@@ -1,16 +1,19 @@
 package se;
 
 class FSM {
-	public var state:State;
+	public var current:State;
 
-	public function new(state:State) {
-		this.state = state;
+	public function new(?state:State) {
+		this.current = state;
 	}
 
 	public function goto(to:State) {
-		final transition = state.getTransition(to);
+		if (current == null)
+			return;
+
+		final transition = current.getTransition(to);
 		if (transition != null) {
-			state = to;
+			current = to;
 			transition();
 		}
 	}
