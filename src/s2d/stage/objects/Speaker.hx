@@ -4,16 +4,17 @@ import aura.dsp.panner.Panner;
 import se.Audio;
 import se.math.SMath;
 
+@:access(se.Audio)
 class Speaker extends StageObject {
 	var audio:Audio = new Audio();
 
 	@alias public var source:String = audio.asset.source;
 
-	@alias public var balance:Float = audio.panner.balance;
-	@alias public var maxDistance:Float = audio.panner.maxDistance;
-	@alias public var dopplerStrength:Float = audio.panner.dopplerStrength;
-	@alias public var attenuationMode:AttenuationMode = audio.panner.attenuationMode;
-	@alias public var attenuationFactor:Float = audio.panner.attenuationFactor;
+	@alias public var balance:Float = audio.balance;
+	@alias public var maxDistance:Float = audio.maxDistance;
+	@alias public var dopplerStrength:Float = audio.dopplerStrength;
+	@alias public var attenuationMode:AttenuationMode = audio.attenuationMode;
+	@alias public var attenuationFactor:Float = audio.attenuationFactor;
 
 	public function new(source:String, uncompressed:Bool = true, name:String = "speaker") {
 		super(name);
@@ -34,11 +35,11 @@ class Speaker extends StageObject {
 
 	override function syncParentTransform() {
 		super.syncParentTransform();
-		audio.panner.location = vec3(globalTransform._20, globalTransform._21, z);
+		audio.location = vec3(globalTransform._20, globalTransform._21, z);
 	}
 
 	override function syncTransform() {
 		super.syncTransform();
-		audio.panner.location = vec3(globalTransform._20, globalTransform._21, z);
+		audio.location = vec3(globalTransform._20, globalTransform._21, z);
 	}
 }

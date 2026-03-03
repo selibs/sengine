@@ -1,8 +1,8 @@
 package s2d.widgets;
 
-import se.Image;
-import se.Assets;
 import se.Texture;
+import se.assets.ImageAsset;
+import se.resource.Image;
 import s2d.DrawableElement;
 import s2d.geometry.Rect;
 

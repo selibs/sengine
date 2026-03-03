@@ -1,8 +1,7 @@
 package s2d.elements;
 
-import se.Font;
-import se.Assets;
 import se.Texture;
+import se.resource.Font;
 import s2d.Alignment;
 
 using se.extensions.StringExt;

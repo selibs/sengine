@@ -1,103 +1,12 @@
-package se;
+package se.resource;
 
-import se.Image;
-
-@:forward()
-extern abstract ResourceShelf(ResourceShelfData) from ResourceShelfData to ResourceShelfData {
-	@:from
-	public static inline function get(sources:ResourceShelfSources):ResourceShelf {
-		var shelf = new ResourceShelf();
-		Resource.getShelf(sources, s -> {
-			shelf.blobs = s.blobs;
-			shelf.fonts = s.fonts;
-			shelf.images = s.images;
-			shelf.sounds = s.sounds;
-			shelf.videos = s.videos;
-		});
-		return shelf;
-	}
-
-	public inline function new(?blobs:ResourceList<Blob>, ?fonts:ResourceList<Font>, ?images:ResourceList<Image>, ?sounds:ResourceList<Sound>,
-			?videos:ResourceList<Video>) {
-		this = {
-			blobs: blobs ?? new ResourceList(),
-			fonts: fonts ?? new ResourceList(),
-			images: images ?? new ResourceList(),
-			sounds: sounds ?? new ResourceList(),
-			videos: videos ?? new ResourceList()
-		}
-	}
-
-	public inline function load(list:ResourceShelfSources) {
-		Resource.loadShelf({
-			blobs: list.blobs,
-			fonts: list.fonts,
-			images: list.images,
-			sounds: list.sounds,
-			videos: list.videos
-		}, s -> {
-			this.blobs = s.blobs;
-			this.fonts = s.fonts;
-			this.images = s.images;
-			this.sounds = s.sounds;
-			this.videos = s.videos;
-		});
-	}
-
-	public inline function reload() {
-		Resource.reloadShelf({
-			blobs: this.blobs.sources,
-			fonts: this.fonts.sources,
-			images: this.images.sources,
-			sounds: this.sounds.sources,
-			videos: this.videos.sources
-		}, s -> {
-			this.blobs = s.blobs;
-			this.fonts = s.fonts;
-			this.images = s.images;
-			this.sounds = s.sounds;
-			this.videos = s.videos;
-		});
-	}
+typedef ResourceError = {
+	var source:String;
+	var message:String;
 }
 
-@:forward.new
-extern abstract ResourceList<T:kha.Resource>(Map<String, T>) {
-	public var sources(get, never):Array<String>;
-
-	public inline function has(key:String):Bool {
-		return this.exists(key);
-	}
-
-	@:op(a.b) @:op([])
-	public inline function get(key:String):T {
-		return this.get(key);
-	}
-
-	@:op(a.b) @:op([])
-	public inline function add(key:String, value:T):Void {
-		if (value != null)
-			this.set(key, value);
-		else
-			unload(key);
-	}
-
-	public inline function unload(key:String):Bool {
-		if (has(key)) {
-			get(key).unload();
-			this.remove(key);
-			return true;
-		}
-		return false;
-	}
-
-	private inline function get_sources():Array<String> {
-		return [
-			for (source in this.keys())
-				source
-		];
-	}
-}
+private typedef KhaFResource<T:kha.Resource> = (source:String, done:T->Void, ?failed:kha.AssetError->Void, ?pos:haxe.PosInfos) -> Void;
+private typedef FResource<T:kha.Resource> = (source:String, done:T->Void, ?failed:ResourceError->Void) -> Void;
 
 class Resource {
 	public static var blobs(default, never) = new ResourceList<Blob>();
@@ -249,8 +158,8 @@ class Resource {
 
 	static function wrapLoad<T:kha.Resource>(p:KhaFResource<T>, n:KhaFResource<T>, source:String, list:ResourceList<T>, ?done:T->Void,
 			?failed:ResourceError->Void) {
-		final f = source.indexOf("/") + source.indexOf("\\") + source.indexOf(".") > -3 ? p : n;
-		f(source, asset -> {
+		final isPath = source.indexOf("/") + source.indexOf("\\") + source.indexOf(".") > -3;
+		(isPath ? p : n)(source, asset -> {
 			list.add(source, asset);
 			if (done != null)
 				done(asset);
@@ -309,9 +218,101 @@ class Resource {
 	}
 }
 
-typedef ResourceError = {
-	var source:String;
-	var message:String;
+@:forward()
+extern abstract ResourceShelf(ResourceShelfData) from ResourceShelfData to ResourceShelfData {
+	@:from
+	public static inline function get(sources:ResourceShelfSources):ResourceShelf {
+		var shelf = new ResourceShelf();
+		Resource.getShelf(sources, s -> {
+			shelf.blobs = s.blobs;
+			shelf.fonts = s.fonts;
+			shelf.images = s.images;
+			shelf.sounds = s.sounds;
+			shelf.videos = s.videos;
+		});
+		return shelf;
+	}
+
+	public inline function new(?blobs:ResourceList<Blob>, ?fonts:ResourceList<Font>, ?images:ResourceList<Image>, ?sounds:ResourceList<Sound>,
+			?videos:ResourceList<Video>) {
+		this = {
+			blobs: blobs ?? new ResourceList(),
+			fonts: fonts ?? new ResourceList(),
+			images: images ?? new ResourceList(),
+			sounds: sounds ?? new ResourceList(),
+			videos: videos ?? new ResourceList()
+		}
+	}
+
+	public inline function load(list:ResourceShelfSources) {
+		Resource.loadShelf({
+			blobs: list.blobs,
+			fonts: list.fonts,
+			images: list.images,
+			sounds: list.sounds,
+			videos: list.videos
+		}, s -> {
+			this.blobs = s.blobs;
+			this.fonts = s.fonts;
+			this.images = s.images;
+			this.sounds = s.sounds;
+			this.videos = s.videos;
+		});
+	}
+
+	public inline function reload() {
+		Resource.reloadShelf({
+			blobs: this.blobs.sources,
+			fonts: this.fonts.sources,
+			images: this.images.sources,
+			sounds: this.sounds.sources,
+			videos: this.videos.sources
+		}, s -> {
+			this.blobs = s.blobs;
+			this.fonts = s.fonts;
+			this.images = s.images;
+			this.sounds = s.sounds;
+			this.videos = s.videos;
+		});
+	}
+}
+
+@:forward.new
+extern abstract ResourceList<T:kha.Resource>(Map<String, T>) {
+	public var sources(get, never):Array<String>;
+
+	public inline function has(key:String):Bool {
+		return this.exists(key);
+	}
+
+	@:op(a.b) @:op([])
+	public inline function get(key:String):T {
+		return this.get(key);
+	}
+
+	@:op(a.b) @:op([])
+	public inline function add(key:String, value:T):Void {
+		if (value != null)
+			this.set(key, value);
+		else
+			unload(key);
+	}
+
+	public inline function unload(key:String):Bool {
+		if (has(key)) {
+			get(key).unload();
+			this.remove(key);
+			return true;
+		}
+		return false;
+	}
+
+	private inline function get_sources():Array<String> {
+		return [
+			for (source in this.keys())
+				source
+		];
+	}
 }
 
 typedef ResourceShelfSources = {
@@ -337,6 +338,3 @@ private typedef ResourceShelfWrapper = {
 	var sounds:FResource<Sound>;
 	var videos:FResource<Video>;
 }
-
-private typedef KhaFResource<T:kha.Resource> = (source:String, done:T->Void, ?failed:kha.AssetError->Void, ?pos:haxe.PosInfos) -> Void;
-private typedef FResource<T:kha.Resource> = (source:String, done:T->Void, ?failed:ResourceError->Void) -> Void;

@@ -1,15 +1,14 @@
 package s2d.elements;
 
-import se.Font;
-import se.Assets;
 import se.Texture;
+import se.assets.FontAsset;
 import s2d.Alignment;
 
 using se.extensions.StringExt;
 
 class Label extends DrawableElement {
 	var fontAsset:FontAsset = new FontAsset();
-	@readonly @alias var kravur:Font = fontAsset.asset;
+	@readonly @alias var kravur:se.resource.Font = fontAsset.asset;
 
 	@alias public var font:String = fontAsset.source;
 	public var fontSize(default, set):Int = 32;

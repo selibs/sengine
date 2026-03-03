@@ -36,21 +36,21 @@ class ShadowPass {
 	}
 
 	public static function render(light:Light):Void @:privateAccess {
-		final target = @:privateAccess Renderer.buffer.shadowMap;
-		target.setDepthStencilFrom(Renderer.buffer.depthMap);
+		// final target = @:privateAccess Renderer.buffer.shadowMap;
+		// target.setDepthStencilFrom(Renderer.buffer.depthMap);
 
-		final ctx = target.context3D;
-		ctx.begin();
-		ctx.clear(White);
-		if (light.isMappingShadows) {
-			ctx.setPipeline(pipeline);
-			ctx.setIndexBuffer(light.layer.shadowBuffer.indices);
-			ctx.setVertexBuffer(light.layer.shadowBuffer.vertices);
-			ctx.setMat3(vpCL, stage.viewProjection);
-			ctx.setFloat2(lightPosCL, light.x, light.y);
-			ctx.draw();
-		}
-		ctx.end();
+		// final ctx = target.context3D;
+		// ctx.begin();
+		// ctx.clear(White);
+		// if (light.isMappingShadows) {
+		// 	ctx.setPipeline(pipeline);
+		// 	ctx.setIndexBuffer(light.layer.shadowBuffer.indices);
+		// 	ctx.setVertexBuffer(light.layer.shadowBuffer.vertices);
+		// 	ctx.setMat3(vpCL, stage.viewProjection);
+		// 	ctx.setFloat2(lightPosCL, light.x, light.y);
+		// 	ctx.draw();
+		// }
+		// ctx.end();
 	}
 }
 #end

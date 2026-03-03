@@ -1,6 +1,6 @@
-package se;
+package se.resource;
 
-import se.Resource;
+import se.resource.Resource;
 
 @:forward()
 abstract Sound(kha.Sound) from kha.Sound to kha.Sound {

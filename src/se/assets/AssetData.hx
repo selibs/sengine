@@ -1,0 +1,56 @@
+package se.assets;
+
+import se.resource.Resource;
+
+#if !macro
+@:build(se.macro.SMacro.build())
+#end
+abstract class AssetData<T:kha.Resource> {
+	@:isVar public var asset(default, null):T = null;
+	@:isVar public var source(default, set):String = "";
+
+	public var isLoaded(get, never):Bool;
+
+	@:signal function assetLoaded(asset:T):Void;
+
+	public inline function new(?source:String) {
+		this.source = source;
+	}
+
+	abstract function _get(?done:T->Void, ?failed:ResourceError->Void):Void;
+
+	abstract function _reload(?done:T->Void, ?failed:ResourceError->Void):Void;
+
+	public inline function delay(f:T->Void, waitForLoaded:Bool = true) {
+		if (isLoaded)
+			f(asset);
+		else if (waitForLoaded)
+			assetLoaded.connect(f, false);
+	}
+
+	public inline function reload(?done:T->Void, ?failed:ResourceError->Void) {
+		_reload(a -> {
+			this.asset = a;
+			this.assetLoaded(asset);
+		});
+	}
+
+	inline function set_source(value:String):String {
+		value = value ?? "";
+		if (value != source) {
+			source = value;
+			if (source != "")
+				_get(a -> {
+					asset = a;
+					assetLoaded(this.asset);
+				});
+			else
+				asset = null;
+		}
+		return source;
+	}
+
+	inline function get_isLoaded():Bool {
+		return this.asset != null;
+	}
+}

@@ -4,8 +4,9 @@ import kha.math.FastVector3;
 import aura.Aura;
 import aura.dsp.panner.Panner;
 import aura.dsp.panner.StereoPanner;
-import se.Assets;
 import se.math.Vec3;
+import se.resource.Sound;
+import se.assets.SoundAsset;
 
 #if !macro
 @:build(se.macro.SMacro.build())

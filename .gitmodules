@@ -4,3 +4,9 @@
 [submodule "aura"]
 	path = libs/aura
 	url = https://github.com/MoritzBrueckner/aura
+[submodule "libs/sshader"]
+	path = libs/sshader
+	url = https://github.com/selibs/sshader
+[submodule "libs/slog"]
+	path = libs/slog
+	url = https://github.com/selibs/slog

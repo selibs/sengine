@@ -1,6 +1,6 @@
 package s2d.widgets;
 
-import se.events.MouseEvents;
+import se.system.input.Mouse;
 import s2d.elements.Flickable;
 
 class ScrollView extends Flickable {

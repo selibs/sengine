@@ -1,4 +1,4 @@
-package s2d.elements;
+package s2d.widgets;
 
 import s2d.layouts.VBoxLayout;
 

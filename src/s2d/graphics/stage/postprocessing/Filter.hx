@@ -26,21 +26,21 @@ class Filter extends PPEffect {
 		kernelCL = pipeline.getConstantLocation("kernel");
 	}
 
-	@:access(s2d.graphics.stage.Renderer)
+	// @:access(s2d.graphics.stage.Renderer)
 	function render(target:Texture) {
-		final ctx = target.context2D;
-		final ctx3d = target.context3D;
+		// final ctx = target.context2D;
+		// final ctx3d = target.context3D;
 
-		ctx.begin();
-		ctx3d.setPipeline(pipeline);
-		ctx3d.setIndexBuffer(@:privateAccess se.sengine.indices);
-		ctx3d.setVertexBuffer(@:privateAccess se.sengine.vertices);
-		ctx3d.setTexture(textureMapTU, Renderer.buffer.src);
-		for (kernel in kernels) {
-			ctx3d.setMat3(kernelCL, kernel);
-			ctx3d.draw();
-		}
-		ctx.end();
+		// ctx.begin();
+		// ctx3d.setPipeline(pipeline);
+		// ctx3d.setIndexBuffer(@:privateAccess se.sengine.indices);
+		// ctx3d.setVertexBuffer(@:privateAccess se.sengine.vertices);
+		// ctx3d.setTexture(textureMapTU, Renderer.buffer.src);
+		// for (kernel in kernels) {
+		// 	ctx3d.setMat3(kernelCL, kernel);
+		// 	ctx3d.draw();
+		// }
+		// ctx.end();
 	}
 
 	public static var Sharpen(get, never):Mat3;

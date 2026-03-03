@@ -1,50 +1,20 @@
 # xml generation
--cp ../Kha/Sources
--cp ../Kha/Backends/HTML5
--cp ../src
+# Generates ../build/project-html5.hxml with machine-local Kha paths.
+--cmd node prepare-kha-hxml.js
+
+--next
+../build/project-html5.hxml
+-cp ../libs/slog/src
 --macro include('se')
 --macro include('s2d')
-# sengine flags
--D S2D_DEBUG_FPS -> enables FPS debugging
--D S2D_SPRITE_INSTANCING
--D S2D_LIGHTING
--D S2D_LIGHTING_PBR
--D S2D_LIGHTING_SHADOWS
--D S2D_LIGHTING_DEFERRED
--D S2D_LIGHTING_ENVIRONMENT
--D S2D_PP_BLOOM
--D S2D_PP_FISHEYE
--D S2D_PP_FILTERS
--D S2D_PP_COMPOSITOR
--D S2D_UI_DEBUG_ELEMENT_BOUNDS
-# kha flags
--D sys_g1
--D sys_g2
--D sys_g3
--D sys_g4
--D sys_a1
--D sys_a2
--D sys_html5
--D kha_g1
--D kha_g2
--D kha_g3
--D kha_g4
--D kha_a1
--D kha_a2
--D kha_webgl
--D kha_html5
--D kha_html5_js
--D kha
--D kha_version=1810
--D kha_project_name=untitled
 --no-output
 -dce no
 -D doc-gen
---js html5/main.js
 -xml build/api.xml
 
 # html generation
 --next
 --cmd if exist "build/html/pages" rd /s /q "build/html/pages"
+
 --next
---cmd haxelib run dox -i build -o build/html/pages -in "se|s2d" --title "sengine API" -D version 1.0.0a -D description "sengine libraries APIs" -D source-path https://github.com/selibs/sengine/tree/main/src
+--cmd haxelib run dox -i build -o build/html/pages -in "se|s2d|slog" --title "sengine API" -D version 1.0.0a -D description "sengine libraries APIs" -D source-path https://github.com/selibs/sengine/tree/main/src

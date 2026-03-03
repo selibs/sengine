@@ -1,6 +1,6 @@
-package se;
+package se.resource;
 
-import se.Resource;
+import se.resource.Resource;
 
 @:forward()
 extern abstract Font(kha.Font) from kha.Font to kha.Font {

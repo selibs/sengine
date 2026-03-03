@@ -3,10 +3,11 @@ package se;
 import kha.System;
 import kha.Framebuffer;
 import aura.Aura;
-import se.Resource;
-import se.input.Mouse;
-import se.input.Keyboard;
+import se.system.Window;
+import se.system.input.Mouse;
+import se.system.input.Keyboard;
 import se.animation.Action;
+import se.resource.Resource;
 import s2d.graphics.Drawers;
 
 @:build(se.macro.SMacro.build())

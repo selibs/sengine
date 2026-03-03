@@ -1,6 +1,6 @@
-package se;
+package se.resource;
 
-import se.Resource;
+import se.resource.Resource;
 
 @:forward(width, height, format, unload, at, fromImage, fromCanvas, fromVideo, fromBytes, fromBytes3D, fromEncodedBytes)
 extern abstract Image(kha.Image) from kha.Image to kha.Image {

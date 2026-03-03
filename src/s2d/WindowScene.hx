@@ -3,7 +3,7 @@ package s2d;
 import se.App;
 import se.Time;
 import se.graphics.Context2D;
-import se.Window;
+import se.system.Window;
 import se.Texture;
 import se.math.Mat3;
 
@@ -11,7 +11,7 @@ using se.extensions.StringExt;
 
 @:structInit
 @:allow(se.App)
-@:allow(se.Window)
+@:allow(se.system.Window)
 @:allow(s2d.Element)
 class WindowScene extends DrawableElement {
 	var window:Window;

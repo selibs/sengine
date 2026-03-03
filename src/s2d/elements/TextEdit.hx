@@ -4,7 +4,7 @@ import se.App;
 import se.Timer;
 import se.Color;
 import se.Texture;
-import se.input.Keyboard;
+import se.system.input.Keyboard;
 
 using se.extensions.StringExt;
 

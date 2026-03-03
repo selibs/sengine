@@ -1,6 +1,6 @@
 package s2d.controls;
 
-import se.events.MouseEvents;
+import se.system.input.Mouse;
 
 class AbstractButton<B:Element, C:Element> extends Control<B, C> {
 	@track public var pressed:Bool = false;

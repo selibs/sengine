@@ -1,11 +1,10 @@
-package se;
+package se.system;
 
 import kha.WindowMode;
 import kha.WindowOptions;
 import kha.Window as KhaWindow;
 import kha.Framebuffer;
-import se.input.Mouse;
-import se.events.MouseEvents;
+import se.system.input.Mouse;
 import s2d.FocusPolicy;
 import s2d.Element;
 import s2d.WindowScene;

@@ -1,9 +1,7 @@
 package se.animation;
 
-import se.math.SMath;
-
 class ColorAnimation extends Animation<Color> {
 	function update(t:Float):Color {
-		return mix(from.RGBA, to.RGBA, t);
+		return se.math.SMath.mix(from.RGBA, to.RGBA, t);
 	}
 }

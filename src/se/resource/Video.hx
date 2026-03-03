@@ -1,6 +1,6 @@
-package se;
+package se.resource;
 
-import se.Resource;
+import se.resource.Resource;
 
 @:forward()
 abstract Video(kha.Video) from kha.Video to kha.Video {

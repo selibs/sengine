@@ -1,4 +1,4 @@
-package se.input;
+package se.system.input;
 
 typedef KeyCode = kha.input.KeyCode;
 

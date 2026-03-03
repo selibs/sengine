@@ -1,6 +1,6 @@
-package se;
+package se.resource;
 
-import se.Resource;
+import se.resource.Resource;
 
 @:forward()
 extern abstract Blob(kha.Blob) from kha.Blob to kha.Blob {

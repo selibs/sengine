@@ -1,6 +1,5 @@
 package se;
 
-import se.Image;
 import kha.graphics4.MipMapFilter;
 import kha.graphics4.TextureFilter;
 import kha.graphics4.TextureFormat;
@@ -9,6 +8,7 @@ import kha.graphics4.DepthStencilFormat;
 import se.graphics.Context1D;
 import se.graphics.Context2D;
 import se.graphics.Context3D;
+import se.resource.Image;
 
 @:forward(unload, width, height)
 extern abstract Texture(Image) from Image to Image {

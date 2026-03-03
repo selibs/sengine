@@ -6,7 +6,7 @@ import kha.graphics4.VertexBuffer;
 import s2d.graphics.StageRenderer;
 #end
 #end
-import se.Assets;
+import se.assets.ImageAsset;
 import s2d.stage.objects.Sprite;
 
 @:access(s2d.stage.objects.Sprite)

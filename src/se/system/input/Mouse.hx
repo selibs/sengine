@@ -1,6 +1,28 @@
-package se.input;
+package se.system.input;
 
 typedef MouseCursor = kha.input.Mouse.MouseCursor;
+
+typedef MouseEvent = {
+	var accepted:Bool;
+	var x:Int;
+	var y:Int;
+}
+
+typedef MouseButtonEvent = {
+	> MouseEvent,
+	var button:MouseButton;
+}
+
+typedef MouseScrollEvent = {
+	> MouseEvent,
+	var delta:Int;
+}
+
+typedef MouseMoveEvent = {
+	> MouseEvent,
+	var dx:Int;
+	var dy:Int;
+}
 
 #if !macro
 @:build(se.macro.SMacro.build())

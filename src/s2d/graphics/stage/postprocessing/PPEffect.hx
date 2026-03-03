@@ -4,7 +4,7 @@ import kha.graphics4.PipelineState;
 import kha.graphics4.VertexStructure;
 import se.Texture;
 
-@:access(s2d.graphics.stage.Renderer)
+// @:access(s2d.graphics.stage.Renderer)
 abstract class PPEffect {
 	var pipeline:PipelineState;
 	var index:Int;
@@ -38,17 +38,18 @@ abstract class PPEffect {
 	abstract public function render(target:Texture):Void;
 
 	public function command():Void {
-		Renderer.buffer.swap();
-		render(Renderer.buffer.tgt);
+		// Renderer.buffer.swap();
+		// render(Renderer.buffer.tgt);
 	}
 
 	function get_enabled():Bool {
-		return Renderer.commands.contains(command);
+		// return Renderer.commands.contains(command);
+		return true;
 	}
 
 	function set_enabled(value:Bool):Bool {
-		if (!enabled && value)
-			Renderer.commands.insert(index, command);
+		// if (!enabled && value)
+		// 	Renderer.commands.insert(index, command);
 		return enabled;
 	}
 }
