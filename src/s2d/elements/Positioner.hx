@@ -4,6 +4,7 @@ import s2d.Direction;
 
 using se.extensions.ArrayExt;
 
+@:ui.shortcut(positioner)
 class Positioner extends Element {
 	var slots:Map<Element, {
 		widthChanged:Float->Void,

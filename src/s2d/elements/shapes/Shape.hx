@@ -7,10 +7,6 @@ abstract class Shape extends DrawableElement {
 		width: 0.0,
 		color: Transparent
 	};
-
-	public function new(name:String = "shape") {
-		super(name);
-	}
 }
 
 typedef ShapeBorder = {

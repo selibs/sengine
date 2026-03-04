@@ -6,6 +6,7 @@ import se.resource.Image;
 import s2d.DrawableElement;
 import s2d.geometry.Rect;
 
+@:ui.shortcut(image)
 class ImageWidget extends DrawableElement {
 	var asset:ImageAsset = new ImageAsset();
 	@readonly @alias var image:Image = asset.asset;
@@ -16,11 +17,8 @@ class ImageWidget extends DrawableElement {
 	public var sourceClip:Rect = new Rect(0.0, 0.0, 0.0, 0.0);
 	public var fillMode:ImageFillMode = Stretch;
 
-	public function new(source:String = "", name:String = "asset") {
-		super(name);
-		asset.source = source;
-		if (asset.isLoaded)
-			__syncAsset__(asset);
+	public function new() {
+		super();
 	}
 
 	@:slot(asset.assetLoaded)

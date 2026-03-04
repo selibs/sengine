@@ -7,6 +7,7 @@ import s2d.layouts.LayoutCell;
 
 using se.extensions.ArrayExt;
 
+@:ui.shortcut(vbox)
 class VBoxLayout extends DirLayout<ElementVSlots, VLayoutCell> {
 	var fillHeightCellsNum:Int = 0;
 	@:inject(syncAvailableHeightPerCell) var availableHeight:Float = 0.0;

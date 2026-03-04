@@ -11,13 +11,6 @@ class Sprite extends LayerObject {
 	public var cropRect:Rect = new Rect(0.0, 0.0, 1.0, 1.0);
 	@:isVar public var material(default, set):SpriteMaterial;
 
-	public function new(name:String = "sprite", material:SpriteMaterial, ?layer:StageLayer, ?polygons:Array<Vec2>) {
-		super(name, layer);
-		this.material = material;
-		if (polygons != null)
-			this.mesh = polygons;
-	}
-
 	#if (S2D_LIGHTING && S2D_LIGHTING_SHADOWS == 1)
 	@:isVar public var isCastingShadows(default, set):Bool = false;
 	public var shadowOpacity:Float = 1.0;

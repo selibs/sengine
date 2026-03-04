@@ -11,6 +11,7 @@ import s2d.stage.StageLayer;
 import s2d.graphics.Drawers;
 
 @:access(s2d.stage.objects.Object)
+@:ui.shortcut(stage)
 class Stage extends DrawableElement {
 	var layers:Array<StageLayer> = [];
 	var renderBuffer:RenderBuffer = new RenderBuffer();
@@ -35,8 +36,8 @@ class Stage extends DrawableElement {
 	}
 	#end
 
-	public function new(name:String = "stage") {
-		super(name);
+	public function new() {
+		super();
 
 		#if (S2D_LIGHTING_ENVIRONMENT == 1)
 		environmentMap = "default_emission";

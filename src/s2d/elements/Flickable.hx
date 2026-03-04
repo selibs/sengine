@@ -2,6 +2,7 @@ package s2d.elements;
 
 import se.math.SMath;
 
+@:ui.shortcut(flickable)
 class Flickable extends Element {
 	var contentItem:Element;
 

@@ -4,6 +4,7 @@ import s2d.elements.Text;
 import s2d.layouts.HBoxLayout;
 import s2d.elements.shapes.RoundedRectangle;
 
+@:ui.shortcut(button)
 class Button extends AbstractButton<RoundedRectangle, HBoxLayout> {
 	public var label:Text;
 

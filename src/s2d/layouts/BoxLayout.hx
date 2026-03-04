@@ -2,6 +2,7 @@ package s2d.layouts;
 
 import s2d.Alignment;
 
+@:ui.shortcut(box)
 class BoxLayout extends Element {
 	var slots:Map<Element, BoxLayoutSlots> = [];
 	@:inject(syncFreeWidth) var freeWidth:Float = 0.0;

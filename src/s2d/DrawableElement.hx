@@ -6,10 +6,6 @@ import se.Texture;
 abstract class DrawableElement extends Element {
 	public var color:Color = White;
 
-	public function new(name:String = "drawable") {
-		super(name);
-	}
-
 	abstract function draw(target:Texture):Void;
 
 	override function render(target:Texture) {

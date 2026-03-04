@@ -2,6 +2,7 @@ package s2d.elements.shapes;
 
 import se.Texture;
 
+@:ui.shortcut(rectangle)
 class Rectangle extends Shape {
 	public function new(name:String = "rectangle") {
 		super(name);

@@ -6,6 +6,7 @@ import s2d.Alignment;
 
 using se.extensions.StringExt;
 
+@:ui.shortcut(label)
 class Label extends DrawableElement {
 	var fontAsset:FontAsset = new FontAsset();
 	@readonly @alias var kravur:se.resource.Font = fontAsset.asset;
@@ -21,8 +22,8 @@ class Label extends DrawableElement {
 
 	public var alignment:Alignment = AlignLeft | AlignTop;
 
-	public function new(text:String = "", name:String = "label") {
-		super(name);
+	public function new(text:String = "") {
+		super();
 		this.text = text;
 		color = Black;
 		font = "font_default";

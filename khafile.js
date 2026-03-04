@@ -160,7 +160,7 @@ for (const def of process.defines) {
 project.addShaders(`${shaderOutputDir}/**/*{frag,vert}.glsl`, {
     defines: defs,
 });
-
+project.addParameter("--macro s2d.macro.ElementMacro.init()");
 await project.addProject("libs/aura");
 
 resolve(project);

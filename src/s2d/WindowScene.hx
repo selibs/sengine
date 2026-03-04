@@ -22,8 +22,8 @@ class WindowScene extends DrawableElement {
 
 	public var active(get, set):Bool;
 
-	public function new(name:String = "scene", window:Window) {
-		super(name);
+	public function new(window:Window) {
+		super();
 		this.window = window;
 		width = window.width;
 		height = window.height;
