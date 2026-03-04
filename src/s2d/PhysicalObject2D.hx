@@ -19,9 +19,7 @@ abstract class PhysicalObject2D<This:PhysicalObject2D<This>> extends se.VirtualO
 	public var scale(get, set):Vec2;
 	public var rotation(get, set):Float;
 
-	public function new(name:String = "object") {
-		super(name);
-	}
+	public function new() {}
 
 	public function zsorted() {
 		var i = 0;

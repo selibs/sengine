@@ -17,7 +17,7 @@ abstract class Builder {
 	var newFields:Array<Field>;
 
 	function new() {
-		cls = Context.getLocalClass().get();
+		cls = Context.getLocalClass()?.get();
 		fields = Context.getBuildFields();
 		newFields = [];
 	}
@@ -264,9 +264,7 @@ function expected(expr:Expr):ComplexType {
 }
 
 function withLocalImports(code:Void->Void) {
-	Context.withImports(resolve(Context.getLocalImports()), resolve(Context.getLocalUsing()), () -> {
-		code();
-	});
+	Context.withImports(resolve(Context.getLocalImports()), resolve(Context.getLocalUsing()), code);
 }
 
 overload extern inline function resolve(type:ComplexType, ?pos:Position):ComplexType {
@@ -315,7 +313,7 @@ function ident(name:String):Expr {
 }
 
 function idents(names:Array<String>) {
-	return names.map(name -> ident(name));
+	return names.map(ident);
 }
 
 function traverse(expr:Expr, f:Expr->Expr):Expr {

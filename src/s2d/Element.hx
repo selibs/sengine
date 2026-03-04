@@ -12,6 +12,9 @@ import s2d.geometry.Size;
 import s2d.geometry.Position;
 
 @:allow(s2d.WindowScene)
+#if !macro
+@:autoBuild(s2d.macro.ElementMacro.build())
+#end
 class Element extends PhysicalObject2D<Element> {
 	overload extern public static inline function mapToElement(element:Element, x:Float, y:Float):Position {
 		return element.mapFromGlobal(x, y);
@@ -121,8 +124,8 @@ class Element extends PhysicalObject2D<Element> {
 
 	@:signal(button) function mouseButtonDoubleClicked(button:MouseButton, m:MouseEvent);
 
-	public function new(name:String = "element") {
-		super(name);
+	public function new() {
+		super();
 
 		anchors = new ElementAnchors(this);
 		left = new LeftAnchor();
@@ -159,6 +162,8 @@ class Element extends PhysicalObject2D<Element> {
 	public function setPadding(value:Float):Void {
 		padding = value;
 	}
+
+	public function setStyleSheet(value:String) {}
 
 	overload extern public inline function setSize(width:Float, height:Float):Void {
 		setSize(new Size(width, height));

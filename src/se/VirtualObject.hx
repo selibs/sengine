@@ -15,10 +15,6 @@ abstract class VirtualObject<This:VirtualObject<This>> {
 
 	@:signal function parentChanged(previous:This):Void;
 
-	public function new(name:String = "object") {
-		this.name = name;
-	}
-
 	public function setParent(value:This):Void {
 		parent = value;
 	}
