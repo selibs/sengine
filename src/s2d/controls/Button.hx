@@ -4,14 +4,13 @@ import s2d.elements.Text;
 import s2d.layouts.HBoxLayout;
 import s2d.elements.shapes.RoundedRectangle;
 
-@:ui.shortcut(button)
 class Button extends AbstractButton<RoundedRectangle, HBoxLayout> {
 	public var label:Text;
 
 	@alias public var text:String = label.text;
 
-	public function new(text:String = "Button", name:String = "button") {
-		super(name);
+	public function new(text:String = "Button") {
+		super();
 
 		background = new RoundedRectangle();
 		background.color = Color.rgb(0.75, 0.75, 0.75);

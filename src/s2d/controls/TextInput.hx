@@ -3,7 +3,6 @@ package s2d.controls;
 import s2d.elements.TextEdit;
 import s2d.elements.shapes.RoundedRectangle;
 
-@:ui.shortcut(input)
 class TextInput extends AbstractButton<RoundedRectangle, TextEdit> {
 	@alias public var text:String = content.text;
 

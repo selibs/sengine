@@ -23,9 +23,10 @@ abstract class VirtualObject<This:VirtualObject<This>> {
 		parent = null;
 	}
 
-	public function addChild(value:This):Void {
+	public function addChild(value:This):This {
 		if (value != null)
 			value.parent = cast this;
+		return value;
 	}
 
 	public function getChild(name:String):This {

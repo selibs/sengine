@@ -120,6 +120,13 @@ project.addAssets("assets/**", {
     name: "{name}",
 });
 
+for (const [k, v] of Object.entries(process.shortcuts ?? {})) {
+  if (typeof k !== "string" || typeof v !== "string" || !v) continue;
+  project.addParameter(
+    `--macro s2d.macro.MarkupMacro.useShortcut(${JSON.stringify(k)}, ${JSON.stringify(v)})`
+  );
+}
+
 // Available Engine Compiler Flags:
 
 // Debug:
@@ -145,8 +152,7 @@ project.addAssets("assets/**", {
 // S2D_LIGHTING_SHADOWS_SOFT -> enables soft shadows
 
 let defs = [];
-if (process.defines == null) process.defines = [];
-for (const def of process.defines) {
+for (const def of (process.defines ?? [])) {
     let kv = def.split(" ");
     if (kv.length === 2) {
         project.addDefine(`${kv[0]}=${kv[1]}`);
@@ -156,11 +162,8 @@ for (const def of process.defines) {
         defs.push(`${kv[0]} 1`);
     }
 }
+project.addShaders(`${shaderOutputDir}/**/*{frag,vert}.glsl`, { defines: defs, });
 
-project.addShaders(`${shaderOutputDir}/**/*{frag,vert}.glsl`, {
-    defines: defs,
-});
-project.addParameter("--macro s2d.macro.ElementMacro.init()");
 await project.addProject("libs/aura");
 
 resolve(project);

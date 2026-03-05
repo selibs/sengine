@@ -8,7 +8,6 @@ import se.system.input.Keyboard;
 
 using se.extensions.StringExt;
 
-@:ui.shortcut(edit)
 class TextEdit extends Text {
 	var _cursorVisible:Bool = false;
 	var _selecting = false;

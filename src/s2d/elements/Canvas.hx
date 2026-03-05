@@ -3,7 +3,6 @@ package s2d.elements;
 import se.Texture;
 import se.graphics.Context2D;
 
-@:ui.shortcut(canvas)
 class Canvas2D extends DrawableElement {
 	@:isVar var texture(default, set):Texture;
 

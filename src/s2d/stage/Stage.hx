@@ -11,7 +11,6 @@ import s2d.stage.StageLayer;
 import s2d.graphics.Drawers;
 
 @:access(s2d.stage.objects.Object)
-@:ui.shortcut(stage)
 class Stage extends DrawableElement {
 	var layers:Array<StageLayer> = [];
 	var renderBuffer:RenderBuffer = new RenderBuffer();

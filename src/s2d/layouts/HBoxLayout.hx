@@ -7,7 +7,6 @@ import s2d.layouts.LayoutCell;
 
 using se.extensions.ArrayExt;
 
-@:ui.shortcut(hbox)
 class HBoxLayout extends DirLayout<ElementHSlots, HLayoutCell> {
 	var fillWidthCellsNum:Int = 0;
 	@:inject(syncAvailableWidthPerCell) var availableWidth:Float = 0.0;

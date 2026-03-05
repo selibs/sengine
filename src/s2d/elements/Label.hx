@@ -6,7 +6,6 @@ import s2d.Alignment;
 
 using se.extensions.StringExt;
 
-@:ui.shortcut(label)
 class Label extends DrawableElement {
 	var fontAsset:FontAsset = new FontAsset();
 	@readonly @alias var kravur:se.resource.Font = fontAsset.asset;
