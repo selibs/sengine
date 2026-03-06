@@ -78,7 +78,7 @@ class MarkupMacro {
 		var stack:Array<Expr> = [];
 
 		function transform(expr:Expr) {
-			function buildEl(meta:MetadataEntry, expr:Expr, pos:Position, ?name:String, ?ref:Expr) {
+			function addEl(meta:MetadataEntry, expr:Expr, pos:Position, ?name:String, ?ref:Expr) {
 				var elName = name ?? "__el" + i++;
 				var elRef = ref ?? macro $i{elName};
 				var elCls = try {
@@ -150,11 +150,23 @@ class MarkupMacro {
 				return EBlock(elExprs);
 			}
 
+			function addStyle(meta:MetadataEntry, expr:Expr) {
+				var e = macro {
+					parent.useStyle(__s);
+				}
+				return e.expr;
+			}
+
 			var def = expr.expr;
 			if (def != null)
 				expr.expr = switch def {
 					case EMeta(m, e) if (m.name.charAt(0) != ":"):
-						buildEl(m, e, expr.pos);
+						switch m.name {
+							case "style":
+								(macro null).expr;
+							default:
+								addEl(m, e, expr.pos);
+						}
 					case EVars(vars):
 						EBlock(vars.map(v -> {
 							var n = v.name;
@@ -163,7 +175,7 @@ class MarkupMacro {
 							return switch v.expr.expr {
 								case EMeta(s, e):
 									{
-										expr: buildEl(s, e, v.expr.pos, n),
+										expr: addEl(s, e, v.expr.pos, n),
 										pos: v.expr.pos
 									}
 								default:
@@ -175,9 +187,9 @@ class MarkupMacro {
 							case EMeta(m, e):
 								switch e1.expr {
 									case EConst(CIdent(s)):
-										buildEl(m, e, e2.pos, s, e1);
+										addEl(m, e, e2.pos, s, e1);
 									case EField(e, field):
-										buildEl(m, e, e2.pos, null, e1);
+										addEl(m, e, e2.pos, null, e1);
 									default:
 										(expr.map(e -> block(transform(e)))).expr;
 								}

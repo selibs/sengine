@@ -11,8 +11,41 @@ import s2d.FocusPolicy;
 import s2d.geometry.Size;
 import s2d.geometry.Position;
 
+enum ElementSelector {
+	Children(selector:Selector);
+	Siblings(selector:Selector);
+}
+
+enum Selector {
+	All;
+	ByName(name:String);
+	ByType<T:Element>(type:Class<T>);
+	ByAttribute<T>(attr:String, ?value:T);
+}
+
 @:allow(s2d.WindowScene)
 class Element extends PhysicalObject2D<Element> {
+	public static function selectGroupByName(group:Array<Element>, name:String):Array<Element> {
+		return group.filter(e -> e.matchesName(name));
+	}
+
+	public static function selectGroupByType<T:Element>(group:Array<Element>, type:Class<T>):Array<Element> {
+		return group.filter(e -> e.matchesType(type));
+	}
+
+	public static function selectGroupByAttribute<T>(group:Array<Element>, attr:String, ?value:T):Array<Element> {
+		return group.filter(e -> e.matchesAttribute(attr, value));
+	}
+
+	public static function selectGroup(group:Array<Element>, selector:Selector):Array<Element> {
+		return switch selector {
+			case All: group;
+			case ByName(name): selectGroupByName(group, name);
+			case ByType(type): selectGroupByType(group, type);
+			case ByAttribute(attr, value): selectGroupByAttribute(group, attr, value);
+		}
+	}
+
 	overload extern public static inline function mapToElement(element:Element, x:Float, y:Float):Position {
 		return element.mapFromGlobal(x, y);
 	}
@@ -160,8 +193,6 @@ class Element extends PhysicalObject2D<Element> {
 		padding = value;
 	}
 
-	public function setStyleSheet(value:String) {}
-
 	overload extern public inline function setSize(width:Float, height:Float):Void {
 		setSize(new Size(width, height));
 	}
@@ -218,6 +249,36 @@ class Element extends PhysicalObject2D<Element> {
 				return cat;
 		};
 		return null;
+	}
+
+	public function matchesName(name:String):Bool {
+		return this.name == name;
+	}
+
+	public function matchesType<T:Element>(type:Class<T>):Bool {
+		return Std.isOfType(this, type);
+	}
+
+	public function matchesAttribute<T>(attr:String, ?value:T):Bool {
+		return Reflect.hasField(this, attr) && (value == null ? true : Reflect.getProperty(this, attr) == value);
+	}
+
+	public function matches(selector:Selector):Bool {
+		return switch selector {
+			case All: true;
+			case ByName(name): matchesName(name);
+			case ByType(type): matchesType(type);
+			case ByAttribute(attr, value): matchesAttribute(attr, value);
+		}
+	}
+
+	public function select(selector:ElementSelector) {
+		return switch selector {
+			case Children(s):
+				Element.selectGroup(children, s);
+			case Siblings(s):
+				Element.selectGroup(parent?.children ?? [], s);
+		}
 	}
 
 	public function contains(x:Float, y:Float):Bool {
