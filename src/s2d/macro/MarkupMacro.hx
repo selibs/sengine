@@ -1,9 +1,9 @@
 package s2d.macro;
 
-import haxe.macro.Compiler;
 #if macro
 import haxe.macro.Expr;
 import haxe.macro.Context;
+import haxe.macro.Compiler;
 
 using haxe.macro.ComplexTypeTools;
 using haxe.macro.TypeTools;
@@ -217,7 +217,6 @@ class MarkupMacro {
 				if (f.expr != null) {
 					var exprs = transform(f.expr);
 					f.expr = macro $b{exprs};
-					trace(f.expr.toString());
 				}
 			default:
 				throw "Field must be function";

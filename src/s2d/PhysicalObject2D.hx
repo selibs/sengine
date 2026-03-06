@@ -19,7 +19,9 @@ abstract class PhysicalObject2D<This:PhysicalObject2D<This>> extends se.VirtualO
 	public var scale(get, set):Vec2;
 	public var rotation(get, set):Float;
 
-	public function new() {}
+	public function new() {
+		super();
+	}
 
 	public function zsorted() {
 		var i = 0;
@@ -49,14 +51,15 @@ abstract class PhysicalObject2D<This:PhysicalObject2D<This>> extends se.VirtualO
 		insertChild(child);
 	}
 
-	function insertChild(child:This) {
-		children.remove(child);
-		for (i in 0...children.length)
-			if (children[i].z > child.z) {
-				children.insert(i, child);
+	function insertChild(child:This) @:privateAccess {
+		var c = children.list;
+		c.remove(child);
+		for (i in 0...c.length)
+			if (c[i].z > child.z) {
+				c.insert(i, child);
 				return;
 			}
-		children.push(child);
+		c.push(child);
 	}
 
 	function set_z(value:Float):Float {

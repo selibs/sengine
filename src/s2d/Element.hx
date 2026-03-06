@@ -6,25 +6,43 @@ import se.math.Vec2;
 import se.math.Mat3;
 import se.math.SMath;
 import se.system.input.Mouse;
+import s2d.Style;
 import s2d.Anchors;
 import s2d.FocusPolicy;
 import s2d.geometry.Size;
 import s2d.geometry.Position;
 
-enum ElementSelector {
-	Children(selector:Selector);
-	Siblings(selector:Selector);
-}
-
-enum Selector {
-	All;
-	ByName(name:String);
-	ByType<T:Element>(type:Class<T>);
-	ByAttribute<T>(attr:String, ?value:T);
-}
-
 @:allow(s2d.WindowScene)
 class Element extends PhysicalObject2D<Element> {
+	public static function selectGroup(group:Array<Element>, selector:Selector):Array<Element> {
+		return switch selector {
+			case Always: group;
+			case Child(element): selectGroupByChild(group, element);
+			case Sibling(element): selectGroupBySibling(group, element);
+			case ByAll(s1, s2): selectGroupByAll(group, s1, s2);
+			case ByAny(s1, s2): selectGroupByAny(group, s1, s2);
+			case ByName(name): selectGroupByName(group, name);
+			case ByType(type): selectGroupByType(group, type);
+			case ByAttribute(attr, value): selectGroupByAttribute(group, attr, value);
+		}
+	}
+
+	public static function selectGroupByAll(group:Array<Element>, s1:Selector, s2:Selector):Array<Element> {
+		return group.filter(e -> e.matchesAll(s1, s2));
+	}
+
+	public static function selectGroupByChild(group:Array<Element>, element:Element):Array<Element> {
+		return group.filter(e -> e.matchesChild(element));
+	}
+
+	public static function selectGroupBySibling(group:Array<Element>, element:Element):Array<Element> {
+		return group.filter(e -> e.matchesSibling(element));
+	}
+
+	public static function selectGroupByAny(group:Array<Element>, s1:Selector, s2:Selector):Array<Element> {
+		return group.filter(e -> e.matchesAny(s1, s2));
+	}
+
 	public static function selectGroupByName(group:Array<Element>, name:String):Array<Element> {
 		return group.filter(e -> e.matchesName(name));
 	}
@@ -35,15 +53,6 @@ class Element extends PhysicalObject2D<Element> {
 
 	public static function selectGroupByAttribute<T>(group:Array<Element>, attr:String, ?value:T):Array<Element> {
 		return group.filter(e -> e.matchesAttribute(attr, value));
-	}
-
-	public static function selectGroup(group:Array<Element>, selector:Selector):Array<Element> {
-		return switch selector {
-			case All: group;
-			case ByName(name): selectGroupByName(group, name);
-			case ByType(type): selectGroupByType(group, type);
-			case ByAttribute(attr, value): selectGroupByAttribute(group, attr, value);
-		}
 	}
 
 	overload extern public static inline function mapToElement(element:Element, x:Float, y:Float):Position {
@@ -251,6 +260,45 @@ class Element extends PhysicalObject2D<Element> {
 		return null;
 	}
 
+	public function setStyle(style:Style) {
+		if (matches(style.selector))
+			style.f(this);
+	}
+
+	public function setStylesheet(stylesheet:Stylesheet) {
+		for (style in stylesheet)
+			setStyle(style);
+	}
+
+	public function matches(selector:Selector):Bool {
+		return switch selector {
+			case Always: true;
+			case Child(element): matchesChild(element);
+			case Sibling(element): matchesSibling(element);
+			case ByAll(s1, s2): matchesAll(s1, s2);
+			case ByAny(s1, s2): matchesAny(s1, s2);
+			case ByName(name): matchesName(name);
+			case ByType(type): matchesType(type);
+			case ByAttribute(attr, value): matchesAttribute(attr, value);
+		}
+	}
+
+	public function matchesChild(element:Element):Bool {
+		return parent == element;
+	}
+
+	public function matchesSibling(element:Element):Bool {
+		return parent?.children.contains(element);
+	}
+
+	public function matchesAll(s1:Selector, s2:Selector):Bool {
+		return matches(s1) && matches(s2);
+	}
+
+	public function matchesAny(s1:Selector, s2:Selector):Bool {
+		return matches(s1) || matches(s2);
+	}
+
 	public function matchesName(name:String):Bool {
 		return this.name == name;
 	}
@@ -263,22 +311,28 @@ class Element extends PhysicalObject2D<Element> {
 		return Reflect.hasField(this, attr) && (value == null ? true : Reflect.getProperty(this, attr) == value);
 	}
 
-	public function matches(selector:Selector):Bool {
-		return switch selector {
-			case All: true;
-			case ByName(name): matchesName(name);
-			case ByType(type): matchesType(type);
-			case ByAttribute(attr, value): matchesAttribute(attr, value);
-		}
+	public function callIfMatches(selector:Selector, f:Void->Void):Bool {
+		return callIf(matches(selector), f);
 	}
 
-	public function select(selector:ElementSelector) {
-		return switch selector {
-			case Children(s):
-				Element.selectGroup(children, s);
-			case Siblings(s):
-				Element.selectGroup(parent?.children ?? [], s);
+	public function callIfMatchesName(name:String, f:Void->Void):Bool {
+		return callIf(matchesName(name), f);
+	}
+
+	public function callIfMatchesType<T:Element>(type:Class<T>, f:Void->Void):Bool {
+		return callIf(matchesType(type), f);
+	}
+
+	public function callIfMatchesAttribute<T>(attr:String, ?value:T, f:Void->Void):Bool {
+		return callIf(matchesAttribute(attr, value), f);
+	}
+
+	inline function callIf(a:Bool, f:Void->Void):Bool {
+		if (a) {
+			f();
+			return true;
 		}
+		return false;
 	}
 
 	public function contains(x:Float, y:Float):Bool {

@@ -11,6 +11,8 @@ abstract class DrawableElement extends Element {
 	override function render(target:Texture) {
 		final ctx = target.context2D;
 		ctx.style.pushOpacity(opacity);
+		if (clip)
+			ctx.scissor(Std.int(absX), Std.int(absY), Std.int(width), Std.int(height));
 		var order = zsorted();
 		for (c in order.below)
 			if (c.visible)
@@ -21,6 +23,8 @@ abstract class DrawableElement extends Element {
 		for (c in order.above)
 			if (c.visible)
 				c.render(target);
+		if (clip)
+			ctx.disableScissor();
 		ctx.style.popOpacity();
 	}
 }
