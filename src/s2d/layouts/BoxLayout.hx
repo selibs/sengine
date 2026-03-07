@@ -68,6 +68,7 @@ class BoxLayout extends Element {
 	}
 
 	override function __childRemoved__(child:Element) {
+		super.__childRemoved__(child);
 		var childSlots = slots.get(child);
 		child.anchors.clear();
 		child.layout.offAlignmentChanged(childSlots.alignmentChanged);

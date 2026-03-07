@@ -18,8 +18,8 @@ class Positioner extends Element {
 	@:isVar public var direction(default, set):Direction = TopToBottom | LeftToRight;
 	@:isVar public var axis(default, set):Axis;
 
-	public function new(name:String = "positioner", axis:Axis = Horizontal) {
-		super(name);
+	public function new(axis:Axis = Horizontal) {
+		super();
 		this.axis = axis;
 	}
 

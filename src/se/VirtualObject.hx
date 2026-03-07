@@ -7,15 +7,19 @@ package se;
 abstract class VirtualObject<T:VirtualObject<T>> {
 	var _parent:T;
 
-	public var name:String;
-	public var children(default, null):Array<T>;
+	@track public var name:String;
 	public var parent(get, set):T;
+	public var children(default, null):Array<T>;
+
+	@:signal function parentChanged(previous:T):Void;
 
 	@:signal function childAdded(child:T):Void;
 
 	@:signal function childRemoved(child:T):Void;
 
-	@:signal function parentChanged(previous:T):Void;
+	@:signal function descendantAdded(descendant:T):Void;
+
+	@:signal function descendantRemoved(descendant:T):Void;
 
 	public function new() {
 		children = new Array(cast this);
@@ -74,6 +78,16 @@ abstract class VirtualObject<T:VirtualObject<T>> {
 		return '${Type.getClassName(Type.getClass(this))} $name';
 	}
 
+	@:slot(childAdded, descendantAdded)
+	function __childAdded__(child:T) {
+		parent?.descendantAdded(child);
+	}
+
+	@:slot(childRemoved, descendantRemoved)
+	function __childRemoved__(child:T) {
+		parent?.descendantRemoved(child);
+	}
+
 	function get_parent():T {
 		return _parent;
 	}
@@ -101,6 +115,10 @@ private abstract Array<T:VirtualObject<T>>(ArrayData<T>) to ArrayData<T> {
 	}
 
 	public var length(get, never):Int;
+
+	public function excluded(x:T) {
+		return copy().remove(x);
+	}
 
 	public function concat(a:List<T>):List<T> {
 		return list.concat(a);

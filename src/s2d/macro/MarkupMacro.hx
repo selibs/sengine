@@ -12,6 +12,9 @@ using haxe.macro.ExprTools;
 
 class MarkupMacro {
 	#if macro
+	static var reserved = ["style", "use", "all"];
+	static var stylesheets:Map<String, Map<String, Array<Expr>>>;
+
 	public static var shortcuts(default, null):Map<String, String> = [
 		"element" => "s2d.Element",
 		// controls
@@ -43,11 +46,16 @@ class MarkupMacro {
 			metadata: ":ui.markup",
 			doc: "A"
 		});
-
+		stylesheets = [];
 		Compiler.addGlobalMetadata("", "@:build(s2d.macro.MarkupMacro.build())", true, true, true);
 	}
 
 	public static function useShortcut(name:String, type:String) {
+		if (reserved.contains(name)) {
+			Context.warning("Can't overwrite reserved shortcut `name`", Context.currentPos());
+			return;
+		}
+
 		if (shortcuts.exists(name))
 			Context.warning('Shortcut `$name -> ${shortcuts.get(name)}` will be overwritten to `$type`', Context.currentPos());
 		shortcuts.set(name, type);
@@ -60,13 +68,11 @@ class MarkupMacro {
 			if (field.meta == null)
 				continue;
 			for (m in field.meta)
-				if (m.name == ":ui.markup") {
-					try {
+				switch m.name {
+					case ":ui.markup":
 						buildMarkup(field);
-					} catch (e:Dynamic) {
-						Context.error("Failed to build markup: " + Std.string(e), field.pos);
-					}
-					break;
+					case ":ui.style":
+						buildStyle(field);
 				}
 		}
 
@@ -76,6 +82,7 @@ class MarkupMacro {
 	static function buildMarkup(field:Field) {
 		var i = 0;
 		var stack:Array<Expr> = [];
+		var styles:Map<String, Array<Expr>> = [];
 
 		function transform(expr:Expr) {
 			function addEl(meta:MetadataEntry, expr:Expr, pos:Position, ?name:String, ?ref:Expr) {
@@ -95,7 +102,12 @@ class MarkupMacro {
 				var attrs = [];
 				var args = [];
 
-				for (p in meta.params ?? []) {
+				var params = meta.params ?? [];
+				for (c in ["all", meta.name])
+					if (styles.exists(c))
+						params = params.concat(styles.get(c));
+
+				for (p in params) {
 					function pushAttr(name:String, value:Expr)
 						if (name != null) {
 							var fRef = elRef;
@@ -150,19 +162,19 @@ class MarkupMacro {
 				return EBlock(elExprs);
 			}
 
-			function addStyle(meta:MetadataEntry, expr:Expr) {
-				var e = macro {
-					parent.useStyle(__s);
-				}
-				return e.expr;
-			}
-
 			var def = expr.expr;
 			if (def != null)
 				expr.expr = switch def {
 					case EMeta(m, e) if (m.name.charAt(0) != ":"):
 						switch m.name {
 							case "style":
+								addStyle(styles, e);
+								(macro null).expr;
+							case "use":
+								var name = extractName(e);
+								if (name != null)
+									// TODO: use stylesheet
+									(macro null).expr;
 								(macro null).expr;
 							default:
 								addEl(m, e, expr.pos);
@@ -203,23 +215,53 @@ class MarkupMacro {
 			return flatten(expr);
 		}
 
-		switch field.kind {
+		var expr = extractExpr(field);
+		var args = switch field.kind {
 			case FFun(f):
-				if (f.args.length > 0)
-					Context.warning("Markup functions can't have arguments", field.pos);
-				f.args = [
-					{
-						name: "parent",
-						type: macro :s2d.Element
-					}
-				];
-
-				if (f.expr != null) {
-					var exprs = transform(f.expr);
-					f.expr = macro $b{exprs};
-				}
+				f.args;
 			default:
-				throw "Field must be function";
+				[];
+		}
+		args.push({
+			name: "parent",
+			type: macro :s2d.Element
+		});
+
+		if (expr != null)
+			field.kind = FFun({
+				args: args,
+				expr: block(transform(expr)),
+				ret: macro :Void
+			});
+	}
+
+	static function buildStyle(field:Field) {
+		// TODO: package styles
+		stylesheets.set(field.name, addStyle([], extractExpr(field)));
+	}
+
+	static function addStyle(styles:Map<String, Array<Expr>>, expr:Expr) {
+		switch expr.expr {
+			case EBlock(exprs):
+				for (e in exprs)
+					switch e.expr {
+						case EMeta(s, e):
+							styles.set(s.name, flatten(e));
+						default:
+							Context.warning("Invalid expression", e.pos);
+					}
+			default:
+				Context.warning("Invalid expression", expr.pos);
+		}
+		return styles;
+	}
+
+	static function extractExpr(field:Field) {
+		return switch field.kind {
+			case FFun(f):
+				f.expr;
+			case FVar(t, e), FProp(_, _, t, e):
+				e;
 		}
 	}
 

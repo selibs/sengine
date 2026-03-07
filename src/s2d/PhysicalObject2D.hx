@@ -47,7 +47,8 @@ abstract class PhysicalObject2D<This:PhysicalObject2D<This>> extends se.VirtualO
 	}
 
 	@:slot(childAdded)
-	function __childAdded__(child:This) {
+	override function __childAdded__(child:This) {
+		super.__childAdded__(child);
 		insertChild(child);
 	}
 
