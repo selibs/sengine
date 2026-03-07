@@ -9,7 +9,7 @@ enum Rule {
 	Custom(f:Element->Bool);
 	// object
 	Tag(tag:String); // "..."
-	Type<Element>(type:Class<Element>); // a
+	Type(type:Class<Element>); // a
 	Object(object:Element); // ~a
 	Properties(fields:StringMap<Dynamic>); // [...=...]
 	// operations
@@ -38,15 +38,16 @@ abstract Selector(SelectorData) from SelectorData {
 
 	public function select(element:Element, callback:Element->Void):Void {
 		var slots = this.slots[element];
-		if (slots != null) {
-			slots = [];
-			this.slots[element] = slots;
-		}
+		if (slots != null)
+			return;
+		
+		slots = [];
+		this.slots[element] = slots;
 
 		function match(r:Rule, ?cb:Bool->Void) {
 			cb = cb ?? b -> if (b) callback(element);
 
-			switch this.rule {
+			switch r {
 				case Custom(f):
 					cb(f(element));
 				case Tag(tag):
@@ -60,8 +61,8 @@ abstract Selector(SelectorData) from SelectorData {
 					cb(object == element);
 				case Properties(fields):
 					for (f in fields.keyValueIterator()) {
-						var slot = _ -> if (Reflect.getProperty(element, f.key) == f.value) cb(element);
-						var signalName = 'on${f.key.charAt(0).toUpperCase()}${f.key.substr(1)}Changed';
+						var slot = _ -> cb(Reflect.getProperty(element, f.key) == f.value);
+						var signalName = '${f.key.charAt(0).toUpperCase()}${f.key.substr(1)}Changed';
 						var on = Reflect.field(element, "on" + signalName);
 						var off = Reflect.field(element, "off" + signalName);
 						if (on != null && off != null) {
@@ -71,30 +72,31 @@ abstract Selector(SelectorData) from SelectorData {
 						slot(Reflect.getProperty(element, f.key));
 					}
 				case Not(rule):
-					match(rule, b -> !b);
+					match(rule, b -> cb(!b));
 				case Or(rule1, rule2), And(rule1, rule2):
 					var cond1 = false;
 					var cond2 = false;
-					switch this.rule {
+					switch r {
 						case Or(_, _):
-							match(rule1, b -> if ((cond1 = b) || cond2) callback(element));
-							match(rule2, b -> if (cond1 || (cond2 = b)) callback(element));
+							match(rule1, b -> cb((cond1 = b) || cond2));
+							match(rule2, b -> cb(cond1 || (cond2 = b)));
 						default:
-							match(rule1, b -> if ((cond1 = b) && cond2) callback(element));
-							match(rule2, b -> if (cond1 && (cond2 = b)) callback(element));
+							match(rule1, b -> cb((cond1 = b) && cond2));
+							match(rule2, b -> cb(cond1 && (cond2 = b)));
 					}
 				case Any(rules), All(rules):
 					var cond = 0;
-					final destination = switch this.rule {
+					final destination = switch r {
 						case All(_): rules.length - 1;
 						default: 0;
 					}
 					for (r in rules) {
 						var set = false;
 						match(r, b -> if (b) {
-							set = true;
-							if (++cond > destination)
-								callback(element);
+							if (!set) {
+								set = true;
+								cb(++cond > destination);
+							}
 						} else if (set) --cond);
 					}
 				case Children(rule):

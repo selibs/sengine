@@ -72,11 +72,30 @@ class MarkupMacro {
 					case ":ui.markup":
 						buildMarkup(field);
 					case ":ui.style":
-						buildStyle(field);
+						var expr = extractExpr(field);
+						expr = buildStylesheet(expr);
+						field.kind = FVar(macro :s2d.Style.Stylesheet, expr);
 				}
 		}
 
 		return fields;
+	}
+
+	static function getType(name:String) {
+		return Context.getType(getTypeName(name)).toComplexType();
+	}
+
+	static function getTypePath(name:String) {
+		switch getType(name) {
+			case TPath(tp):
+				return tp;
+			default:
+				throw "Invalid element class: " + name;
+		}
+	}
+
+	static function getTypeName(name:String) {
+		return shortcuts.get(name) ?? name;
 	}
 
 	static function buildMarkup(field:Field) {
@@ -88,13 +107,7 @@ class MarkupMacro {
 				var elName = name ?? "__el" + i++;
 				var elRef = ref ?? macro $i{elName};
 				var elCls = try {
-					var n = shortcuts.get(meta.name) ?? meta.name;
-					switch Context.getType(n).toComplexType() {
-						case TPath(tp):
-							tp;
-						default:
-							throw "Invalid element class: " + n;
-					}
+					getTypePath(meta.name);
 				} catch (e)
 					Context.error(Std.string(e), pos);
 
@@ -161,11 +174,11 @@ class MarkupMacro {
 				expr.expr = switch def {
 					case EMeta(m, e) if (m.name.charAt(0) != ":"):
 						switch m.name {
-							case "style":
-								addStyle(styles, e);
-								(macro null).expr;
+							// case "style":
+							// 	addStyle(styles, e);
+							// 	(macro null).expr;
 							case "use":
-								(macro ${stack[stack.length - 1]}.applyStylesheet($e)).expr;
+								(macro parent.useStylesheet($e)).expr;
 							default:
 								addEl(m, e, expr.pos);
 						}
@@ -227,113 +240,122 @@ class MarkupMacro {
 
 	static function buildStylesheet(expr:Expr) {
 		function rule(expr:Expr) {
+			var name = extractName(expr);
+			if (name != null)
+				return macro @:pos(expr.pos) Type($p{getTypeName(name).split(".")});
+
 			return switch expr.expr {
 				case EConst(CString(s)):
-					macro Tag($expr);
-				case EConst(CIdent(s)):
-					macro Type($expr);
+					macro @:pos(expr.pos) Tag($expr);
 				case EUnop(op, false, e):
 					switch op {
 						case OpNot:
-							macro Not(${rule(e)});
+							macro @:pos(expr.pos) Not(${rule(e)});
 						case OpNegBits:
-							macro Object(${rule(e)});
+							macro @:pos(expr.pos) Object($e);
 						default:
-							Context.warning("Invalid expression", expr.pos);
+							throw "Invalid expression";
 					}
 				case EBinop(op, e1, e2):
 					switch op {
 						case OpOr:
-							macro Or(${rule(e1)}, ${rule(e2)});
+							macro @:pos(expr.pos) Or(${rule(e1)}, ${rule(e2)});
 						case OpAnd:
-							macro And(${rule(e1)}, ${rule(e2)});
+							macro @:pos(expr.pos) And(${rule(e1)}, ${rule(e2)});
 						case OpLt:
-							macro And(${rule(e1)}, Parent(${rule(e2)}));
+							macro @:pos(expr.pos) And(${rule(e1)}, Parent(${rule(e2)}));
 						case OpGt:
-							macro And(${rule(e1)}, Children(${rule(e2)}));
+							macro @:pos(expr.pos) And(${rule(e1)}, Children(${rule(e2)}));
 						case OpMod:
-							macro And(${rule(e1)}, Siblings(${rule(e2)}));
+							macro @:pos(expr.pos) And(${rule(e1)}, Siblings(${rule(e2)}));
 						case OpShr:
-							macro And(${rule(e1)}, Descendants(${rule(e2)}));
+							macro @:pos(expr.pos) And(${rule(e1)}, Descendants(${rule(e2)}));
 						default:
-							Context.warning("Invalid expression", expr.pos);
+							throw "Invalid expression";
 					}
 				case ECall(e, params):
 					switch e.expr {
 						case EConst(CIdent(s)):
 							switch s {
 								case "not" if (params.length == 1):
-									macro Not([${rule(params[0])}]);
+									macro @:pos(expr.pos) Not(${rule(params[0])});
 								case "any":
-									macro Any([$a{params.map(rule)}]);
+									macro @:pos(expr.pos) Any([$a{params.map(rule)}]);
 								case "all":
-									macro All([$a{params.map(rule)}]);
+									macro @:pos(expr.pos) All([$a{params.map(rule)}]);
 								default:
-									Context.warning('Unknown operation "$s"', expr.pos);
+									throw 'Unknown operation "$s"';
 							}
 						default:
-							Context.warning("Operation name expected", expr.pos);
+							throw "Operation name expected";
 					}
 				default:
-					Context.warning("Invalid expression", expr.pos);
+					throw "Invalid expression";
+			}
+		}
+
+		function body(type:String, expr:Expr) {
+			return switch expr.expr {
+				case EBlock(exprs):
+					var t = getType(type);
+					var fields = [macro var e:$t = cast e];
+					for (e in exprs)
+						try {
+							switch e.expr {
+								case EBinop(OpAssign, e1, e2):
+									var name = extractName(e1);
+									if (name == null)
+										throw "Invalid expression";
+									e1.expr = (macro $p{["e"].concat(name.split("."))}).expr;
+									fields.push(macro $e1 = $e2);
+								default:
+									throw "Invalid expression";
+							}
+						} catch (err)
+							Context.reportError(err.message, e.pos);
+					macro e -> ${block(fields)};
+				default:
+					throw "Invalid expression";
 			}
 		}
 
 		function buildStyle(expr:Expr) {
-			switch expr.expr {
-				case EMeta(m, e):
-					switch m.name {
-						case "rule":
-							var params = m.params ?? [];
-							if (params.length == 1) {
-								var r = rule(params[0]);
-								var f;
-								return macro new s2d.Style($r, $f);
-							} else if (params.length == 0) {
-								Context.warning("Expected selector", expr.expr);
-							} else {
-								Context.warning("Expected only 1 selector", expr.expr);
-							}
-						default:
-							Context.warning('Unknown expression "${m.name}"', expr.pos);
-					}
-				default:
-					Context.warning("Invalid expression", expr.pos);
+			try {
+				switch expr.expr {
+					case EMeta(m, e) if (m.name.charAt(0) != ":"):
+						var params = m.params ?? [];
+						if (params.length < 2) {
+							var selector = macro Type($p{getTypeName(m.name).split(".")});
+							if (params.length == 1)
+								selector = macro And($selector, ${rule(params[0])});
+							return macro new s2d.Style($selector, ${body(m.name, e)});
+						} else {
+							throw "Expected only 1 selector";
+						}
+					default:
+						throw "Invalid expression";
+				}
+			} catch (e) {
+				Context.warning(e.message, expr.pos);
+				return null;
 			}
-			return null;
 		}
 
 		expr.expr = {
 			switch expr.expr {
 				case EBlock(exprs):
-					var styles = [];
-					for (e in exprs) {
-						var s = buildStyle(e);
-						if (s != null)
-							styles.push(s);
-					}
-					EArrayDecl(styles);
+					EArrayDecl([
+						for (e in exprs) {
+							var s = buildStyle(e);
+							if (s != null) s; else continue;
+						}
+					]);
 				default:
 					Context.warning("Invalid expression", expr.pos);
+					(macro null).expr;
 			}
 		}
 		return expr;
-	}
-
-	static function addStyle(styles:Map<String, Array<Expr>>, expr:Expr) {
-		switch expr.expr {
-			case EBlock(exprs):
-				for (e in exprs)
-					switch e.expr {
-						case EMeta(s, e):
-							styles.set(s.name, flatten(e));
-						default:
-							Context.warning("Invalid expression", e.pos);
-					}
-			default:
-				Context.warning("Invalid expression", expr.pos);
-		}
-		return styles;
 	}
 
 	static function extractExpr(field:Field) {

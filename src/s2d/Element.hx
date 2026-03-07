@@ -224,9 +224,9 @@ class Element extends PhysicalObject2D<Element> {
 		return left.position <= p.x && p.x <= right.position && top.position <= p.y && p.y <= bottom.position;
 	}
 
-	public function applyStylesheet(stylesheet:Stylesheet) {
+	public function useStylesheet(stylesheet:Stylesheet) {
 		for (s in stylesheet)
-			applyStyle(s);
+			useStyle(s);
 	}
 
 	public function removeStylesheet(stylesheet:Stylesheet) {
@@ -234,7 +234,7 @@ class Element extends PhysicalObject2D<Element> {
 			removeStyle(s);
 	}
 
-	public inline function applyStyle(style:Style) {
+	public inline function useStyle(style:Style) {
 		style.apply(this);
 	}
 
