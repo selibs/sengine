@@ -9,8 +9,8 @@ class BoxLayout extends Element {
 	var fillWidthElements:Array<Element> = [];
 	var fillHeightElements:Array<Element> = [];
 
-	public function new(name:String = "box") {
-		super(name);
+	public function new() {
+		super();
 	}
 
 	override function __childAdded__(child:Element) {

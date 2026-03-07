@@ -18,8 +18,8 @@ class Control<B:Element, C:Element> extends Element {
 	@alias public var rightOffset:Float = content.right.margin;
 	@writeonly @alias public var offset:Float = content.anchors.margins;
 
-	public function new(name:String = "control") {
-		super(name);
+	public function new() {
+		super();
 		enabled = true;
 	}
 

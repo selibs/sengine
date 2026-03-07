@@ -82,7 +82,6 @@ class MarkupMacro {
 	static function buildMarkup(field:Field) {
 		var i = 0;
 		var stack:Array<Expr> = [];
-		var styles:Map<String, Array<Expr>> = [];
 
 		function transform(expr:Expr) {
 			function addEl(meta:MetadataEntry, expr:Expr, pos:Position, ?name:String, ?ref:Expr) {
@@ -102,12 +101,7 @@ class MarkupMacro {
 				var attrs = [];
 				var args = [];
 
-				var params = meta.params ?? [];
-				for (c in ["all", meta.name])
-					if (styles.exists(c))
-						params = params.concat(styles.get(c));
-
-				for (p in params) {
+				for (p in meta.params ?? []) {
 					function pushAttr(name:String, value:Expr)
 						if (name != null) {
 							var fRef = elRef;
@@ -171,11 +165,7 @@ class MarkupMacro {
 								addStyle(styles, e);
 								(macro null).expr;
 							case "use":
-								var name = extractName(e);
-								if (name != null)
-									// TODO: use stylesheet
-									(macro null).expr;
-								(macro null).expr;
+								(macro ${stack[stack.length - 1]}.applyStylesheet($e)).expr;
 							default:
 								addEl(m, e, expr.pos);
 						}
@@ -235,9 +225,99 @@ class MarkupMacro {
 			});
 	}
 
-	static function buildStyle(field:Field) {
-		// TODO: package styles
-		stylesheets.set(field.name, addStyle([], extractExpr(field)));
+	static function buildStylesheet(expr:Expr) {
+		function rule(expr:Expr) {
+			return switch expr.expr {
+				case EConst(CString(s)):
+					macro Tag($expr);
+				case EConst(CIdent(s)):
+					macro Type($expr);
+				case EUnop(op, false, e):
+					switch op {
+						case OpNot:
+							macro Not(${rule(e)});
+						case OpNegBits:
+							macro Object(${rule(e)});
+						default:
+							Context.warning("Invalid expression", expr.pos);
+					}
+				case EBinop(op, e1, e2):
+					switch op {
+						case OpOr:
+							macro Or(${rule(e1)}, ${rule(e2)});
+						case OpAnd:
+							macro And(${rule(e1)}, ${rule(e2)});
+						case OpLt:
+							macro And(${rule(e1)}, Parent(${rule(e2)}));
+						case OpGt:
+							macro And(${rule(e1)}, Children(${rule(e2)}));
+						case OpMod:
+							macro And(${rule(e1)}, Siblings(${rule(e2)}));
+						case OpShr:
+							macro And(${rule(e1)}, Descendants(${rule(e2)}));
+						default:
+							Context.warning("Invalid expression", expr.pos);
+					}
+				case ECall(e, params):
+					switch e.expr {
+						case EConst(CIdent(s)):
+							switch s {
+								case "not" if (params.length == 1):
+									macro Not([${rule(params[0])}]);
+								case "any":
+									macro Any([$a{params.map(rule)}]);
+								case "all":
+									macro All([$a{params.map(rule)}]);
+								default:
+									Context.warning('Unknown operation "$s"', expr.pos);
+							}
+						default:
+							Context.warning("Operation name expected", expr.pos);
+					}
+				default:
+					Context.warning("Invalid expression", expr.pos);
+			}
+		}
+
+		function buildStyle(expr:Expr) {
+			switch expr.expr {
+				case EMeta(m, e):
+					switch m.name {
+						case "rule":
+							var params = m.params ?? [];
+							if (params.length == 1) {
+								var r = rule(params[0]);
+								var f;
+								return macro new s2d.Style($r, $f);
+							} else if (params.length == 0) {
+								Context.warning("Expected selector", expr.expr);
+							} else {
+								Context.warning("Expected only 1 selector", expr.expr);
+							}
+						default:
+							Context.warning('Unknown expression "${m.name}"', expr.pos);
+					}
+				default:
+					Context.warning("Invalid expression", expr.pos);
+			}
+			return null;
+		}
+
+		expr.expr = {
+			switch expr.expr {
+				case EBlock(exprs):
+					var styles = [];
+					for (e in exprs) {
+						var s = buildStyle(e);
+						if (s != null)
+							styles.push(s);
+					}
+					EArrayDecl(styles);
+				default:
+					Context.warning("Invalid expression", expr.pos);
+			}
+		}
+		return expr;
 	}
 
 	static function addStyle(styles:Map<String, Array<Expr>>, expr:Expr) {

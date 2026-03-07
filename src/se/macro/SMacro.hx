@@ -463,7 +463,7 @@ class SMacro extends Builder {
 								args: [arg("value", t)],
 								expr: macro {
 									$i{field.name} = value;
-									return $i{field.name};
+									return value;
 								}
 							}));
 							buildTrack(field, isPublic, isSingle);
@@ -474,11 +474,11 @@ class SMacro extends Builder {
 									var signal = add(method(signalName, fun([arg(field.name, t)])));
 									buildSignal(signal, isPublic, field.access.contains(AStatic), isSingle, []);
 									f.expr = macro {
-										var __previous__ = $i{field.name};
+										final __prev__ = $i{field.name};
 										${
 											inject(f.expr, macro {
-												if ($i{field.name} != __previous__)
-													$i{signalName}(__previous__);
+												if ($i{field.name} != __prev__)
+													$i{signalName}(__prev__);
 											})
 										};
 									}

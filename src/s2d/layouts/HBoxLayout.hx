@@ -12,8 +12,8 @@ class HBoxLayout extends DirLayout<ElementHSlots, HLayoutCell> {
 	@:inject(syncAvailableWidthPerCell) var availableWidth:Float = 0.0;
 	@:inject(syncLayout) var availableWidthPerCell:Float = 0.0;
 
-	public function new(name:String = "hBox", direction:Direction = LeftToRight) {
-		super(name, direction);
+	public function new(direction:Direction = LeftToRight) {
+		super(direction);
 	}
 
 	@:slot(widthChanged)

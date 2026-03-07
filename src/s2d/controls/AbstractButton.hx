@@ -11,8 +11,8 @@ class AbstractButton<B:Element, C:Element> extends Control<B, C> {
 
 	@:signal function cancelled();
 
-	public function new(name:String = "button") {
-		super(name);
+	public function new() {
+		super();
 	}
 
 	@:slot(mouseEntered)

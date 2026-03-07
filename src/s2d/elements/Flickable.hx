@@ -11,8 +11,8 @@ class Flickable extends Element {
 	@alias public var contentWidth:Float = contentItem.width;
 	@alias public var contentHeight:Float = contentItem.height;
 
-	public function new(name:String = "flickable") {
-		super(name);
+	public function new() {
+		super();
 		clip = true;
 
 		addChild({

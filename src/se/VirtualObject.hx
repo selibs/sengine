@@ -7,7 +7,7 @@ package se;
 abstract class VirtualObject<T:VirtualObject<T>> {
 	var _parent:T;
 
-	@track public var name:String;
+	@track public var tag:String;
 	public var parent(get, set):T;
 	public var children(default, null):Array<T>;
 
@@ -41,23 +41,23 @@ abstract class VirtualObject<T:VirtualObject<T>> {
 		return children.remove(value);
 	}
 
-	public function getChild(name:String):T {
+	public function getChild(tag:String):T {
 		for (c in children)
-			if (c.name == name)
+			if (c.tag == tag)
 				return c;
 		return null;
 	}
 
-	public function getChildren(name:String):List<T> {
-		return children.filter(e -> e.name == name);
+	public function getChildren(tag:String):List<T> {
+		return children.filter(e -> e.tag == tag);
 	}
 
-	public function findChild(name:String):T {
+	public function findChild(tag:String):T {
 		for (child in children)
-			if (child.name == name)
+			if (child.tag == tag)
 				return child;
 			else {
-				var c = child.findChild(name);
+				var c = child.findChild(tag);
 				if (c != null)
 					return c;
 			}
@@ -75,7 +75,7 @@ abstract class VirtualObject<T:VirtualObject<T>> {
 	}
 
 	public function toString():String {
-		return '${Type.getClassName(Type.getClass(this))} $name';
+		return '${Type.getClassName(Type.getClass(this))} $tag';
 	}
 
 	@:slot(childAdded, descendantAdded)

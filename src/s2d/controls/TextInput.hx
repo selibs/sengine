@@ -6,8 +6,8 @@ import s2d.elements.shapes.RoundedRectangle;
 class TextInput extends AbstractButton<RoundedRectangle, TextEdit> {
 	@alias public var text:String = content.text;
 
-	public function new(text:String = "", name:String = "textInput") {
-		super(name);
+	public function new(text:String = "") {
+		super();
 		background = new RoundedRectangle();
 		content = new TextEdit(text);
 	}

@@ -36,8 +36,8 @@ class TextEdit extends Text {
 	public var placeholder:String;
 	public var placeholderColor:Color = 0x44000000;
 
-	public function new(text:String = "", placeholder:String = "Text", name:String = "textEdit") {
-		super(text, name);
+	public function new(text:String = "", placeholder:String = "Text") {
+		super(text);
 		this.placeholder = placeholder;
 
 		onMouseButtonPressed(Left, m -> {

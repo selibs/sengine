@@ -11,8 +11,8 @@ class Light extends LayerObject {
 	public var isMappingShadows:Bool = false;
 	#end
 
-	public function new(name:String = "light", ?layer:StageLayer) {
-		super(name, layer);
+	public function new(?layer:StageLayer) {
+		super(layer);
 	}
 
 	function set_layer(value:StageLayer):StageLayer {

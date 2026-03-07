@@ -6,8 +6,8 @@ import s2d.elements.Flickable;
 class ScrollView extends Flickable {
 	public var scrollDelta:Float = 10.0;
 
-	public function new(name:String = "scrollView") {
-		super(name);
+	public function new() {
+		super();
 	}
 
 	@:slot(mouseScrolled)

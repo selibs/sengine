@@ -6,6 +6,7 @@ import se.math.Vec2;
 import se.math.Mat3;
 import se.math.SMath;
 import se.system.input.Mouse;
+import s2d.Style;
 import s2d.Anchors;
 import s2d.FocusPolicy;
 import s2d.geometry.Size;
@@ -223,8 +224,22 @@ class Element extends PhysicalObject2D<Element> {
 		return left.position <= p.x && p.x <= right.position && top.position <= p.y && p.y <= bottom.position;
 	}
 
-	public function setStyle(style:Style) {
+	public function applyStylesheet(stylesheet:Stylesheet) {
+		for (s in stylesheet)
+			applyStyle(s);
+	}
+
+	public function removeStylesheet(stylesheet:Stylesheet) {
+		for (s in stylesheet)
+			removeStyle(s);
+	}
+
+	public inline function applyStyle(style:Style) {
 		style.apply(this);
+	}
+
+	public inline function removeStyle(style:Style) {
+		return style.remove(this);
 	}
 
 	function render(target:Texture) {

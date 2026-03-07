@@ -8,8 +8,8 @@ class Canvas2D extends DrawableElement {
 
 	@:signal function paint(ctx:Context2D):Void;
 
-	public function new(name:String = "canvas") {
-		super(name);
+	public function new() {
+		super();
 		texture = new Texture(Std.int(width), Std.int(height));
 	}
 

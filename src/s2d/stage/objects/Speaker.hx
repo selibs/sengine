@@ -16,8 +16,8 @@ class Speaker extends StageObject {
 	@alias public var attenuationMode:AttenuationMode = audio.attenuationMode;
 	@alias public var attenuationFactor:Float = audio.attenuationFactor;
 
-	public function new(source:String, uncompressed:Bool = true, name:String = "speaker") {
-		super(name);
+	public function new(source:String, uncompressed:Bool = true) {
+		super();
 		audio = new Audio(source, uncompressed);
 	}
 
