@@ -4,7 +4,7 @@ import se.math.Vec2;
 import se.math.Mat3;
 import se.math.SMath;
 
-abstract class PhysicalObject2D<This:PhysicalObject2D<This>> extends se.VirtualObject<This> {
+abstract class Object2D<This:Object2D<This>> extends se.Object<This> {
 	@track public var visible:Bool = true;
 	@track @:isVar public var z(default, set):Float = 0;
 

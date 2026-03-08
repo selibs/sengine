@@ -1,9 +1,13 @@
 package s2d;
 
-import haxe.ds.StringMap;
 import s2d.Element;
 
 using StringTools;
+
+enum PropertyRule {
+	Exists;
+	Equals(value:Dynamic);
+}
 
 enum Rule {
 	Custom(f:Element->Bool);
@@ -11,7 +15,7 @@ enum Rule {
 	Tag(tag:String); // "..."
 	Type(type:Class<Element>); // a
 	Object(object:Element); // ~a
-	Properties(fields:StringMap<Dynamic>); // [...=...]
+	Properties(fields:Map<String, PropertyRule>); // [...=...]
 	// operations
 	Not(rule:Rule); // !... / not(...)
 	Or(rule1:Rule, rule2:Rule); // ... | ...
@@ -39,7 +43,7 @@ abstract Selector(SelectorData) from SelectorData {
 		var slots = this.slots[element];
 		if (slots != null)
 			return;
-		
+
 		slots = [];
 		this.slots[element] = slots;
 
@@ -60,15 +64,20 @@ abstract Selector(SelectorData) from SelectorData {
 					cb(object == element);
 				case Properties(fields):
 					for (f in fields.keyValueIterator()) {
-						var slot = _ -> cb(Reflect.getProperty(element, f.key) == f.value);
-						var signalName = '${f.key.charAt(0).toUpperCase()}${f.key.substr(1)}Changed';
-						var on = Reflect.field(element, "on" + signalName);
-						var off = Reflect.field(element, "off" + signalName);
-						if (on != null && off != null) {
-							Reflect.callMethod(element, on, [slot]);
-							slots.push(() -> Reflect.callMethod(element, off, [slot]));
+						switch f.value {
+							case Exists:
+								cb(Reflect.hasField(element, f.key));
+							case Equals(value):
+								var slot = _ -> cb(Reflect.getProperty(element, f.key) == value);
+								var signalName = '${f.key.charAt(0).toUpperCase()}${f.key.substr(1)}Changed';
+								var on = Reflect.field(element, "on" + signalName);
+								var off = Reflect.field(element, "off" + signalName);
+								if (on != null && off != null) {
+									Reflect.callMethod(element, on, [slot]);
+									slots.push(() -> Reflect.callMethod(element, off, [slot]));
+								}
+								slot(Reflect.getProperty(element, f.key));
 						}
-						slot(Reflect.getProperty(element, f.key));
 					}
 				case Not(rule):
 					match(rule, b -> cb(!b));

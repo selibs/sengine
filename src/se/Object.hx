@@ -4,12 +4,12 @@ package se;
 @:build(se.macro.SMacro.build())
 @:autoBuild(se.macro.SMacro.build())
 #end
-abstract class VirtualObject<T:VirtualObject<T>> {
+abstract class Object<T:Object<T>> {
 	var _parent:T;
 
 	@track public var tag:String = "object";
 	public var parent(get, set):T;
-	public var children(default, null):Array<T>;
+	public var children(default, null):ObjectList<T>;
 
 	@:signal function parentChanged(previous:T):Void;
 
@@ -22,7 +22,7 @@ abstract class VirtualObject<T:VirtualObject<T>> {
 	@:signal function descendantRemoved(descendant:T):Void;
 
 	public function new() {
-		children = new Array(cast this);
+		children = new ObjectList(cast this);
 	}
 
 	public function setParent(value:T):Void {
@@ -34,7 +34,7 @@ abstract class VirtualObject<T:VirtualObject<T>> {
 	}
 
 	public function addChild(value:T) {
-		return children.push(value);
+		return children.add(value);
 	}
 
 	public function removeChild(value:T) {
@@ -48,7 +48,7 @@ abstract class VirtualObject<T:VirtualObject<T>> {
 		return null;
 	}
 
-	public function getChildren(tag:String):List<T> {
+	public function getChildren(tag:String):Array<T> {
 		return children.filter(e -> e.tag == tag);
 	}
 
@@ -75,7 +75,7 @@ abstract class VirtualObject<T:VirtualObject<T>> {
 	}
 
 	public function toString():String {
-		return '${Type.getClassName(Type.getClass(this))} $tag';
+		return '${Type.getClassName(Type.getClass(this))} #$tag';
 	}
 
 	@:slot(childAdded, descendantAdded)
@@ -101,16 +101,14 @@ abstract class VirtualObject<T:VirtualObject<T>> {
 	}
 }
 
-private typedef List<T> = std.Array<T>;
-
-@:access(se.VirtualObject)
+@:access(se.Object)
 @:forward.new
-private abstract Array<T:VirtualObject<T>>(ArrayData<T>) to ArrayData<T> {
-	var list(get, never):List<T>;
+private abstract ObjectList<T:Object<T>>(ArrayData<T>) to ArrayData<T> {
+	var list(get, never):Array<T>;
 	var element(get, never):T;
 
 	@:to
-	function toArray():List<T> {
+	function toArray():Array<T> {
 		return list.copy();
 	}
 
@@ -120,7 +118,7 @@ private abstract Array<T:VirtualObject<T>>(ArrayData<T>) to ArrayData<T> {
 		return copy().remove(x);
 	}
 
-	public function concat(a:List<T>):List<T> {
+	public function concat(a:Array<T>):Array<T> {
 		return list.concat(a);
 	}
 
@@ -132,11 +130,11 @@ private abstract Array<T:VirtualObject<T>>(ArrayData<T>) to ArrayData<T> {
 		return inline rem(list.pop());
 	}
 
-	public function push(x:T):Bool {
+	public function add(x:T):Bool {
 		if (contains(x))
 			return false;
 		list.push(x);
-		return inline add(x);
+		return inline addEl(x);
 	}
 
 	public function reverse():Void {
@@ -147,7 +145,7 @@ private abstract Array<T:VirtualObject<T>>(ArrayData<T>) to ArrayData<T> {
 		return inline rem(list.shift());
 	}
 
-	public function slice(pos:Int, ?end:Int):List<T> {
+	public function slice(pos:Int, ?end:Int):Array<T> {
 		return list.slice(pos, end);
 	}
 
@@ -155,7 +153,7 @@ private abstract Array<T:VirtualObject<T>>(ArrayData<T>) to ArrayData<T> {
 		list.sort(f);
 	}
 
-	public function splice(pos:Int, len:Int):List<T> {
+	public function splice(pos:Int, len:Int):Array<T> {
 		var els = list.splice(pos, len);
 		for (x in els)
 			inline rem(x);
@@ -170,14 +168,14 @@ private abstract Array<T:VirtualObject<T>>(ArrayData<T>) to ArrayData<T> {
 		if (contains(x))
 			return false;
 		list.unshift(x);
-		return inline add(x);
+		return inline addEl(x);
 	}
 
 	public function insert(pos:Int, x:T):Bool {
 		if (contains(x))
 			return false;
 		list.insert(pos, x);
-		return inline add(x);
+		return inline addEl(x);
 	}
 
 	public function remove(x:T):Bool {
@@ -199,7 +197,7 @@ private abstract Array<T:VirtualObject<T>>(ArrayData<T>) to ArrayData<T> {
 		return list.lastIndexOf(x, fromIndex);
 	}
 
-	public function copy():List<T> {
+	public function copy():Array<T> {
 		return list.copy();
 	}
 
@@ -211,11 +209,11 @@ private abstract Array<T:VirtualObject<T>>(ArrayData<T>) to ArrayData<T> {
 		return list.keyValueIterator();
 	}
 
-	public function map<S>(f:T->S):List<S> {
+	public function map<S>(f:T->S):Array<S> {
 		return list.map(f);
 	}
 
-	public function filter(f:T->Bool):List<T> {
+	public function filter(f:T->Bool):Array<T> {
 		return list.filter(f);
 	}
 
@@ -231,7 +229,7 @@ private abstract Array<T:VirtualObject<T>>(ArrayData<T>) to ArrayData<T> {
 		return x;
 	}
 
-	inline function add(x:T) {
+	inline function addEl(x:T) {
 		if (x == null)
 			return false;
 		var prev = x._parent;
@@ -257,7 +255,7 @@ private abstract Array<T:VirtualObject<T>>(ArrayData<T>) to ArrayData<T> {
 		return x;
 	}
 
-	inline function get_list():List<T> {
+	inline function get_list():Array<T> {
 		return this.list;
 	}
 
@@ -266,9 +264,9 @@ private abstract Array<T:VirtualObject<T>>(ArrayData<T>) to ArrayData<T> {
 	}
 }
 
-private class ArrayData<T:VirtualObject<T>> {
+private class ArrayData<T:Object<T>> {
 	public var element:T;
-	public var list:List<T> = [];
+	public var list:Array<T> = [];
 
 	public function new(element:T) {
 		this.element = element;

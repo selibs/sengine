@@ -13,7 +13,7 @@ import s2d.geometry.Size;
 import s2d.geometry.Position;
 
 @:allow(s2d.WindowScene)
-class Element extends PhysicalObject2D<Element> {
+class Element extends Object2D<Element> {
 	overload extern public static inline function mapToElement(element:Element, x:Float, y:Float):Position {
 		return element.mapFromGlobal(x, y);
 	}

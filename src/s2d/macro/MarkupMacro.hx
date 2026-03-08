@@ -8,6 +8,19 @@ import haxe.macro.Compiler;
 using haxe.macro.ComplexTypeTools;
 using haxe.macro.TypeTools;
 using haxe.macro.ExprTools;
+
+class ExprError extends haxe.Exception {
+	public var expr:Expr;
+
+	public function new(expr:Expr, ?message:String) {
+		super(message ?? "Invalid expression");
+		this.expr = expr;
+	}
+
+	public function warn() {
+		Context.warning('$message: ${expr.toString()}', expr.pos);
+	}
+}
 #end
 
 class MarkupMacro {
@@ -17,6 +30,7 @@ class MarkupMacro {
 
 	public static var shortcuts(default, null):Map<String, String> = [
 		"element" => "s2d.Element",
+        "drawable" => "s2d.DrawableElement",
 		// controls
 		"button" => "s2d.controls.Button",
 		"input" => "s2d.controls.TextInput",
@@ -72,9 +86,12 @@ class MarkupMacro {
 					case ":ui.markup":
 						buildMarkup(field);
 					case ":ui.style":
-						var expr = extractExpr(field);
-						expr = buildStylesheet(expr);
-						field.kind = FVar(macro :s2d.Style.Stylesheet, expr);
+						try {
+							buildStylesheet(field);
+						} catch (er:ExprError) {
+							er.warn();
+							fields.remove(field);
+						}
 				}
 		}
 
@@ -231,36 +248,48 @@ class MarkupMacro {
 		});
 
 		if (expr != null) {
-			var expr = block(transform(expr));
-			trace(expr.toString());
 			field.kind = FFun({
 				args: args,
-				expr: expr,
+				expr: block(transform(expr)),
 				ret: macro :Void
 			});
 		}
 	}
 
-	static function buildStylesheet(expr:Expr) {
-		function buildStyle(meta:MetadataEntry, expr:Expr):Array<Expr> {
+	static function buildStylesheet(field:Field) {
+		function buildStyle(meta:MetadataEntry, expr:Expr, mExpr:Expr):Array<Expr> {
 			var substyles = [];
 
-			function rule(expr:Expr) {
-				function getName(expr:Expr) {
-					return switch expr.expr {
-						case EConst((CIdent(s))):
-							switch s {
-								case "$":
-									meta.name;
-								default: s;
-							}
-						case EField(e, field, kind):
-							getName(e) + "." + field;
-						default:
-							null;
-					}
+			function getName(expr:Expr) {
+				return switch expr.expr {
+					case EConst((CIdent(s))):
+						switch s {
+							case "$":
+								meta.name;
+							default: s;
+						}
+					case EField(e, field, kind):
+						getName(e) + "." + field;
+					default:
+						null;
 				}
+			}
 
+			function prop(expr:Expr) {
+				return switch expr.expr {
+					case EConst(CIdent(s)):
+						macro @:pos(expr.pos) $v{s} => Exists;
+					case EBinop(OpAssign, e1, e2):
+						var name = getName(e1);
+						if (name == null)
+							throw new ExprError(expr, "Name expected");
+						macro @:pos(e1.pos) $v{name} => Equals($e2);
+					default:
+						throw new ExprError(expr);
+				}
+			}
+
+			function rule(expr:Expr) {
 				var name = getName(expr);
 				if (name != null)
 					return macro @:pos(expr.pos) Type($p{getTypeName(name).split(".")});
@@ -275,7 +304,7 @@ class MarkupMacro {
 							case OpNegBits:
 								macro @:pos(expr.pos) Object($e);
 							default:
-								throw "Invalid expression";
+								throw new ExprError(expr);
 						}
 					case EBinop(op, e1, e2):
 						switch op {
@@ -290,8 +319,19 @@ class MarkupMacro {
 							case OpMod:
 								macro @:pos(expr.pos) And(${rule(e1)}, Siblings(${rule(e2)}));
 							default:
-								throw "Invalid expression";
+								throw new ExprError(expr);
 						}
+					case EArrayDecl(values):
+						var props = [
+							for (v in values)
+								try {
+									prop(v);
+								} catch (er:ExprError) {
+									er.warn();
+									continue;
+								}
+						];
+						macro @:pos(expr.pos) Properties([$a{props}]);
 					case ECall(e, params):
 						switch e.expr {
 							case EConst(CIdent(s)):
@@ -307,13 +347,13 @@ class MarkupMacro {
 									case "all":
 										macro @:pos(expr.pos) All([$a{params.map(rule)}]);
 									default:
-										throw 'Unknown operation "$s"';
+										throw new ExprError(expr, 'Unknown operation "$s"');
 								}
 							default:
-								throw "Operation name expected";
+								throw new ExprError(expr, "Operation name expected");
 						}
 					default:
-						throw "Invalid expression";
+						throw new ExprError(expr);
 				}
 			}
 
@@ -332,23 +372,19 @@ class MarkupMacro {
 						var t = getType(type);
 						var fields = [macro var e:$t = cast e];
 						for (e in exprs)
-							try {
-								switch e.expr {
-									case EMeta(m, e) if (m.name.charAt(0) != ":"):
-										try {
-											for (s in buildStyle(m, e))
-												substyles.push(s);
-										} catch (er) {
-											Context.warning("Failed to add style: " + er.message, e.pos);
-										}
-									default:
-										fields.push(replace(e));
-								}
-							} catch (err)
-								Context.reportError(err.message, e.pos);
+							switch e.expr {
+								case EMeta(m, e) if (m.name.charAt(0) != ":"):
+									try {
+										for (s in buildStyle(m, e, expr))
+											substyles.push(s);
+									} catch (er:ExprError)
+										er.warn();
+								default:
+									fields.push(replace(e));
+							}
 						macro e -> ${block(fields)};
 					default:
-						throw "Invalid expression";
+						throw new ExprError(expr);
 				}
 			}
 
@@ -358,37 +394,30 @@ class MarkupMacro {
 				if (params.length == 1)
 					selector = macro And($selector, ${rule(params[0])});
 				substyles.push(macro new s2d.Style($selector, ${body(meta.name, expr)}));
-			} else {
-				throw "Expected only 1 selector";
-			}
+			} else
+				throw new ExprError(mExpr, "Expected only 1 selector");
 
 			return substyles;
 		}
 
-		expr.expr = {
-			switch expr.expr {
-				case EBlock(exprs):
-					var styles = [];
-					for (e in exprs)
-						try {
-							switch e.expr {
-								case EMeta(m, e) if (m.name.charAt(0) != ":"):
-									styles = styles.concat(buildStyle(m, e));
-								default:
-									throw "Invalid expression";
-							}
-						} catch (e) {
-							Context.warning(e.message, expr.pos);
-							continue;
+		var expr = extractExpr(field);
+		switch expr.expr {
+			case EBlock(exprs):
+				var styles = [];
+				for (ex in exprs)
+					try {
+						switch ex.expr {
+							case EMeta(m, e) if (m.name.charAt(0) != ":"):
+								styles = styles.concat(buildStyle(m, e, ex));
+							default:
+								throw new ExprError(ex);
 						}
-
-					EArrayDecl(styles);
-				default:
-					Context.warning("Invalid expression", expr.pos);
-					(macro null).expr;
-			}
+					} catch (er:ExprError)
+						er.warn();
+				field.kind = FVar(macro :s2d.Style.Stylesheet, macro @:pos(expr.pos) $a{styles});
+			default:
+				throw new ExprError(expr);
 		}
-		return expr;
 	}
 
 	static function extractExpr(field:Field) {
