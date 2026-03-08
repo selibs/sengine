@@ -230,126 +230,159 @@ class MarkupMacro {
 			type: macro :s2d.Element
 		});
 
-		if (expr != null)
+		if (expr != null) {
+			var expr = block(transform(expr));
+			trace(expr.toString());
 			field.kind = FFun({
 				args: args,
-				expr: block(transform(expr)),
+				expr: expr,
 				ret: macro :Void
 			});
+		}
 	}
 
 	static function buildStylesheet(expr:Expr) {
-		function rule(expr:Expr) {
-			var name = extractName(expr);
-			if (name != null)
-				return macro @:pos(expr.pos) Type($p{getTypeName(name).split(".")});
+		function buildStyle(meta:MetadataEntry, expr:Expr):Array<Expr> {
+			var substyles = [];
 
-			return switch expr.expr {
-				case EConst(CString(s)):
-					macro @:pos(expr.pos) Tag($expr);
-				case EUnop(op, false, e):
-					switch op {
-						case OpNot:
-							macro @:pos(expr.pos) Not(${rule(e)});
-						case OpNegBits:
-							macro @:pos(expr.pos) Object($e);
-						default:
-							throw "Invalid expression";
-					}
-				case EBinop(op, e1, e2):
-					switch op {
-						case OpOr:
-							macro @:pos(expr.pos) Or(${rule(e1)}, ${rule(e2)});
-						case OpAnd:
-							macro @:pos(expr.pos) And(${rule(e1)}, ${rule(e2)});
-						case OpLt:
-							macro @:pos(expr.pos) And(${rule(e1)}, Parent(${rule(e2)}));
-						case OpGt:
-							macro @:pos(expr.pos) And(${rule(e1)}, Children(${rule(e2)}));
-						case OpMod:
-							macro @:pos(expr.pos) And(${rule(e1)}, Siblings(${rule(e2)}));
-						case OpShr:
-							macro @:pos(expr.pos) And(${rule(e1)}, Descendants(${rule(e2)}));
-						default:
-							throw "Invalid expression";
-					}
-				case ECall(e, params):
-					switch e.expr {
-						case EConst(CIdent(s)):
+			function rule(expr:Expr) {
+				function getName(expr:Expr) {
+					return switch expr.expr {
+						case EConst((CIdent(s))):
 							switch s {
-								case "not" if (params.length == 1):
-									macro @:pos(expr.pos) Not(${rule(params[0])});
-								case "any":
-									macro @:pos(expr.pos) Any([$a{params.map(rule)}]);
-								case "all":
-									macro @:pos(expr.pos) All([$a{params.map(rule)}]);
-								default:
-									throw 'Unknown operation "$s"';
+								case "$":
+									meta.name;
+								default: s;
 							}
+						case EField(e, field, kind):
+							getName(e) + "." + field;
 						default:
-							throw "Operation name expected";
+							null;
 					}
-				default:
-					throw "Invalid expression";
-			}
-		}
+				}
 
-		function body(type:String, expr:Expr) {
-			return switch expr.expr {
-				case EBlock(exprs):
-					var t = getType(type);
-					var fields = [macro var e:$t = cast e];
-					for (e in exprs)
-						try {
-							switch e.expr {
-								case EBinop(OpAssign, e1, e2):
-									var name = extractName(e1);
-									if (name == null)
-										throw "Invalid expression";
-									e1.expr = (macro $p{["e"].concat(name.split("."))}).expr;
-									fields.push(macro $e1 = $e2);
-								default:
-									throw "Invalid expression";
-							}
-						} catch (err)
-							Context.reportError(err.message, e.pos);
-					macro e -> ${block(fields)};
-				default:
-					throw "Invalid expression";
-			}
-		}
+				var name = getName(expr);
+				if (name != null)
+					return macro @:pos(expr.pos) Type($p{getTypeName(name).split(".")});
 
-		function buildStyle(expr:Expr) {
-			try {
-				switch expr.expr {
-					case EMeta(m, e) if (m.name.charAt(0) != ":"):
-						var params = m.params ?? [];
-						if (params.length < 2) {
-							var selector = macro Type($p{getTypeName(m.name).split(".")});
-							if (params.length == 1)
-								selector = macro And($selector, ${rule(params[0])});
-							return macro new s2d.Style($selector, ${body(m.name, e)});
-						} else {
-							throw "Expected only 1 selector";
+				return switch expr.expr {
+					case EConst(CString(s)):
+						macro @:pos(expr.pos) Tag($expr);
+					case EUnop(op, false, e):
+						switch op {
+							case OpNot:
+								macro @:pos(expr.pos) Not(${rule(e)});
+							case OpNegBits:
+								macro @:pos(expr.pos) Object($e);
+							default:
+								throw "Invalid expression";
+						}
+					case EBinop(op, e1, e2):
+						switch op {
+							case OpOr:
+								macro @:pos(expr.pos) Or(${rule(e1)}, ${rule(e2)});
+							case OpAnd:
+								macro @:pos(expr.pos) And(${rule(e1)}, ${rule(e2)});
+							case OpLt:
+								macro @:pos(expr.pos) And(${rule(e1)}, Parent(${rule(e2)}));
+							case OpGt:
+								macro @:pos(expr.pos) And(${rule(e1)}, Children(${rule(e2)}));
+							case OpMod:
+								macro @:pos(expr.pos) And(${rule(e1)}, Siblings(${rule(e2)}));
+							default:
+								throw "Invalid expression";
+						}
+					case ECall(e, params):
+						switch e.expr {
+							case EConst(CIdent(s)):
+								switch s {
+									case "not" if (params.length == 1):
+										macro @:pos(expr.pos) Not(${rule(params[0])});
+									case "or" if (params.length == 2):
+										macro @:pos(expr.pos) Or(${rule(params[0])}, ${rule(params[1])});
+									case "and" if (params.length == 2):
+										macro @:pos(expr.pos) And(${rule(params[0])}, ${rule(params[1])});
+									case "any":
+										macro @:pos(expr.pos) Any([$a{params.map(rule)}]);
+									case "all":
+										macro @:pos(expr.pos) All([$a{params.map(rule)}]);
+									default:
+										throw 'Unknown operation "$s"';
+								}
+							default:
+								throw "Operation name expected";
 						}
 					default:
 						throw "Invalid expression";
 				}
-			} catch (e) {
-				Context.warning(e.message, expr.pos);
-				return null;
 			}
+
+			function body(type:String, expr:Expr) {
+				function replace(e:Expr) {
+					return e.map(e -> switch e.expr {
+						case EConst(CIdent(s)) if (s.charAt(0) == "$"):
+							macro @:pos(e.pos) $p{["e"].concat(s.substr(1).split("."))};
+						default:
+							replace(e);
+					});
+				}
+
+				return switch expr.expr {
+					case EBlock(exprs):
+						var t = getType(type);
+						var fields = [macro var e:$t = cast e];
+						for (e in exprs)
+							try {
+								switch e.expr {
+									case EMeta(m, e) if (m.name.charAt(0) != ":"):
+										try {
+											for (s in buildStyle(m, e))
+												substyles.push(s);
+										} catch (er) {
+											Context.warning("Failed to add style: " + er.message, e.pos);
+										}
+									default:
+										fields.push(replace(e));
+								}
+							} catch (err)
+								Context.reportError(err.message, e.pos);
+						macro e -> ${block(fields)};
+					default:
+						throw "Invalid expression";
+				}
+			}
+
+			var params = meta.params ?? [];
+			if (params.length < 2) {
+				var selector = macro Type($p{getTypeName(meta.name).split(".")});
+				if (params.length == 1)
+					selector = macro And($selector, ${rule(params[0])});
+				substyles.push(macro new s2d.Style($selector, ${body(meta.name, expr)}));
+			} else {
+				throw "Expected only 1 selector";
+			}
+
+			return substyles;
 		}
 
 		expr.expr = {
 			switch expr.expr {
 				case EBlock(exprs):
-					EArrayDecl([
-						for (e in exprs) {
-							var s = buildStyle(e);
-							if (s != null) s; else continue;
+					var styles = [];
+					for (e in exprs)
+						try {
+							switch e.expr {
+								case EMeta(m, e) if (m.name.charAt(0) != ":"):
+									styles = styles.concat(buildStyle(m, e));
+								default:
+									throw "Invalid expression";
+							}
+						} catch (e) {
+							Context.warning(e.message, expr.pos);
+							continue;
 						}
-					]);
+
+					EArrayDecl(styles);
 				default:
 					Context.warning("Invalid expression", expr.pos);
 					(macro null).expr;

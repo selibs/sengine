@@ -7,7 +7,7 @@ package se;
 abstract class VirtualObject<T:VirtualObject<T>> {
 	var _parent:T;
 
-	@track public var tag:String;
+	@track public var tag:String = "object";
 	public var parent(get, set):T;
 	public var children(default, null):Array<T>;
 

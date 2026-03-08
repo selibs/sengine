@@ -22,7 +22,6 @@ enum Rule {
 	Parent(rule:Rule); // ... < ...
 	Children(rule:Rule); // ... > ...
 	Siblings(rule:Rule); // ... % ...
-	Descendants(rule:Rule); // ... >> ...
 }
 
 abstract Selector(SelectorData) from SelectorData {
@@ -132,16 +131,12 @@ abstract Selector(SelectorData) from SelectorData {
 					var s = new Selector(Parent(Children(And(Not(Object(element)), rule))));
 					s.select(element, callback);
 					slots.push(() -> s.deselect(element));
-				case Descendants(rule):
-					var s = new Selector(Children(Or(Descendants(rule), rule)));
-					s.select(element, callback);
-					slots.push(() -> s.deselect(element));
 				default:
 					true;
 			}
 		}
 
-		match(this.rule);
+		match(Or(this.rule, Children(this.rule)));
 	}
 
 	public function deselect(element:Element):Bool {
