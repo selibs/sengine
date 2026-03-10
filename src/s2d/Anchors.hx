@@ -39,7 +39,12 @@ class ElementAnchors {
 		fillHeight(top, bottom);
 	}
 
-	overload extern public inline function fill(element:Element) {
+	overload extern public inline function fill(element:{
+		left:HorizontalAnchor,
+		right:HorizontalAnchor,
+		top:VerticalAnchor,
+		bottom:VerticalAnchor
+	}) {
 		if (element != null)
 			fill(element.left, element.right, element.top, element.bottom);
 	}

@@ -276,9 +276,9 @@ class Element extends Object2D<Element> {
 	}
 
 	function anchor(f:Void->Void) {
-		if (++anchoring == 1) {
+		if (anchoring++ == 0) {
 			f();
-			--anchoring;
+			anchoring--;
 			geometryChanged();
 		} else
 			Log.warning("Possible anchor binding loop detected!");

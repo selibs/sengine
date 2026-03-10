@@ -170,30 +170,6 @@ class SMacro extends Builder {
 		}
 	}
 
-	function buildNewSignal(field:Field) {
-		switch field.kind {
-			case FFun(f):
-				if (f.expr != null)
-					Context.warning("Signals can't have expressions", f.expr.pos);
-				// slot arguments
-				var args = [];
-				for (arg in sArgs) {
-					var t = TNamed(arg.name, arg.type);
-					args.push(arg.opt ? TOptional(t) : t);
-				}
-				// slot type
-				var t = ComplexType.TFunction(args, macro :Void);
-				// signal type
-				var type = macro :se.Signal<$t>;
-                
-				if (!field.access.contains(AFinal))
-					field.access.push(AFinal);
-				field.kind = FVar(type, macro new $type());
-			default:
-				Context.error("Signal signature must be function", field.pos);
-		}
-	}
-
 	function buildSignal(field:Field, isPublic:Bool, isStatic:Bool, isSingle:Bool, mask:Array<String>):Void {
 		if (isSingle)
 			buildSingleSignal(field, isPublic, isStatic);

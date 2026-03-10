@@ -1,38 +1,70 @@
 package s2d;
 
+import se.Color;
 import se.App;
 import se.Time;
-import se.graphics.Context2D;
-import se.system.Window;
 import se.Texture;
 import se.math.Mat3;
+import se.system.Window;
+import se.system.input.Mouse;
+import se.graphics.Context2D;
+import s2d.Anchors;
+import s2d.FocusPolicy;
 
 using se.extensions.StringExt;
 
-@:structInit
-@:allow(se.App)
-@:allow(se.system.Window)
 @:allow(s2d.Element)
-class WindowScene extends DrawableElement {
-	var window:Window;
+@:build(se.macro.SMacro.build())
+class WindowScene {
+	var pending:Array<Element> = [];
+	var entered:Array<Element> = [];
+	var focusedElement(default, set):Element;
 
-	@:signal function set():Void;
+	public var window(default, null):Window;
+	public var root(default, set):Element;
+	public var color:Color = White;
 
-	@:signal function unset():Void;
+	public function new(w:Window) {
+		window = w;
+		window.onResized((w, h) -> {
+			root.width = w;
+			root.height = h;
+		});
 
-	public var active(get, set):Bool;
+		// mouse events
+		var m = App.input.mouse;
+		m.onMoved(processMouseMoved);
+		m.onScrolled(d -> {
+			processMouseScrolled(d, m.x, m.y);
+			adjustWheelFocus(d);
+		});
+		m.onPressed(processMouseDown);
+		m.onReleased(processMouseUp);
+		m.onHold(processMouseHold);
+		m.onClicked(processMouseClicked);
+		m.onDoubleClicked(processMouseDoubleClicked);
 
-	public function new(window:Window) {
-		super();
-		this.window = window;
-		width = window.width;
-		height = window.height;
+		// keyboard events
+		var k = App.input.keyboard;
+		k.onDown(k -> if (k == Tab) adjustTabFocus());
+		k.onDown(key -> focusedElement?.keyboardDown(key));
+		k.onUp(key -> focusedElement?.keyboardUp(key));
+		k.onHold(key -> focusedElement?.keyboardHold(key));
+		k.onPressed(char -> focusedElement?.keyboardPressed(char));
+
+		setRoot(new Element());
+		// temp
+		kha.System.notifyOnFrames(frames -> render());
+	}
+
+	public function setRoot(element:Element) {
+		root = element;
 	}
 
 	public function elementAt(x:Float, y:Float):Null<Element> {
-		var i = children.length;
+		var i = root.children.length;
 		while (--i >= 0) {
-			final c = children[i];
+			final c = root.children[i];
 			var cat = c.descendantAt(x, y);
 			if (cat == null) {
 				if (c.contains(x, y))
@@ -43,10 +75,14 @@ class WindowScene extends DrawableElement {
 		return null;
 	}
 
-	override function render(target:Texture) {
-		for (e in children)
-			e.render(target);
-		draw(target);
+	@:access(se.system.Window)
+	function render() {
+		var target = window.backbuffer;
+		var ctx = target.context2D;
+		ctx.begin();
+		ctx.clear(color);
+		root.render(target);
+		ctx.end();
 	}
 
 	function draw(target:Texture) {
@@ -66,20 +102,6 @@ class WindowScene extends DrawableElement {
 		ctx.style.color = White;
 		ctx.drawString('FPS: ${fps}', 5, 5);
 		#end
-	}
-
-	function get_active() {
-		return window?.scene == this;
-	}
-
-	function set_active(value:Bool) {
-		if (window != null) {
-			if (!active && value)
-				window.scene = this;
-			else if (active && !value)
-				window.scene = null;
-		}
-		return active;
 	}
 
 	#if (S2D_UI_DEBUG_ELEMENT_BOUNDS == 1)
@@ -192,4 +214,153 @@ class WindowScene extends DrawableElement {
 			+ style.fontSize);
 	}
 	#end
+
+	function adjustTabFocus() {
+		final i = root.children.indexOf(focusedElement);
+		for (j in 1...root.children.length) {
+			var e = root.children[(i + j) % root.children.length];
+			if (e.enabled && (e.focusPolicy & TabFocus != 0)) {
+				focusedElement = e;
+				return;
+			}
+		}
+	}
+
+	function adjustWheelFocus(d:Int) {
+		final i = root.children.length + root.children.indexOf(focusedElement);
+		for (j in 1...root.children.length) {
+			var e = root.children[(i + (d > 0 ? j : -j)) % root.children.length];
+			if (e.enabled && (e.focusPolicy & WheelFocus != 0)) {
+				focusedElement = e;
+				return;
+			}
+		}
+	}
+
+	function processMouseMoved(x:Int, y:Int, dx:Int, dy:Int):Void {
+		var containsMouse = [];
+		processMouseEvent({
+			accepted: false,
+			x: x,
+			y: y,
+			dx: dx,
+			dy: dy
+		}, (c, m) -> {
+			containsMouse.push(c);
+			if (!entered.contains(c)) {
+				entered.push(c);
+				c.mouseEntered(x, y);
+			}
+			c.mouseMoved(m);
+		});
+		for (c in entered)
+			if (!containsMouse.contains(c)) {
+				entered.remove(c);
+				c.mouseExited(x, y);
+			}
+	}
+
+	function processMouseScrolled(d:Int, x:Int, y:Int):Void {
+		processMouseEvent({
+			accepted: false,
+			delta: d,
+			x: x,
+			y: y
+		}, (c, m) -> c.mouseScrolled(m));
+	}
+
+	function processMouseDown(b:MouseButton, x:Int, y:Int):Void {
+		processMouseEvent({
+			accepted: false,
+			button: b,
+			x: x,
+			y: y
+		}, (c, m) -> {
+			pending.push(c);
+			c.mousePressed(m);
+		});
+	}
+
+	function processMouseUp(b:MouseButton, x:Int, y:Int):Void {
+		final m = {
+			accepted: false,
+			button: b,
+			x: x,
+			y: y
+		}
+		for (el in pending)
+			el.mouseReleased(m);
+	}
+
+	function processMouseHold(b:MouseButton, x:Int, y:Int):Void {
+		processMouseEvent({
+			accepted: false,
+			button: b,
+			x: x,
+			y: y
+		}, (c, m) -> c.mouseHold(m));
+	}
+
+	function processMouseClicked(b:MouseButton, x:Int, y:Int):Void {
+		var focusedSet = false;
+		processMouseEvent({
+			accepted: false,
+			button: b,
+			x: x,
+			y: y
+		}, (c, m) -> {
+			c.mouseClicked(m);
+			if (!focusedSet && (c.focusPolicy & ClickFocus != 0)) {
+				focusedSet = true;
+				focusedElement = c;
+			}
+		});
+	}
+
+	function processMouseDoubleClicked(b:MouseButton, x:Int, y:Int):Void {
+		processMouseEvent({
+			accepted: false,
+			button: b,
+			x: x,
+			y: y
+		}, (c, m) -> c.mouseDoubleClicked(m));
+	}
+
+	function processMouseEvent<T:MouseEvent>(m:T, f:(Element, T) -> Void) {
+		function process(els:Array<Element>) {
+			var i = 0;
+			while (++i <= els.length) {
+				var el = els[els.length - i];
+				if (el.enabled && el.visible) {
+					process(el.children);
+					if (m.accepted)
+						return;
+					if (el.contains(m.x, m.y)) {
+						f(el, m);
+						if (m.accepted)
+							return;
+					}
+				}
+			}
+		}
+		process(root.children);
+	}
+
+	function set_root(element:Element) {
+		root = element;
+		root.anchors.clear();
+		root.width = window.width;
+		root.height = window.height;
+		return root;
+	}
+
+	function set_focusedElement(value:Element):Element {
+		if (focusedElement != value) {
+			if (focusedElement != null)
+				focusedElement.focused = false;
+			value.focused = true;
+			focusedElement = value;
+		}
+		return focusedElement;
+	}
 }

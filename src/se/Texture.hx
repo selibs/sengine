@@ -10,9 +10,9 @@ import se.graphics.Context2D;
 import se.graphics.Context3D;
 import se.resource.Image;
 
-@:forward(unload, width, height)
+@:forward(unload, width, height, generateMipmaps)
 extern abstract Texture(Image) from Image to Image {
-	var self(get, never):kha.Image;
+	private var self(get, never):kha.Image;
 
 	@:to
 	private inline function get_self():kha.Image {
@@ -25,10 +25,6 @@ extern abstract Texture(Image) from Image to Image {
 
 	public inline function new(width:Int, height:Int, ?format:TextureFormat, ?depthStencil:DepthStencilFormat, aaSamples:Int = 1) {
 		this = kha.Image.createRenderTarget(width, height, format, depthStencil, aaSamples);
-	}
-
-	public inline function generateMipmaps(levels:Int = 1) {
-		self.generateMipmaps(levels);
 	}
 
 	public inline function setDepthStencilFrom(image:Image) {

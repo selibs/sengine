@@ -7,6 +7,7 @@ typedef KeyCode = kha.input.KeyCode;
 #end
 class Keyboard {
 	var keysTimers:Map<KeyCode, Timer> = [];
+	var hotkeyPressedListeners:Map<Array<KeyCode>, Array<Void->Void>> = [];
 
 	public var keysDown:Array<KeyCode> = [];
 	public var holdInterval = 0.5;
@@ -21,21 +22,8 @@ class Keyboard {
 
 	@:signal function hotkey(hotkey:Array<KeyCode>);
 
-	@:signal(key) function keyDown(key:KeyCode);
-
-	@:signal(key) function keyUp(key:KeyCode);
-
-	@:signal(key) function keyHold(key:KeyCode);
-
-	@:signal(char) function charPressed(char:String);
-
-	var hotkeyPressedListeners:Map<Array<KeyCode>, Array<Void->Void>> = [];
-
 	public function new(id:Int = 0) {
 		kha.input.Keyboard.get(id).notify(down.emit, up.emit, pressed.emit);
-
-		onPressed(charPressed.emit);
-		onHold(keyHold.emit);
 	}
 
 	public function onHotkeyPressed(hotkey:Array<KeyCode>, slot:Void->Void) {
@@ -54,7 +42,6 @@ class Keyboard {
 	}
 
 	@:slot(down) function _down(key:KeyCode) {
-		keyDown(key);
 		keysDown.push(key);
 		hotkeyDown(keysDown);
 
@@ -65,7 +52,6 @@ class Keyboard {
 	}
 
 	@:slot(up) function _up(key:KeyCode) {
-		keyUp(key);
 		keysDown.remove(key);
 		hotkeyDown(keysDown);
 

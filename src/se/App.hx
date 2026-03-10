@@ -12,57 +12,12 @@ import s2d.graphics.Drawers;
 
 @:build(se.macro.SMacro.build())
 class App {
-	static var undoListener:Void->Void;
-	static var redoListener:Void->Void;
+	static var windows(default, null):Array<Window> = [];
 
-	@:signal static function update();
-
-	public static var input(default, null):{
-		var mouse:Mouse;
-		var keyboard:Keyboard;
-	};
-	public static var windows(default, null):Array<Window>;
+	public static var input(default, null):{mouse:Mouse, keyboard:Keyboard};
 
 	public static function start(options:SystemOptions, ?setup:Window->Void, ?started:Void->Void, ?progress:Float->Void, ?failed:ResourceError->Void) {
-		onUpdate(() -> {
-			Time.update();
-			Action.update(Time.time);
-		});
-
-		System.start(options, window -> {
-			Resource.loadShelf({
-				fonts: ["font_default"],
-				images: ["image_default"]
-			}, _ -> {
-				if (started != null)
-					started();
-				System.notifyOnFrames(frames -> {
-					update();
-					render(frames);
-				});
-			}, progress, failed);
-
-			Aura.init();
-			Drawers.compile();
-
-			App.input = {
-				mouse: new Mouse(),
-				keyboard: new Keyboard()
-			}
-
-			input.keyboard.onHotkey(hotkey -> switch hotkey {
-				case [Control, Z] if (undoListener != null):
-					undoListener();
-				case [Control, Shift, Z] if (undoListener != null):
-					undoListener();
-				default:
-			});
-
-			var w = new Window(window);
-			windows = [w];
-			if (setup != null)
-				setup(w);
-		});
+		System.start(options, w -> init(w, setup, started, progress, failed));
 	}
 
 	public static function exit() {
@@ -70,20 +25,45 @@ class App {
 			Log.warning("This application can't be stopped!");
 	}
 
-	public static function onUndo(listener:Void->Void) {
-		undoListener = listener;
-	}
-
-	public static function onRedo(listener:Void->Void) {
-		redoListener = listener;
-	}
-
 	public static function onCutCopyPaste(cut:Void->String, copy:Void->String, paste:String->Void) {
 		System.notifyOnCutCopyPaste(cut, copy, paste);
 	}
 
-	static inline function render(frames:Array<Framebuffer>) @:privateAccess {
-		for (i in 0...frames.length)
-			windows[i].render(frames[i]);
+	static function init(window, setup, started, progress, failed) {
+		Resource.loadShelf({
+			fonts: ["font_default"],
+			images: ["image_default"]
+		}, _ -> {
+			if (started != null)
+				started();
+			System.notifyOnFrames(frames -> {
+				Time.update();
+				Action.update(Time.time);
+				render(frames);
+			});
+		}, progress, failed);
+
+		Aura.init();
+		Drawers.compile();
+
+		App.input = {
+			mouse: new Mouse(),
+			keyboard: new Keyboard()
+		}
+
+		var w = new Window(window);
+		windows.push(w);
+
+		if (setup != null)
+			setup(w);
+	}
+
+	static function render(frames:Array<Framebuffer>) {
+		for (i in 0...frames.length) {
+			final g2 = frames[i].g2;
+			g2.begin(true);
+			g2.drawImage(windows[i].backbuffer, 0, 0);
+			g2.end();
+		}
 	}
 }

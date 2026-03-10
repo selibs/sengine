@@ -29,6 +29,7 @@ typedef MouseMoveEvent = {
 #end
 class Mouse {
 	var mouse:kha.input.Mouse;
+
 	var buttonsDown:Array<MouseButton> = [];
 	var recentlyPressed:Map<MouseButton, Timer> = [];
 	var recentlyClicked:Map<MouseButton, Timer> = [];
@@ -38,10 +39,11 @@ class Mouse {
 	public var clickInterval = 0.3;
 	public var doubleClickInterval = 0.5;
 
-	public var x:Int = 0;
-	public var y:Int = 0;
-	@:isVar public var locked(default, set):Bool = false;
-	@:isVar public var cursor(default, set):MouseCursor = Default;
+	public var x(default, null):Int = 0;
+	public var y(default, null):Int = 0;
+	public var visible(default, set):Bool = true;
+	public var locked(default, set):Bool = false;
+	public var cursor(default, set):MouseCursor = Default;
 
 	@:signal function exited();
 
@@ -59,47 +61,13 @@ class Mouse {
 
 	@:signal function doubleClicked(button:MouseButton, x:Int, y:Int);
 
-	@:signal(button) function buttonPressed(button:MouseButton, x:Int, y:Int);
-
-	@:signal(button) function buttonReleased(button:MouseButton, x:Int, y:Int);
-
-	@:signal(button) function buttonHold(button:MouseButton, x:Int, y:Int);
-
-	@:signal(button) function buttonClicked(button:MouseButton, x:Int, y:Int);
-
-	@:signal(button) function buttonDoubleClicked(button:MouseButton, x:Int, y:Int);
-
 	public function new(id:Int = 0) {
 		mouse = kha.input.Mouse.get(id);
 		mouse.notify(pressed.emit, released.emit, moved.emit, scrolled.emit, exited.emit);
-		onDoubleClicked(buttonDoubleClicked.emit);
-		onHold(buttonHold.emit);
-	}
-
-	/**
-	 * Hides the system cursor without locking
-	 */
-	public inline function hideSystemCursor():Void {
-		mouse.hideSystemCursor();
-	}
-
-	/**
-	 * Shows the system cursor
-	 */
-	public inline function showSystemCursor():Void {
-		mouse.showSystemCursor();
-	}
-
-	/**
-	 * Sets the system cursor
-	 */
-	public inline function setSystemCursor(cursor:MouseCursor) {
-		this.cursor = cursor;
 	}
 
 	@:slot(pressed)
 	function __syncPressed__(button:MouseButton, x:Int, y:Int) {
-		buttonPressed(button, x, y);
 		buttonsDown.push(button);
 
 		recentlyPressed.set(button, Timer.set(() -> {
@@ -113,8 +81,6 @@ class Mouse {
 
 	@:slot(released)
 	function __syncReleased__(button:MouseButton, x:Int, y:Int) {
-		buttonReleased(button, x, y);
-
 		if (recentlyPressed.exists(button))
 			clicked(button, x, y);
 
@@ -125,8 +91,6 @@ class Mouse {
 
 	@:slot(clicked)
 	function __syncClicked__(button:MouseButton, x:Int, y:Int) {
-		buttonClicked(button, x, y);
-
 		if (recentlyClicked.exists(button))
 			doubleClicked(button, x, y);
 
@@ -143,6 +107,14 @@ class Mouse {
 	function __syncMoved__(x:Int, y:Int, dx:Int, dy:Int) {
 		this.x = x;
 		this.y = y;
+	}
+
+	function set_visible(value:Bool):Bool {
+		if (visible = value)
+			mouse.showSystemCursor();
+		else
+			mouse.hideSystemCursor();
+		return visible;
 	}
 
 	function set_locked(value:Bool):Bool {
@@ -167,14 +139,6 @@ enum abstract MouseButton(Int) from Int to Int {
 	var Forward;
 
 	@:to
-	public function toString():String {
-		final map = [
-			Left => "Left",
-			Right => "Right",
-			Middle => "Middle",
-			Back => "Back",
-			Forward => "Forward"
-		];
-		return 'MouseButton.${map.get(this)}';
-	}
+	public function toString():String
+		return 'MouseButton.${[Left => "Left", Right => "Right", Middle => "Middle", Back => "Back", Forward => "Forward"].get(this)}';
 }

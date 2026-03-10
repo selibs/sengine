@@ -103,127 +103,127 @@ abstract class Object<T:Object<T>> {
 
 @:access(se.Object)
 @:forward.new
-private abstract ObjectList<T:Object<T>>(ArrayData<T>) to ArrayData<T> {
+private extern abstract ObjectList<T:Object<T>>(ArrayData<T>) to ArrayData<T> {
 	var list(get, never):Array<T>;
 	var element(get, never):T;
 
 	@:to
-	function toArray():Array<T> {
+	inline function toArray():Array<T> {
 		return list.copy();
 	}
 
 	public var length(get, never):Int;
 
-	public function excluded(x:T) {
+	public inline function excluded(x:T) {
 		return copy().remove(x);
 	}
 
-	public function concat(a:Array<T>):Array<T> {
+	public inline function concat(a:Array<T>):Array<T> {
 		return list.concat(a);
 	}
 
-	public function join(sep:String):String {
+	public inline function join(sep:String):String {
 		return list.join(sep);
 	}
 
-	public function pop():Null<T> {
+	public inline function pop():Null<T> {
 		return inline rem(list.pop());
 	}
 
-	public function add(x:T):Bool {
+	public inline function add(x:T):T {
 		if (contains(x))
-			return false;
+			return null;
 		list.push(x);
 		return inline addEl(x);
 	}
 
-	public function reverse():Void {
+	public inline function reverse():Void {
 		list.reverse();
 	}
 
-	public function shift():Null<T> {
+	public inline function shift():Null<T> {
 		return inline rem(list.shift());
 	}
 
-	public function slice(pos:Int, ?end:Int):Array<T> {
+	public inline function slice(pos:Int, ?end:Int):Array<T> {
 		return list.slice(pos, end);
 	}
 
-	public function sort(f:T->T->Int):Void {
+	public inline function sort(f:T->T->Int):Void {
 		list.sort(f);
 	}
 
-	public function splice(pos:Int, len:Int):Array<T> {
+	public inline function splice(pos:Int, len:Int):Array<T> {
 		var els = list.splice(pos, len);
 		for (x in els)
 			inline rem(x);
 		return els;
 	}
 
-	public function toString():String {
+	public inline function toString():String {
 		return list.toString();
 	}
 
-	public function unshift(x:T):Bool {
+	public inline function unshift(x:T):T {
 		if (contains(x))
-			return false;
+			return null;
 		list.unshift(x);
 		return inline addEl(x);
 	}
 
-	public function insert(pos:Int, x:T):Bool {
+	public inline function insert(pos:Int, x:T):T {
 		if (contains(x))
-			return false;
+			return null;
 		list.insert(pos, x);
 		return inline addEl(x);
 	}
 
-	public function remove(x:T):Bool {
+	public inline function remove(x:T):Bool {
 		var r = list.remove(x);
 		if (r)
 			inline rem(x);
 		return r;
 	}
 
-	public function contains(x:T):Bool {
+	public inline function contains(x:T):Bool {
 		return x?._parent == this.element;
 	}
 
-	public function indexOf(x:T, ?fromIndex:Int):Int {
+	public inline function indexOf(x:T, ?fromIndex:Int):Int {
 		return list.indexOf(x, fromIndex);
 	}
 
-	public function lastIndexOf(x:T, ?fromIndex:Int):Int {
+	public inline function lastIndexOf(x:T, ?fromIndex:Int):Int {
 		return list.lastIndexOf(x, fromIndex);
 	}
 
-	public function copy():Array<T> {
+	public inline function copy():Array<T> {
 		return list.copy();
 	}
 
-	public function iterator():haxe.iterators.ArrayIterator<T> {
+	public inline function iterator():haxe.iterators.ArrayIterator<T> {
 		return list.iterator();
 	}
 
-	public function keyValueIterator():haxe.iterators.ArrayKeyValueIterator<T> {
+	public inline function keyValueIterator():haxe.iterators.ArrayKeyValueIterator<T> {
 		return list.keyValueIterator();
 	}
 
-	public function map<S>(f:T->S):Array<S> {
+	public inline function map<S>(f:T->S):Array<S> {
 		return list.map(f);
 	}
 
-	public function filter(f:T->Bool):Array<T> {
+	public inline function filter(f:T->Bool):Array<T> {
 		return list.filter(f);
 	}
 
 	@:op([])
-	function arrayRead(i:Int):T {
+	inline function arrayRead(i:Int):T {
 		return list[i];
 	}
 
 	@:op([])
-	function arrayWrite(i:Int, x:T):T {
+	inline function arrayWrite(i:Int, x:T):T {
 		if (!contains(x))
 			list[i] = x;
 		return x;
@@ -231,14 +231,14 @@ private abstract ObjectList<T:Object<T>>(ArrayData<T>) to ArrayData<T> {
 
 	inline function addEl(x:T) {
 		if (x == null)
-			return false;
+			return null;
 		var prev = x._parent;
 		x._parent = this.element;
 		if (prev != null)
 			prev.childRemoved(x);
 		this.element.childAdded(x);
 		x.parentChanged(prev);
-		return true;
+		return x;
 	}
 
 	inline function get_length():Int {

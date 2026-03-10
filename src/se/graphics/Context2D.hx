@@ -485,9 +485,8 @@ extern abstract Context2D(Graphics) from Graphics {
 	}
 }
 
-@:dox(show)
 @:forward(opacity, fontSize)
-extern private abstract Context2DStyle(Graphics) from Graphics {
+extern abstract Context2DStyle(Graphics) from Graphics {
 	public var color(get, set):Color;
 	public var font(get, set):Font;
 
