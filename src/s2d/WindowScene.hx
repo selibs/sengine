@@ -5,7 +5,7 @@ import se.App;
 import se.Time;
 import se.Texture;
 import se.math.Mat3;
-import se.system.Window;
+import se.Window;
 import se.system.input.Mouse;
 import se.graphics.Context2D;
 import s2d.Anchors;
@@ -14,7 +14,7 @@ import s2d.FocusPolicy;
 using se.extensions.StringExt;
 
 @:allow(s2d.Element)
-@:build(se.macro.SMacro.build())
+@:build(s.shortcut.Macro.build())
 class WindowScene {
 	var pending:Array<Element> = [];
 	var entered:Array<Element> = [];
@@ -75,7 +75,7 @@ class WindowScene {
 		return null;
 	}
 
-	@:access(se.system.Window)
+	@:access(se.Window)
 	function render() {
 		var target = window.backbuffer;
 		var ctx = target.context2D;

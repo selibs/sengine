@@ -3,7 +3,7 @@ package se.assets;
 import se.resource.Resource;
 
 #if !macro
-@:build(se.macro.SMacro.build())
+@:build(s.shortcut.Macro.build())
 #end
 abstract class AssetData<T:kha.Resource> {
 	@:isVar public var asset(default, null):T = null;
@@ -11,7 +11,7 @@ abstract class AssetData<T:kha.Resource> {
 
 	public var isLoaded(get, never):Bool;
 
-	@:signal function assetLoaded(asset:T):Void;
+	@:signal public function assetLoaded(asset:T):Void;
 
 	public inline function new(?source:String) {
 		this.source = source;
@@ -25,7 +25,8 @@ abstract class AssetData<T:kha.Resource> {
 		if (isLoaded)
 			f(asset);
 		else if (waitForLoaded)
-			assetLoaded.connect(f, false);
+            // TODO: once signals
+			assetLoaded.connect(f);
 	}
 
 	public inline function reload(?done:T->Void, ?failed:ResourceError->Void) {

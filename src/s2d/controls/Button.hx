@@ -7,7 +7,7 @@ import s2d.elements.shapes.RoundedRectangle;
 class Button extends AbstractButton<RoundedRectangle, HBoxLayout> {
 	public var label:Text;
 
-	@alias public var text:String = label.text;
+	@:alias public var text:String = label.text;
 
 	public function new(text:String = "Button") {
 		super();

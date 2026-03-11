@@ -5,7 +5,7 @@ import se.math.SMath;
 import se.animation.Action.Actuator;
 
 #if !macro
-@:build(se.macro.SMacro.build())
+@:build(s.shortcut.Macro.build())
 #end
 @:access(se.animation.Action)
 abstract class Animation<T> {
@@ -26,8 +26,8 @@ abstract class Animation<T> {
 	public var started(get, set):Bool;
 	public var paused(get, set):Bool;
 
-	@alias public var duration:Float = actuator.duration;
-	@alias public var easing:Float->Float = actuator.easing;
+	@:alias public var duration:Float = actuator.duration;
+	@:alias public var easing:Float->Float = actuator.easing;
 
 	public function new(from:T, to:T, duration:Float, onTick:T->Void) {
 		this.from = from;

@@ -10,8 +10,8 @@ class RoundedRectangle extends Shape {
 	var _rect:Rect = new Rect(0.0, 0.0, 0.0, 0.0);
 	var _radius:Float = 0.0;
 
-	@track @:isVar public var radius(default, set):Float;
-	@track @:isVar public var softness(default, set):Float;
+	@:signal @:isVar public var radius(default, set):Float;
+	@:signal @:isVar public var softness(default, set):Float;
 
 	public function new(radius:Float = 10.0, ?softness:Float = 0.5) {
 		super();

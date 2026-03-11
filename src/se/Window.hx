@@ -1,25 +1,25 @@
-package se.system;
+package se;
 
 import kha.WindowMode;
 import kha.WindowOptions;
 import kha.Window as KhaWindow;
 
 #if !macro
-@:build(se.macro.SMacro.build())
+@:build(s.shortcut.Macro.build())
 #end
 @:allow(se.App)
 class Window {
 	var backbuffer:Texture;
 	var window:KhaWindow;
 
-	@alias public var x:Int = window.x;
-	@alias public var y:Int = window.y;
+	@:alias public var x:Int = window.x;
+	@:alias public var y:Int = window.y;
 	public var width(default, null):Int = 0;
 	public var height(default, null):Int = 0;
 
-	@alias public var title:String = window.title;
-	@alias public var mode:WindowMode = window.mode;
-	@readonly @alias public var vSynced:Bool = window.vSynced;
+	@:alias public var title:String = window.title;
+	@:alias public var mode:WindowMode = window.mode;
+	@:readonly @:alias public var vSynced:Bool = window.vSynced;
 
 	@:inject(syncFeatures) public var onTop:Bool = false;
 	@:inject(syncFeatures) public var resizable:Bool = true;
@@ -34,7 +34,7 @@ class Window {
 	@:inject(syncFramebuffer) public var stencilBufferBits:Int = 8;
 	@:inject(syncFramebuffer) public var samplesPerPixel:Int = 1;
 
-	@:signal function resized(width:Int, height:Int);
+	@:signal public function resized(width:Int, height:Int);
 
 	@:access(se.App)
 	public function new(w:KhaWindow) {

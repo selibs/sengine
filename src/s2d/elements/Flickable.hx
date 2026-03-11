@@ -8,8 +8,8 @@ class Flickable extends Element {
 	public var shiftX(get, set):Float;
 	public var shiftY(get, set):Float;
 
-	@alias public var contentWidth:Float = contentItem.width;
-	@alias public var contentHeight:Float = contentItem.height;
+	@:alias public var contentWidth:Float = contentItem.width;
+	@:alias public var contentHeight:Float = contentItem.height;
 
 	public function new() {
 		super();

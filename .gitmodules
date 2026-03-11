@@ -1,7 +1,7 @@
-[submodule "sengine-APIs"]
+[submodule "api/build/html"]
 	path = api/build/html
 	url = https://github.com/selibs/api
-[submodule "aura"]
+[submodule "libs/aura"]
 	path = libs/aura
 	url = https://github.com/MoritzBrueckner/aura
 [submodule "libs/sshader"]
@@ -10,3 +10,6 @@
 [submodule "libs/slog"]
 	path = libs/slog
 	url = https://github.com/selibs/slog
+[submodule "libs/sshortcut"]
+	path = libs/sshortcut
+	url = https://github.com/selibs/sshortcut

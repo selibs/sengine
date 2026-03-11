@@ -8,13 +8,13 @@ import se.math.SMath;
 class Speaker extends StageObject {
 	var audio:Audio = new Audio();
 
-	@alias public var source:String = audio.asset.source;
+	@:alias public var source:String = audio.asset.source;
 
-	@alias public var balance:Float = audio.balance;
-	@alias public var maxDistance:Float = audio.maxDistance;
-	@alias public var dopplerStrength:Float = audio.dopplerStrength;
-	@alias public var attenuationMode:AttenuationMode = audio.attenuationMode;
-	@alias public var attenuationFactor:Float = audio.attenuationFactor;
+	@:alias public var balance:Float = audio.balance;
+	@:alias public var maxDistance:Float = audio.maxDistance;
+	@:alias public var dopplerStrength:Float = audio.dopplerStrength;
+	@:alias public var attenuationMode:AttenuationMode = audio.attenuationMode;
+	@:alias public var attenuationFactor:Float = audio.attenuationFactor;
 
 	public function new(source:String, uncompressed:Bool = true) {
 		super();

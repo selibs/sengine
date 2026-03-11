@@ -3,7 +3,7 @@ package se.system.input;
 typedef KeyCode = kha.input.KeyCode;
 
 #if !macro
-@:build(se.macro.SMacro.build())
+@:build(s.shortcut.Macro.build())
 #end
 class Keyboard {
 	var keysTimers:Map<KeyCode, Timer> = [];
@@ -12,18 +12,18 @@ class Keyboard {
 	public var keysDown:Array<KeyCode> = [];
 	public var holdInterval = 0.5;
 
-	@:signal function down(key:KeyCode);
+	@:signal public function down(key:KeyCode);
 
-	@:signal function up(key:KeyCode);
+	@:signal public function up(key:KeyCode);
 
-	@:signal function hold(key:KeyCode);
+	@:signal public function hold(key:KeyCode);
 
-	@:signal function pressed(char:String);
+	@:signal public function pressed(char:String);
 
-	@:signal function hotkey(hotkey:Array<KeyCode>);
+	@:signal public function hotkey(hotkey:Array<KeyCode>);
 
 	public function new(id:Int = 0) {
-		kha.input.Keyboard.get(id).notify(down.emit, up.emit, pressed.emit);
+		kha.input.Keyboard.get(id).notify(k -> down(k), k -> up(k), c -> pressed(c));
 	}
 
 	public function onHotkeyPressed(hotkey:Array<KeyCode>, slot:Void->Void) {

@@ -4,7 +4,7 @@ import s2d.Anchors;
 import s2d.Alignment;
 
 #if !macro
-@:build(se.macro.SMacro.build())
+@:build(s.shortcut.Macro.build())
 #end
 @:dox(hide)
 abstract class LayoutCell<S:ElementSlots> {
@@ -19,11 +19,11 @@ abstract class LayoutCell<S:ElementSlots> {
 	public var vCenter:VerticalAnchor;
 	public var bottom:VerticalAnchor;
 
-	@track.single public var requiredWidth:Float = 0.0;
-	@track.single public var requiredHeight:Float = 0.0;
+	@:signal public var requiredWidth:Float = 0.0;
+	@:signal public var requiredHeight:Float = 0.0;
 
-	@alias public var fillWidth:Bool = el.layout.fillWidth;
-	@alias public var fillHeight:Bool = el.layout.fillHeight;
+	@:alias public var fillWidth:Bool = el.layout.fillWidth;
+	@:alias public var fillHeight:Bool = el.layout.fillHeight;
 
 	public function new(el:Element, left:HorizontalAnchor, top:VerticalAnchor, right:HorizontalAnchor, bottom:VerticalAnchor) {
 		this.el = el;

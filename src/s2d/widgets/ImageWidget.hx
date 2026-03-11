@@ -8,10 +8,10 @@ import s2d.geometry.Rect;
 
 class ImageWidget extends DrawableElement {
 	var asset:ImageAsset = new ImageAsset();
-	@readonly @alias var image:Image = asset.asset;
+	@:readonly @:alias var image:Image = asset.asset;
 
-	@alias public var source:String = asset.source;
-	@readonly @alias public var isLoaded:Bool = asset.isLoaded;
+	@:alias public var source:String = asset.source;
+	@:readonly @:alias public var isLoaded:Bool = asset.isLoaded;
 
 	public var sourceClip:Rect = new Rect(0.0, 0.0, 0.0, 0.0);
 	public var fillMode:ImageFillMode = Stretch;

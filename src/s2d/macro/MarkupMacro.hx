@@ -30,7 +30,7 @@ class MarkupMacro {
 
 	public static var shortcuts(default, null):Map<String, String> = [
 		"element" => "s2d.Element",
-        "drawable" => "s2d.DrawableElement",
+		"drawable" => "s2d.DrawableElement",
 		// controls
 		"button" => "s2d.controls.Button",
 		"input" => "s2d.controls.TextInput",
@@ -117,68 +117,25 @@ class MarkupMacro {
 
 	static function buildMarkup(field:Field) {
 		var i = 0;
-		var stack:Array<Expr> = [];
+		var stack:Array<Expr> = [macro parent];
 
 		function transform(expr:Expr) {
 			function addEl(meta:MetadataEntry, expr:Expr, pos:Position, ?name:String, ?ref:Expr) {
 				var elName = name ?? "__el" + i++;
-				var elRef = ref ?? macro $i{elName};
+				var elRef = ref ?? macro @:pos(pos) $i{elName};
 				var elCls = try {
 					getTypePath(meta.name);
 				} catch (e)
 					Context.error(Std.string(e), pos);
 
-				var attrs = [];
-				var args = [];
-
-				for (p in meta.params ?? []) {
-					function pushAttr(name:String, value:Expr)
-						if (name != null) {
-							var fRef = elRef;
-							for (f in name.split("."))
-								fRef = macro $fRef.$f;
-
-							var call = switch value.expr {
-								case EMeta(s, e):
-									value = e;
-									s.name == "args";
-								default:
-									false;
-							}
-							var expr = if (call) switch value.expr {
-								case EArrayDecl(values):
-									macro $fRef($a{values});
-								default:
-									Context.warning("Expected an array of call arguments", value.pos);
-									return;
-							} else macro $fRef = $value;
-
-							attrs.push(macro @:pos(p.pos) $expr);
-						}
-
-					switch p.expr {
-						case EBinop(OpAssign, e1, e2):
-							pushAttr(extractName(e1), e2);
-						case EObjectDecl(fields):
-							for (f in fields)
-								pushAttr(f.field, f.expr);
-						default:
-							args.push(p);
-					}
-				}
-
 				var elExprs = [];
-				if (stack.length > 0)
-					elExprs.push(macro parent = ${stack[stack.length - 1]});
-
-				var ctor = macro new $elCls($a{args});
+				var ctor = macro new $elCls($a{meta.params ?? []});
 				if (ref == null)
-					elExprs.push(macro var $elName = $ctor);
+					elExprs.push(macro @:pos(pos) var $elName = $ctor);
 				else
-					elExprs.push(macro $elRef = $ctor);
-				elExprs.push(macro parent.addChild($elRef));
-				elExprs = elExprs.concat(attrs);
+					elExprs.push(macro @:pos(pos) $elRef = $ctor);
 
+				elExprs.push(macro ${stack[stack.length - 1]}.addChild($elRef));
 				stack.push(elRef);
 				elExprs = elExprs.concat(transform(expr));
 				stack.pop();
@@ -189,13 +146,12 @@ class MarkupMacro {
 			var def = expr.expr;
 			if (def != null)
 				expr.expr = switch def {
+					case EConst(CIdent(s)) if (s.charAt(0) == "$"):
+						return transform(macro @:pos(expr.pos) $p{[stack[stack.length - 1].toString(), s.substr(1)]});
 					case EMeta(m, e) if (m.name.charAt(0) != ":"):
 						switch m.name {
-							// case "style":
-							// 	addStyle(styles, e);
-							// 	(macro null).expr;
 							case "use":
-								(macro parent.useStylesheet($e)).expr;
+								(macro ${stack[stack.length - 1]}.useStylesheet($e)).expr;
 							default:
 								addEl(m, e, expr.pos);
 						}
@@ -203,7 +159,7 @@ class MarkupMacro {
 						EBlock(vars.map(v -> {
 							var n = v.name;
 							if (v.expr == null)
-								return macro var $n;
+								return macro @:pos(expr.pos) var $n;
 							return switch v.expr.expr {
 								case EMeta(s, e):
 									{
@@ -211,7 +167,7 @@ class MarkupMacro {
 										pos: v.expr.pos
 									}
 								default:
-									macro var $n = ${v.expr};
+									macro @:pos(v.expr.pos) var $n = ${v.expr};
 							}
 						}));
 					case EBinop(OpAssign, e1, e2):
@@ -248,11 +204,12 @@ class MarkupMacro {
 		});
 
 		if (expr != null) {
-			field.kind = FFun({
+			var f = {
 				args: args,
 				expr: block(transform(expr)),
 				ret: macro :Void
-			});
+			}
+			field.kind = FFun(f);
 		}
 	}
 

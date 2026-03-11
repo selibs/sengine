@@ -1,25 +1,25 @@
 package se;
 
 #if !macro
-@:build(se.macro.SMacro.build())
-@:autoBuild(se.macro.SMacro.build())
+@:build(s.shortcut.Macro.build())
+@:autoBuild(s.shortcut.Macro.build())
 #end
 abstract class Object<T:Object<T>> {
 	var _parent:T;
 
-	@track public var tag:String = "object";
+	@:signal public var tag:String = "object";
 	public var parent(get, set):T;
 	public var children(default, null):ObjectList<T>;
 
-	@:signal function parentChanged(previous:T):Void;
+	@:signal public function parentChanged(previous:T):Void;
 
-	@:signal function childAdded(child:T):Void;
+	@:signal public function childAdded(child:T):Void;
 
-	@:signal function childRemoved(child:T):Void;
+	@:signal public function childRemoved(child:T):Void;
 
-	@:signal function descendantAdded(descendant:T):Void;
+	@:signal public function descendantAdded(descendant:T):Void;
 
-	@:signal function descendantRemoved(descendant:T):Void;
+	@:signal public function descendantRemoved(descendant:T):Void;
 
 	public function new() {
 		children = new ObjectList(cast this);

@@ -4,7 +4,7 @@ import s2d.Alignment;
 import s2d.Element;
 
 #if !macro
-@:build(se.macro.SMacro.build())
+@:build(s.shortcut.Macro.build())
 #end
 class Layout {
 	public static function clampWidth(el:Element, width:Float) {
@@ -17,20 +17,20 @@ class Layout {
 		return Math.max(l.minimumHeight, Math.min(height, l.maximumHeight)) + el.top.margin + el.bottom.margin;
 	}
 
-	@track @:isVar public var row(default, set):Int = 0;
-	@track @:isVar public var rowSpan(default, set):Int = 1;
-	@track @:isVar public var column(default, set):Int = 0;
-	@track @:isVar public var columnSpan(default, set):Int = 1;
-	@track public var alignment:Alignment = AlignCenter;
-	@track public var weight:Float = 1.0;
-	@track public var fillWidth:Bool = false;
-	@track public var fillHeight:Bool = false;
-	@track public var minimumWidth:Float = 0.0;
-	@track public var maximumWidth:Float = Math.POSITIVE_INFINITY;
-	@track public var minimumHeight:Float = 0.0;
-	@track public var maximumHeight:Float = Math.POSITIVE_INFINITY;
-	@track public var preferredWidth:Float = Math.NaN;
-	@track public var preferredHeight:Float = Math.NaN;
+	@:signal @:isVar public var row(default, set):Int = 0;
+	@:signal @:isVar public var rowSpan(default, set):Int = 1;
+	@:signal @:isVar public var column(default, set):Int = 0;
+	@:signal @:isVar public var columnSpan(default, set):Int = 1;
+	@:signal public var alignment:Alignment = AlignCenter;
+	@:signal public var weight:Float = 1.0;
+	@:signal public var fillWidth:Bool = false;
+	@:signal public var fillHeight:Bool = false;
+	@:signal public var minimumWidth:Float = 0.0;
+	@:signal public var maximumWidth:Float = Math.POSITIVE_INFINITY;
+	@:signal public var minimumHeight:Float = 0.0;
+	@:signal public var maximumHeight:Float = Math.POSITIVE_INFINITY;
+	@:signal public var preferredWidth:Float = Math.NaN;
+	@:signal public var preferredHeight:Float = Math.NaN;
 
 	public function new() {}
 

@@ -8,16 +8,16 @@ using se.extensions.StringExt;
 
 class Label extends DrawableElement {
 	var fontAsset:FontAsset = new FontAsset();
-	@readonly @alias var kravur:se.resource.Font = fontAsset.asset;
+	@:readonly @:alias var kravur:se.resource.Font = fontAsset.asset;
 
-	@alias public var font:String = fontAsset.source;
+	@:alias public var font:String = fontAsset.source;
 	public var fontSize(default, set):Int = 32;
 
 	public var text(default, set):String;
 	public var textX(default, null):Float = 0.0;
 	public var textY(default, null):Float = 0.0;
 	public var textWidth(default, set):Float = 0.0;
-	@alias public var textHeight:Int = fontSize;
+	@:alias public var textHeight:Int = fontSize;
 
 	public var alignment:Alignment = AlignLeft | AlignTop;
 

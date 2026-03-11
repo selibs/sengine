@@ -3,14 +3,14 @@ package se;
 import kha.System;
 import kha.Framebuffer;
 import aura.Aura;
-import se.system.Window;
+import se.Window;
 import se.system.input.Mouse;
 import se.system.input.Keyboard;
 import se.animation.Action;
 import se.resource.Resource;
 import s2d.graphics.Drawers;
 
-@:build(se.macro.SMacro.build())
+@:autoBuild(se.macro.AppMacro.build())
 class App {
 	static var windows(default, null):Array<Window> = [];
 
@@ -29,19 +29,19 @@ class App {
 		System.notifyOnCutCopyPaste(cut, copy, paste);
 	}
 
-	static function init(window, setup, started, progress, failed) {
+	static function init(window, setup, start, loadProgress, loadFailed) {
 		Resource.loadShelf({
 			fonts: ["font_default"],
 			images: ["image_default"]
 		}, _ -> {
-			if (started != null)
-				started();
+			if (start != null)
+				start();
 			System.notifyOnFrames(frames -> {
 				Time.update();
 				Action.update(Time.time);
 				render(frames);
 			});
-		}, progress, failed);
+		}, loadProgress, loadFailed);
 
 		Aura.init();
 		Drawers.compile();

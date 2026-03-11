@@ -32,8 +32,8 @@ class Element extends Object2D<Element> {
 
 	var anchoring:Int = 0;
 
-	@track public var enabled:Bool = true;
-	@track public var focused:Bool = false;
+	@:signal public var enabled:Bool = true;
+	@:signal public var focused:Bool = false;
 	public var focusPolicy:FocusPolicy = ClickFocus | TabFocus;
 
 	public var clip:Bool = false;
@@ -66,61 +66,43 @@ class Element extends Object2D<Element> {
 	@:isVar public var width(default, set):Float = 0.0;
 	@:isVar public var height(default, set):Float = 0.0;
 
-	@:signal.private function absXChanged(x:Float):Void;
+	@:signal public function absXChanged(x:Float):Void;
 
-	@:signal.private function absYChanged(x:Float):Void;
+	@:signal public function absYChanged(x:Float):Void;
 
-	@:signal.private function xChanged(x:Float):Void;
+	@:signal public function xChanged(x:Float):Void;
 
-	@:signal.private function yChanged(x:Float):Void;
+	@:signal public function yChanged(x:Float):Void;
 
-	@:signal.private function widthChanged(x:Float):Void;
+	@:signal public function widthChanged(x:Float):Void;
 
-	@:signal.private function heightChanged(x:Float):Void;
+	@:signal public function heightChanged(x:Float):Void;
 
-	@:signal function keyboardDown(key:kha.input.KeyCode);
+	@:signal public function keyboardDown(key:kha.input.KeyCode);
 
-	@:signal function keyboardUp(key:kha.input.KeyCode);
+	@:signal public function keyboardUp(key:kha.input.KeyCode);
 
-	@:signal function keyboardHold(key:kha.input.KeyCode);
+	@:signal public function keyboardHold(key:kha.input.KeyCode);
 
-	@:signal function keyboardPressed(char:String);
+	@:signal public function keyboardPressed(char:String);
 
-	@:signal(key) function keyboardKeyDown(key:kha.input.KeyCode);
+	@:signal public function mouseEntered(x:Float, y:Float);
 
-	@:signal(key) function keyboardKeyUp(key:kha.input.KeyCode);
+	@:signal public function mouseExited(x:Float, y:Float);
 
-	@:signal(key) function keyboardKeyHold(key:kha.input.KeyCode);
+	@:signal public function mouseMoved(m:MouseMoveEvent);
 
-	@:signal(char) function keyboardCharPressed(char:String);
+	@:signal public function mouseScrolled(m:MouseScrollEvent);
 
-	@:signal function mouseEntered(x:Float, y:Float);
+	@:signal public function mousePressed(m:MouseButtonEvent);
 
-	@:signal function mouseExited(x:Float, y:Float);
+	@:signal public function mouseReleased(m:MouseButtonEvent);
 
-	@:signal function mouseMoved(m:MouseMoveEvent);
+	@:signal public function mouseHold(m:MouseButtonEvent);
 
-	@:signal function mouseScrolled(m:MouseScrollEvent);
+	@:signal public function mouseClicked(m:MouseButtonEvent);
 
-	@:signal function mousePressed(m:MouseButtonEvent);
-
-	@:signal function mouseReleased(m:MouseButtonEvent);
-
-	@:signal function mouseHold(m:MouseButtonEvent);
-
-	@:signal function mouseClicked(m:MouseButtonEvent);
-
-	@:signal function mouseDoubleClicked(m:MouseButtonEvent);
-
-	@:signal(button) function mouseButtonPressed(button:MouseButton, m:MouseEvent);
-
-	@:signal(button) function mouseButtonReleased(button:MouseButton, m:MouseEvent);
-
-	@:signal(button) function mouseButtonHold(button:MouseButton, m:MouseEvent);
-
-	@:signal(button) function mouseButtonClicked(button:MouseButton, m:MouseEvent);
-
-	@:signal(button) function mouseButtonDoubleClicked(button:MouseButton, m:MouseEvent);
+	@:signal public function mouseDoubleClicked(m:MouseButtonEvent);
 
 	public function new() {
 		super();
@@ -132,17 +114,6 @@ class Element extends Object2D<Element> {
 		top = new TopAnchor();
 		vCenter = new VCenterAnchor();
 		bottom = new BottomAnchor();
-
-		onKeyboardDown(keyboardKeyDown.emit);
-		onKeyboardUp(keyboardKeyUp.emit);
-		onKeyboardHold(keyboardKeyHold.emit);
-		onKeyboardPressed(keyboardCharPressed.emit);
-
-		onMousePressed(m -> mouseButtonPressed(m.button, m));
-		onMouseReleased(m -> mouseButtonReleased(m.button, m));
-		onMouseHold(m -> mouseButtonHold(m.button, m));
-		onMouseClicked(m -> mouseButtonClicked(m.button, m));
-		onMouseDoubleClicked(m -> mouseButtonDoubleClicked(m.button, m));
 	}
 
 	override function __childAdded__(child:Element) {

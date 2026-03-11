@@ -187,8 +187,8 @@ class ElementAnchors {
 }
 
 #if !macro
-@:build(se.macro.SMacro.build())
-@:autoBuild(se.macro.SMacro.build())
+@:build(s.shortcut.Macro.build())
+@:autoBuild(s.shortcut.Macro.build())
 #end
 abstract class Anchor<A:Anchor<A>> {
 	var bindedLines:Array<A> = [];
@@ -202,11 +202,11 @@ abstract class Anchor<A:Anchor<A>> {
 	public var padding(default, set):Float = 0.0;
 	public var margin(default, set):Float = 0.0;
 
-	@:signal function positionChanged(position:Float):Void;
+	@:signal public function positionChanged(position:Float):Void;
 
-	@:signal function paddingChanged(padding:Float):Void;
+	@:signal public function paddingChanged(padding:Float):Void;
 
-	@:signal function marginChanged(margin:Float):Void;
+	@:signal public function marginChanged(margin:Float):Void;
 
 	public function new(?position:Float) {
 		if (position != null)

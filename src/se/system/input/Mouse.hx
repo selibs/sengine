@@ -25,7 +25,7 @@ typedef MouseMoveEvent = {
 }
 
 #if !macro
-@:build(se.macro.SMacro.build())
+@:build(s.shortcut.Macro.build())
 #end
 class Mouse {
 	var mouse:kha.input.Mouse;
@@ -45,25 +45,25 @@ class Mouse {
 	public var locked(default, set):Bool = false;
 	public var cursor(default, set):MouseCursor = Default;
 
-	@:signal function exited();
+	@:signal public function exited();
 
-	@:signal function scrolled(delta:Int);
+	@:signal public function scrolled(delta:Int);
 
-	@:signal function moved(x:Int, y:Int, dx:Int, dy:Int);
+	@:signal public function moved(x:Int, y:Int, dx:Int, dy:Int);
 
-	@:signal function pressed(button:MouseButton, x:Int, y:Int);
+	@:signal public function pressed(button:MouseButton, x:Int, y:Int);
 
-	@:signal function released(button:MouseButton, x:Int, y:Int);
+	@:signal public function released(button:MouseButton, x:Int, y:Int);
 
-	@:signal function hold(button:MouseButton, x:Int, y:Int);
+	@:signal public function hold(button:MouseButton, x:Int, y:Int);
 
-	@:signal function clicked(button:MouseButton, x:Int, y:Int);
+	@:signal public function clicked(button:MouseButton, x:Int, y:Int);
 
-	@:signal function doubleClicked(button:MouseButton, x:Int, y:Int);
+	@:signal public function doubleClicked(button:MouseButton, x:Int, y:Int);
 
 	public function new(id:Int = 0) {
 		mouse = kha.input.Mouse.get(id);
-		mouse.notify(pressed.emit, released.emit, moved.emit, scrolled.emit, exited.emit);
+		mouse.notify((b, x, y) -> pressed(b, x, y), (b, x, y) -> released(b, x, y), (x, y, dx, dy) -> moved(x, y, dx, dy), d -> scrolled(d), () -> exited());
 	}
 
 	@:slot(pressed)

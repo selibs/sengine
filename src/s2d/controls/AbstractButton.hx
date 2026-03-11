@@ -3,13 +3,13 @@ package s2d.controls;
 import se.system.input.Mouse;
 
 class AbstractButton<B:Element, C:Element> extends Control<B, C> {
-	@track public var pressed:Bool = false;
-	@track public var hovered:Bool = false;
+	@:signal public var pressed:Bool = false;
+	@:signal public var hovered:Bool = false;
 
 	public var pressX(default, null):Float = 0.0;
 	public var pressY(default, null):Float = 0.0;
 
-	@:signal function cancelled();
+	@:signal public function cancelled();
 
 	public function new() {
 		super();

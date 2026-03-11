@@ -9,26 +9,27 @@ import se.resource.Sound;
 import se.assets.SoundAsset;
 
 #if !macro
-@:build(se.macro.SMacro.build())
+@:build(s.shortcut.Macro.build())
 #end
 class Audio {
 	var asset:SoundAsset = new SoundAsset();
 	var panner:AudioPanner = new AudioPanner();
 
-	@readonly @alias var sound:Sound = asset.asset;
-	@alias public var source:String = asset.source;
-	@readonly @alias public var duration:Float = sound.length;
-	@readonly @alias public var isLoaded:Bool = asset.isLoaded;
-	
+	@:readonly @:alias var sound:Sound = asset.asset;
+
+	@:alias public var source:String = asset.source;
+	@:readonly @:alias public var duration:Float = sound.length;
+	@:readonly @:alias public var isLoaded:Bool = asset.isLoaded;
+
 	@:isVar public var uncompressed(default, set):Bool;
 
-	@alias public var volume:Float = panner.volume;
-	@alias public var balance:Float = panner.balance;
-	@alias public var location:Vec3 = panner.location;
-	@alias public var maxDistance:Float = panner.maxDistance;
-	@alias public var dopplerStrength:Float = panner.dopplerStrength;
-	@alias public var attenuationMode:AttenuationMode = panner.attenuationMode;
-	@alias public var attenuationFactor:Float = panner.attenuationFactor;
+	@:alias public var volume:Float = panner.volume;
+	@:alias public var balance:Float = panner.balance;
+	@:alias public var location:Vec3 = panner.location;
+	@:alias public var maxDistance:Float = panner.maxDistance;
+	@:alias public var dopplerStrength:Float = panner.dopplerStrength;
+	@:alias public var attenuationMode:AttenuationMode = panner.attenuationMode;
+	@:alias public var attenuationFactor:Float = panner.attenuationFactor;
 
 	public function new(?source:String, uncomressed:Bool = true) {
 		this.uncompressed = uncompressed;

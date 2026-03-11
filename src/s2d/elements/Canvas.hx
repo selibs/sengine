@@ -6,7 +6,7 @@ import se.graphics.Context2D;
 class Canvas2D extends DrawableElement {
 	@:isVar var texture(default, set):Texture;
 
-	@:signal function paint(ctx:Context2D):Void;
+	@:signal public function paint(ctx:Context2D):Void;
 
 	public function new() {
 		super();
@@ -21,7 +21,7 @@ class Canvas2D extends DrawableElement {
 	function draw(target:Texture) {
 		final tgtCtx = target.context2D;
 		tgtCtx.end();
-		texture.context2D.render(true, Transparent, paint.emit);
+		texture.context2D.render(true, Transparent, ctx -> paint(ctx));
 		tgtCtx.begin();
 		tgtCtx.drawImage(texture, absX, absY);
 	}

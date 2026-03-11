@@ -164,6 +164,8 @@ for (const def of (process.defines ?? [])) {
 }
 project.addShaders(`${shaderOutputDir}/**/*{frag,vert}.glsl`, { defines: defs, });
 
+project.localLibraryPath = "libs";
+project.addLibrary("sshortcut");
 await project.addProject("libs/aura");
 
 resolve(project);
