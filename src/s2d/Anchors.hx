@@ -49,6 +49,11 @@ class ElementAnchors {
 			fill(element.left, element.right, element.top, element.bottom);
 	}
 
+	overload extern public inline function fill(element:Element) {
+		if (element != null)
+			fill(element.left, element.right, element.top, element.bottom);
+	}
+
 	overload extern public inline function fillWidth(left:HorizontalAnchor, right:HorizontalAnchor) {
 		this.left = left;
 		this.right = right;

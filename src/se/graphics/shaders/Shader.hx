@@ -1,8 +1,9 @@
 package se.graphics.shaders;
 
 import kha.Shaders;
-import kha.graphics4.PipelineState;
+import kha.graphics4.VertexData;
 import kha.graphics4.IndexBuffer;
+import kha.graphics4.PipelineState;
 
 @:autoBuild(se.macro.ShaderMacro.build())
 abstract class Shader {
@@ -16,7 +17,7 @@ abstract class Shader {
 
 	public static function compileShaders() {
 		// vertices
-		vertices2D = new VertexBuffer(4, ["vertCoord" => kha.graphics4.VertexData.Float32_2X], StaticUsage);
+		vertices2D = new VertexBuffer(4, ["vertCoord" => Float32_2X], StaticUsage);
 		var vert = vertices2D.lock();
 		for (i in 0...4) {
 			vert[i * 2 + 0] = i == 0 || i == 1 ? -1.0 : 1.0;

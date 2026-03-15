@@ -32,14 +32,4 @@ class Speaker extends StageObject {
 	public inline function stop() {
 		audio.stop();
 	}
-
-	override function syncParentTransform() {
-		super.syncParentTransform();
-		audio.location = vec3(globalTransform._20, globalTransform._21, z);
-	}
-
-	override function syncTransform() {
-		super.syncTransform();
-		audio.location = vec3(globalTransform._20, globalTransform._21, z);
-	}
 }

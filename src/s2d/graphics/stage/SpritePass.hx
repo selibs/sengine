@@ -61,7 +61,7 @@ class SpritePass extends StageRenderPass {
 			#else
 			for (sprite in layer.sprites) {
 				ctx.setFloat(depthCL, sprite.z);
-				ctx.setMat3(modelCL, sprite.globalTransform);
+				ctx.setMat3(modelCL, sprite.transform);
 				ctx.setVec4(cropRectCL, sprite.cropRect);
 				ctx.setTexture(textureMapTU, sprite.material.textureMap);
 				ctx.draw();

@@ -11,20 +11,16 @@ abstract class DrawableElement extends Element {
 	override function render(target:Texture) {
 		final ctx = target.context2D;
 		ctx.style.pushOpacity(opacity);
-		if (clip)
-			ctx.scissor(Std.int(absX), Std.int(absY), Std.int(width), Std.int(height));
-		var order = zsorted();
-		for (c in order.below)
-			if (c.visible)
-				c.render(target);
-		ctx.transform = globalTransform;
-		ctx.style.color = color;
+		var i = 0;
+		while (i < children.length && children[i].z < 0.0) {
+			Element.renderElement(target, children[i]);
+			i++;
+		}
 		draw(target);
-		for (c in order.above)
-			if (c.visible)
-				c.render(target);
-		if (clip)
-			ctx.disableScissor();
+		while (i < children.length) {
+			Element.renderElement(target, children[i]);
+			i++;
+		}
 		ctx.style.popOpacity();
 	}
 }

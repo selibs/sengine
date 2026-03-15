@@ -35,7 +35,7 @@ extern abstract Context2D(Graphics) from Graphics {
 	}
 
 	public inline function pushTransformation(value:Mat3):Void {
-		this.pushTransformation(value * transform);
+		this.pushTransformation(transform * value);
 	}
 
 	public inline function popTransformation():Mat3 {
@@ -486,8 +486,7 @@ extern abstract Context2D(Graphics) from Graphics {
 	}
 
 	private inline function set_transform(value:Mat3):Mat3 {
-		this.transformation.setFrom(value);
-		return this.transformation;
+		return this.transformation = value;
 	}
 }
 

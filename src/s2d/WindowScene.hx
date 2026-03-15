@@ -18,7 +18,6 @@ class WindowScene implements s.shortcut.Shortcut {
 	// var pending:Array<Element> = [];
 	// var entered:Array<Element> = [];
 	// var focusedElement(default, set):Element;
-
 	public var window(default, null):Window;
 	public var root(default, set):Element;
 	public var color:Color = White;
@@ -53,7 +52,6 @@ class WindowScene implements s.shortcut.Shortcut {
 		// k.onUp(key -> focusedElement?.keyboardUp(key));
 		// k.onHold(key -> focusedElement?.keyboardHold(key));
 		// k.onPressed(char -> focusedElement?.keyboardPressed(char));
-
 	}
 
 	public function setRoot(element:Element) {
@@ -66,7 +64,7 @@ class WindowScene implements s.shortcut.Shortcut {
 			final c = root.children[i];
 			var cat = c.descendantAt(x, y);
 			if (cat == null) {
-				if (c.contains(x, y))
+				if (c.covers(x, y))
 					return c;
 			} else
 				return cat;
@@ -78,8 +76,11 @@ class WindowScene implements s.shortcut.Shortcut {
 	function render(target:Texture) {
 		final ctx = target.context2D;
 		ctx.begin();
+        // TODO: revert when all the elements use g4
+		// ctx.pushTransformation(Mat3.orthogonalProjection(0.0, target.width, target.height, 0.0));
 		ctx.clear(color);
 		root.render(target);
+		// ctx.popTransformation();
 		ctx.end();
 	}
 
@@ -223,7 +224,6 @@ class WindowScene implements s.shortcut.Shortcut {
 	// 		}
 	// 	}
 	// }
-
 	// function adjustWheelFocus(d:Int) {
 	// 	final i = root.children.length + root.children.indexOf(focusedElement);
 	// 	for (j in 1...root.children.length) {
@@ -234,7 +234,6 @@ class WindowScene implements s.shortcut.Shortcut {
 	// 		}
 	// 	}
 	// }
-
 	// function processMouseMoved(x:Int, y:Int, dx:Int, dy:Int):Void {
 	// 	var containsMouse = [];
 	// 	processMouseEvent({
@@ -257,7 +256,6 @@ class WindowScene implements s.shortcut.Shortcut {
 	// 			c.mouseExited(x, y);
 	// 		}
 	// }
-
 	// function processMouseScrolled(d:Int, x:Int, y:Int):Void {
 	// 	processMouseEvent({
 	// 		accepted: false,
@@ -266,7 +264,6 @@ class WindowScene implements s.shortcut.Shortcut {
 	// 		y: y
 	// 	}, (c, m) -> c.mouseScrolled(m));
 	// }
-
 	// function processMouseDown(b:MouseButton, x:Int, y:Int):Void {
 	// 	processMouseEvent({
 	// 		accepted: false,
@@ -278,7 +275,6 @@ class WindowScene implements s.shortcut.Shortcut {
 	// 		c.mousePressed(m);
 	// 	});
 	// }
-
 	// function processMouseUp(b:MouseButton, x:Int, y:Int):Void {
 	// 	final m = {
 	// 		accepted: false,
@@ -289,7 +285,6 @@ class WindowScene implements s.shortcut.Shortcut {
 	// 	for (el in pending)
 	// 		el.mouseReleased(m);
 	// }
-
 	// function processMouseHold(b:MouseButton, x:Int, y:Int):Void {
 	// 	processMouseEvent({
 	// 		accepted: false,
@@ -298,7 +293,6 @@ class WindowScene implements s.shortcut.Shortcut {
 	// 		y: y
 	// 	}, (c, m) -> c.mouseHold(m));
 	// }
-
 	// function processMouseClicked(b:MouseButton, x:Int, y:Int):Void {
 	// 	var focusedSet = false;
 	// 	processMouseEvent({
@@ -314,7 +308,6 @@ class WindowScene implements s.shortcut.Shortcut {
 	// 		}
 	// 	});
 	// }
-
 	// function processMouseDoubleClicked(b:MouseButton, x:Int, y:Int):Void {
 	// 	processMouseEvent({
 	// 		accepted: false,
@@ -323,7 +316,6 @@ class WindowScene implements s.shortcut.Shortcut {
 	// 		y: y
 	// 	}, (c, m) -> c.mouseDoubleClicked(m));
 	// }
-
 	// function processMouseEvent<T:MouseEvent>(m:T, f:(Element, T) -> Void) {
 	// 	function process(els:Array<Element>) {
 	// 		var i = 0;

@@ -31,7 +31,7 @@ class MarkupMacro {
 	public static var shortcuts(default, null):Map<String, String> = [
 		"element" => "s2d.Element",
 		"drawable" => "s2d.elements.DrawableElement",
-		"interactive" => "s2d.elements.Interactive",
+		"interactive" => "s2d.elements.InteractiveElement",
 		// controls
 		"button" => "s2d.controls.Button",
 		"input" => "s2d.controls.TextInput",
@@ -55,8 +55,6 @@ class MarkupMacro {
 		// stage
 		"stage" => "s2d.Stage"
 	];
-
-	public static var templates(default, null):Array<String> = ["s2d.elements.Interactive"];
 
 	public static function init() {
 		Compiler.registerCustomMetadata({
@@ -122,101 +120,142 @@ class MarkupMacro {
 		var i = 0;
 		var stack:Array<Expr> = [macro parent];
 
-		function transform(expr:Expr) {
-			function addEl(meta:MetadataEntry, expr:Expr, pos:Position, ?name:String, ?ref:Expr) {
-				var elName = name ?? "__el" + i++;
-				var elRef = ref ?? macro @:pos(pos) $i{elName};
+		inline function currentRef():Expr
+			return stack[stack.length - 1];
 
+		inline function parentRef():Expr
+			return stack.length > 1 ? stack[stack.length - 2] : macro parent;
+
+		function transform(expr:Expr) {
+			function addEl(meta:MetadataEntry, expr:Expr, pos:Position, ?varData:{name:String, type:Null<ComplexType>, isFinal:Bool}, ?assignRef:Expr) {
 				var elTypeName = getTypeName(meta.name);
 				var elCls:TypePath = {
 					pack: null,
 					name: null,
-					sub: null,
-					params: []
+					sub: null
 				}
 				elCls.pack = elTypeName.split(".");
 				elCls.name = elCls.pack.pop();
-				var c = elCls.pack[elCls.pack.length - 1].charAt(0);
-				if (c == c.toUpperCase()) {
-					elCls.sub = elCls.name;
-					elCls.name = elCls.pack.pop();
-				}
-
-				var args = meta.params ?? [];
-				if (templates.contains(elTypeName)) {
-					for (a in args) {
-						var name = extractName(a);
-						if (name != null)
-							try {
-								elCls.params.push(TPType(getType(name)));
-							} catch (e)
-								Context.error(Std.string(e), a.pos);
+				if (elCls.pack.length > 0) {
+					var c = elCls.pack[elCls.pack.length - 1].charAt(0);
+					if (c == c.toUpperCase()) {
+						elCls.sub = elCls.name;
+						elCls.name = elCls.pack.pop();
 					}
-					args = [];
 				}
 
+				var ctor = macro @:pos(pos) new $elCls($a{meta.params ?? []});
+				var elRef:Expr;
 				var elExprs = [];
-				var ctor = macro @:pos(pos) new $elCls($a{args});
-				if (ref == null)
+
+				if (varData != null) {
+					elRef = macro @:pos(pos) $i{varData.name};
+					elExprs.push({
+						pos: pos,
+						expr: EVars([{
+							name: varData.name,
+							type: varData.type,
+							expr: ctor,
+							isFinal: varData.isFinal
+						}])
+					});
+				} else if (assignRef != null) {
+					elRef = assignRef;
+					elExprs.push(macro @:pos(pos) $assignRef = $ctor);
+				} else {
+					var elName = "__el" + i++;
+					elRef = macro @:pos(pos) $i{elName};
 					elExprs.push(macro @:pos(pos) var $elName = $ctor);
-				else
-					elExprs.push(macro @:pos(pos) $elRef = $ctor);
+				}
 
-				elExprs.push(macro ${stack[stack.length - 1]}.addChild($elRef));
 				stack.push(elRef);
-				elExprs = elExprs.concat(transform(expr));
+				var bodyExprs = transform(expr);
 				stack.pop();
+				if (bodyExprs != null && bodyExprs.length > 0)
+					elExprs.push({
+						pos: pos,
+						expr: EBlock(bodyExprs)
+					});
+				elExprs.push(macro ${currentRef()}.addChild($elRef));
 
-				return EBlock(elExprs);
+				return elExprs;
 			}
 
 			var def = expr.expr;
-			if (def != null)
-				expr.expr = switch def {
-					case EConst(CIdent(s)) if (s.charAt(0) == "$"):
-						expr.expr = EField(stack[stack.length - 1], s.substr(1));
-						return transform(expr);
-					case EMeta(m, e) if (m.name.charAt(0) != ":"):
-						switch m.name {
-							case "use":
-								(macro ${stack[stack.length - 1]}.useStylesheet($e)).expr;
-							default:
-								addEl(m, e, expr.pos);
-						}
-					case EVars(vars):
-						EBlock(vars.map(v -> {
-							var n = v.name;
-							if (v.expr == null)
-								return macro @:pos(expr.pos) var $n;
-							return switch v.expr.expr {
-								case EMeta(s, e):
-									{
-										expr: addEl(s, e, v.expr.pos, n),
-										pos: v.expr.pos
-									}
-								default:
-									macro @:pos(v.expr.pos) var $n = ${v.expr};
-							}
-						}));
-					case EBinop(OpAssign, e1, e2):
-						switch e2.expr {
-							case EMeta(m, e):
-								switch e1.expr {
-									case EConst(CIdent(s)):
-										addEl(m, e, e2.pos, s, e1);
-									case EField(e, field):
-										addEl(m, e, e2.pos, null, e1);
-									default:
-										(expr.map(e -> block(transform(e)))).expr;
-								}
-							default:
-								(expr.map(e -> block(transform(e)))).expr;
-						}
-					default:
-						(expr.map(e -> block(transform(e)))).expr;
-				}
+			if (def == null)
+				return null;
 
-			return flatten(expr);
+			switch def {
+				case EBlock(exprs):
+					var out:Array<Expr> = [];
+					for (e in exprs)
+						out = out.concat(transform(e));
+					return out;
+				case EConst(CIdent(s)) if (s.charAt(0) == "$"):
+					if (s == "$parent")
+						expr = parentRef();
+					else
+						expr.expr = EField(currentRef(), s.substr(1));
+					return transform(expr);
+				case EMeta(m, e) if (m.name.charAt(0) != ":"):
+					return switch m.name {
+						case "use":
+							[macro ${currentRef()}.useStylesheet($e)];
+						default:
+							addEl(m, e, expr.pos);
+					}
+				case EVars(vars):
+					var out:Array<Expr> = [];
+					for (v in vars) {
+						var n = v.name;
+						if (v.expr == null) {
+							out.push({
+								pos: expr.pos,
+								expr: EVars([{
+									name: v.name,
+									type: v.type,
+									expr: null,
+									isFinal: v.isFinal
+								}])
+							});
+							continue;
+						}
+						out = out.concat(switch v.expr.expr {
+							case EMeta(s, e):
+								addEl(s, e, v.expr.pos, {
+									name: n,
+									type: v.type,
+									isFinal: v.isFinal
+								});
+							default:
+								[{
+									pos: v.expr.pos,
+									expr: EVars([{
+										name: v.name,
+										type: v.type,
+										expr: v.expr,
+										isFinal: v.isFinal
+									}])
+								}];
+						});
+					}
+					return out;
+				case EBinop(OpAssign, e1, e2):
+					switch e2.expr {
+						case EMeta(m, e):
+							switch e1.expr {
+								case EConst(CIdent(s)):
+									return addEl(m, e, e2.pos, null, macro @:pos(e1.pos) $i{s});
+								case EField(e, field):
+									return addEl(m, e, e2.pos, null, e1);
+								default:
+							}
+						default:
+					}
+				default:
+			}
+
+			return flatten(expr.map(e -> block(transform(e))));
 		}
 
 		var expr = extractExpr(field);
@@ -231,12 +270,14 @@ class MarkupMacro {
 			type: macro :s2d.Element
 		});
 
-		if (expr != null)
+		if (expr != null) {
+			var expr = block(transform(expr));
 			field.kind = FFun({
 				args: args,
-				expr: block(transform(expr)),
+				expr: expr,
 				ret: macro :Void
 			});
+		}
 	}
 
 	static function buildStylesheet(field:Field) {

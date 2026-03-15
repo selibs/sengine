@@ -2,10 +2,7 @@ package s2d;
 
 import se.Log;
 import se.Texture;
-import se.math.Vec2;
-import se.math.Mat3;
 import se.math.SMath;
-import se.system.input.Mouse;
 import s2d.Style;
 import s2d.Anchors;
 import s2d.FocusPolicy;
@@ -30,24 +27,33 @@ class Element extends Object2D<Element> {
 		return element.mapToGlobal(p.x, p.y);
 	}
 
+	public static function renderElement(target:Texture, element:Element) {
+		if (!element.visible)
+			return;
+		final ctx = target.context2D;
+		ctx.pushTransformation(element.transform);
+		element.render(target);
+		ctx.popTransformation();
+	}
+
 	var anchoring:Int = 0;
 
 	@:attr public var focused(default, null):Bool = false;
 
 	public var focusPolicy:FocusPolicy = ClickFocus | TabFocus;
 
-	public var clip:Bool = false;
+	public var clip:Bool = false; // TODO: stencil test
 	public var opacity:Float = 1.0;
 	public var layout:Layout = new Layout();
 
-	public var left:HorizontalAnchor = new LeftAnchor();
-	public var hCenter:HorizontalAnchor = new HCenterAnchor();
-	public var right:HorizontalAnchor = new RightAnchor();
-	public var top:VerticalAnchor = new TopAnchor();
-	public var vCenter:VerticalAnchor = new VCenterAnchor();
-	public var bottom:VerticalAnchor = new BottomAnchor();
-	public var anchors:ElementAnchors;
 	public var padding(never, set):Float;
+	public var anchors:ElementAnchors;
+	public var left(default, never):HorizontalAnchor = new LeftAnchor();
+	public var hCenter(default, never):HorizontalAnchor = new HCenterAnchor();
+	public var right(default, never):HorizontalAnchor = new RightAnchor();
+	public var top(default, never):VerticalAnchor = new TopAnchor();
+	public var vCenter(default, never):VerticalAnchor = new VCenterAnchor();
+	public var bottom(default, never):VerticalAnchor = new BottomAnchor();
 
 	var _absX(default, set):Float = 0.0;
 	var _absY(default, set):Float = 0.0;
@@ -82,12 +88,6 @@ class Element extends Object2D<Element> {
 		super();
 
 		anchors = new ElementAnchors(this);
-		left = new LeftAnchor();
-		hCenter = new HCenterAnchor();
-		right = new RightAnchor();
-		top = new TopAnchor();
-		vCenter = new VCenterAnchor();
-		bottom = new BottomAnchor();
 	}
 
 	override function __childAdded__(child:Element) {
@@ -125,7 +125,7 @@ class Element extends Object2D<Element> {
 	}
 
 	overload extern public inline function mapFromGlobal(p:Position):Position {
-		return globalTransform * p - vec2(absX, absY);
+		return transform * p - vec2(absX, absY);
 	}
 
 	overload extern public inline function mapFromGlobal(x:Float, y:Float):Position {
@@ -133,7 +133,7 @@ class Element extends Object2D<Element> {
 	}
 
 	overload extern public inline function mapToGlobal(p:Position):Position {
-		return inverse(globalTransform) * p;
+		return inverse(transform) * p;
 	}
 
 	overload extern public inline function mapToGlobal(x:Float, y:Float):Position {
@@ -144,7 +144,7 @@ class Element extends Object2D<Element> {
 		var i = children.length;
 		while (0 < i) {
 			final c = children[--i];
-			if (c.contains(x, y))
+			if (c.covers(x, y))
 				return c;
 		}
 		return null;
@@ -156,7 +156,7 @@ class Element extends Object2D<Element> {
 			final c = children[--i];
 			var cat = c.descendantAt(x, y);
 			if (cat == null) {
-				if (c.contains(x, y))
+				if (c.covers(x, y))
 					return c;
 			} else
 				return cat;
@@ -164,7 +164,7 @@ class Element extends Object2D<Element> {
 		return null;
 	}
 
-	public function contains(x:Float, y:Float):Bool {
+	public function covers(x:Float, y:Float):Bool {
 		var p = mapToGlobal(x, y);
 		return left.position <= p.x && p.x <= right.position && top.position <= p.y && p.y <= bottom.position;
 	}
@@ -190,14 +190,8 @@ class Element extends Object2D<Element> {
 	function render(target:Texture) {
 		final ctx = target.context2D;
 		ctx.style.pushOpacity(opacity);
-		ctx.transform = globalTransform;
-		if (clip)
-			ctx.scissor(Std.int(absX), Std.int(absY), Std.int(width), Std.int(height));
 		for (c in children)
-			if (c.visible)
-				c.render(target);
-		if (clip)
-			ctx.disableScissor();
+			Element.renderElement(target, c);
 		ctx.style.popOpacity();
 	}
 
@@ -227,15 +221,6 @@ class Element extends Object2D<Element> {
 			geometryChanged();
 		} else
 			Log.warning("Possible anchor binding loop detected!");
-	}
-
-	override function applyTransform(m:Mat3, ?o:Vec2) {
-		if (o == null)
-			o = vec2(x, y);
-		else
-			o += vec2(x, y);
-		transform *= Mat3.translation(-o.x, -o.y) * m * Mat3.translation(o.x, o.y);
-		syncTransform();
 	}
 
 	@:slot(left.positionChanged)

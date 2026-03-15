@@ -1,6 +1,6 @@
 package s2d.elements;
 
-@:genericBuild @:template class Interactive<T:Element> {
+class InteractiveElement extends Element {
 	@:attr public var enabled:Bool = true;
 	@:attr public var hovered:Bool = false;
 
@@ -37,13 +37,15 @@ package s2d.elements;
 		var mx = m.x;
 		var my = m.y;
 
-		var containsMouse = contains(mx, my);
+		var p = se.math.SMath.inverse(target.context2D.transform) * se.math.SMath.vec2(mx, my);
+		var containsMouse = left.position <= p.x && p.x <= right.position && top.position <= p.y && p.y <= bottom.position;
+
 		if (!hovered && containsMouse)
 			mouseEntered(mx, my);
 		else if (hovered && !containsMouse)
 			mouseExited(mx, my);
-
 		flush();
+        
 		super.render(target);
 	}
 

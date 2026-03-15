@@ -9,12 +9,10 @@ import se.graphics.shaders.Shader;
 abstract class Drawer2D<T:s2d.elements.DrawableElement> extends Shader {
 	var modelCL:ConstantLocation;
 	var colorCL:ConstantLocation;
-	var viewportCL:ConstantLocation;
 
 	override function setup() {
 		modelCL = pipeline.getConstantLocation("model");
 		colorCL = pipeline.getConstantLocation("color");
-		viewportCL = pipeline.getConstantLocation("viewport");
 	}
 
 	public function render(target:Texture, element:T) {
@@ -22,9 +20,8 @@ abstract class Drawer2D<T:s2d.elements.DrawableElement> extends Shader {
 		ctx.setPipeline(pipeline);
 		ctx.setIndexBuffer(Shader.indices2D);
 		ctx.setVertexBuffer(Shader.vertices2D);
-		ctx.setMat3(modelCL, element.globalTransform);
+		ctx.setMat3(modelCL, target.context2D.transform);
 		ctx.setFloat4(colorCL, element.color);
-		ctx.setFloat2(viewportCL, target.width, target.height);
 		draw(target, element);
 	}
 

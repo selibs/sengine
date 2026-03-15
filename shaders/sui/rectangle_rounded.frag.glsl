@@ -9,8 +9,8 @@ uniform vec4 bordCol;
 #define softness rectData.y
 #define bordWidth rectData.z
 
-in layout(location = 0) vec2 fragCoord;
-out layout(location = 0) vec4 fragColor;
+layout(location = 0) in vec2 fragCoord;
+layout(location = 0) out vec4 fragColor;
 
 float sdf(vec2 center, vec2 size) {
     vec2 q = abs(center) - size + radius;

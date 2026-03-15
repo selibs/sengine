@@ -30,13 +30,13 @@ class Label extends DrawableElement {
 	}
 
 	function draw(target:Texture) {
-		if (text != "" && kravur != null) {
-			final ctx = target.context2D;
-			ctx.style.font = kravur;
-			ctx.style.fontSize = fontSize;
-			ctx.style.color = color;
-			ctx.drawString(text, textX, textY);
-		}
+		if (text.length == 0 || kravur == null)
+			return;
+		final ctx = target.context2D;
+		ctx.style.font = kravur;
+		ctx.style.fontSize = fontSize;
+		ctx.style.color = color;
+		ctx.drawString(text, textX, textY);
 	}
 
 	function syncTextWidth() {
