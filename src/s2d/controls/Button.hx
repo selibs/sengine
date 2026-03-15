@@ -2,9 +2,9 @@ package s2d.controls;
 
 import s2d.elements.Text;
 import s2d.layouts.HBoxLayout;
-import s2d.elements.shapes.RoundedRectangle;
+import s2d.elements.shapes.RectangleRounded;
 
-class Button extends AbstractButton<RoundedRectangle, HBoxLayout> {
+class Button extends AbstractButton<RectangleRounded, HBoxLayout> {
 	public var label:Text;
 
 	@:alias public var text:String = label.text;
@@ -12,9 +12,9 @@ class Button extends AbstractButton<RoundedRectangle, HBoxLayout> {
 	public function new(text:String = "Button") {
 		super();
 
-		background = new RoundedRectangle();
+		background = new RectangleRounded();
 		background.color = Color.rgb(0.75, 0.75, 0.75);
-		onHoveredChanged((_) -> if (!pressed) {
+		onHoveredDirty((_) -> if (!pressed) {
 			background.color = hovered ? Color.rgb(0.85, 0.85, 0.85) : Color.rgb(0.75, 0.75, 0.75);
 		});
 		onPressedChanged((_) -> {

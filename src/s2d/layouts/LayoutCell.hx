@@ -3,11 +3,8 @@ package s2d.layouts;
 import s2d.Anchors;
 import s2d.Alignment;
 
-#if !macro
-@:build(s.shortcut.Macro.build())
-#end
 @:dox(hide)
-abstract class LayoutCell<S:ElementSlots> {
+abstract class LayoutCell<S:ElementSlots> implements s.shortcut.Shortcut {
 	var slots:S;
 
 	public var el:Element;

@@ -32,8 +32,8 @@ class Element extends Object2D<Element> {
 
 	var anchoring:Int = 0;
 
-	@:signal public var enabled:Bool = true;
-	@:signal public var focused:Bool = false;
+	@:attr public var focused(default, null):Bool = false;
+
 	public var focusPolicy:FocusPolicy = ClickFocus | TabFocus;
 
 	public var clip:Bool = false;
@@ -49,8 +49,8 @@ class Element extends Object2D<Element> {
 	public var anchors:ElementAnchors;
 	public var padding(never, set):Float;
 
-	@:isVar var _absX(default, set):Float = 0.0;
-	@:isVar var _absY(default, set):Float = 0.0;
+	var _absX(default, set):Float = 0.0;
+	var _absY(default, set):Float = 0.0;
 
 	public var absX(get, set):Float;
 	public var absY(get, set):Float;
@@ -61,10 +61,10 @@ class Element extends Object2D<Element> {
 	var _width:Float = 0.0;
 	var _height:Float = 0.0;
 
-	@:isVar public var x(default, set):Float = 0.0;
-	@:isVar public var y(default, set):Float = 0.0;
-	@:isVar public var width(default, set):Float = 0.0;
-	@:isVar public var height(default, set):Float = 0.0;
+	public var x(default, set):Float = 0.0;
+	public var y(default, set):Float = 0.0;
+	public var width(default, set):Float = 0.0;
+	public var height(default, set):Float = 0.0;
 
 	@:signal public function absXChanged(x:Float):Void;
 
@@ -77,32 +77,6 @@ class Element extends Object2D<Element> {
 	@:signal public function widthChanged(x:Float):Void;
 
 	@:signal public function heightChanged(x:Float):Void;
-
-	@:signal public function keyboardDown(key:kha.input.KeyCode);
-
-	@:signal public function keyboardUp(key:kha.input.KeyCode);
-
-	@:signal public function keyboardHold(key:kha.input.KeyCode);
-
-	@:signal public function keyboardPressed(char:String);
-
-	@:signal public function mouseEntered(x:Float, y:Float);
-
-	@:signal public function mouseExited(x:Float, y:Float);
-
-	@:signal public function mouseMoved(m:MouseMoveEvent);
-
-	@:signal public function mouseScrolled(m:MouseScrollEvent);
-
-	@:signal public function mousePressed(m:MouseButtonEvent);
-
-	@:signal public function mouseReleased(m:MouseButtonEvent);
-
-	@:signal public function mouseHold(m:MouseButtonEvent);
-
-	@:signal public function mouseClicked(m:MouseButtonEvent);
-
-	@:signal public function mouseDoubleClicked(m:MouseButtonEvent);
 
 	public function new() {
 		super();

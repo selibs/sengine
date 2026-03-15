@@ -4,12 +4,10 @@ import kha.WindowMode;
 import kha.WindowOptions;
 import kha.Window as KhaWindow;
 
-#if !macro
-@:build(s.shortcut.Macro.build())
-#end
 @:allow(se.App)
-class Window {
-	var backbuffer:Texture;
+class Window implements s.shortcut.Shortcut {
+	var bA:Texture;
+	var bB:Texture;
 	var window:KhaWindow;
 
 	@:alias public var x:Int = window.x;
@@ -36,19 +34,24 @@ class Window {
 
 	@:signal public function resized(width:Int, height:Int);
 
+	@:signal public function render(target:Texture);
+
 	@:access(se.App)
 	public function new(w:KhaWindow) {
 		window = w;
 		width = w.width;
 		height = w.height;
-		backbuffer = new Texture(w.width, w.height);
+		bA = new Texture(width, height);
+		bB = new Texture(width, height);
 		App.windows.push(this);
 
 		window.notifyOnResize((w, h) -> {
 			width = w;
 			height = h;
-			backbuffer.unload();
-			backbuffer = new Texture(width, height);
+			bA.unload();
+			bB.unload();
+			bA = new Texture(width, height);
+			bB = new Texture(width, height);
 			resized(w, h);
 		});
 	}
@@ -63,6 +66,12 @@ class Window {
 
 	public inline function destroy() {
 		KhaWindow.destroy(window);
+	}
+
+	function swap() {
+		var temp = bA;
+		bA = bB;
+		bB = temp;
 	}
 
 	function syncFramebuffer() {

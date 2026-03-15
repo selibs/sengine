@@ -2,10 +2,7 @@ package se.system.input;
 
 typedef KeyCode = kha.input.KeyCode;
 
-#if !macro
-@:build(s.shortcut.Macro.build())
-#end
-class Keyboard {
+class Keyboard implements s.shortcut.Shortcut {
 	var keysTimers:Map<KeyCode, Timer> = [];
 	var hotkeyPressedListeners:Map<Array<KeyCode>, Array<Void->Void>> = [];
 
@@ -22,23 +19,21 @@ class Keyboard {
 
 	@:signal public function hotkey(hotkey:Array<KeyCode>);
 
+	@:signal(key) public function keyDown(key:KeyCode);
+
+	@:signal(key) public function keyUp(key:KeyCode);
+
+	@:signal(key) public function keyHold(key:KeyCode);
+
+	@:signal(char) public function charPressed(char:String);
+
 	public function new(id:Int = 0) {
 		kha.input.Keyboard.get(id).notify(k -> down(k), k -> up(k), c -> pressed(c));
-	}
 
-	public function onHotkeyPressed(hotkey:Array<KeyCode>, slot:Void->Void) {
-		for (hkl in hotkeyPressedListeners.keys())
-			if (hkl == hotkey) {
-				hotkeyPressedListeners.get(hkl).push(slot);
-				return;
-			}
-		hotkeyPressedListeners.set(hotkey, [slot]);
-	}
-
-	public function offHotkeyPressed(slot:Void->Void) {
-		for (key in hotkeyPressedListeners.keys())
-			if (hotkeyPressedListeners.get(key).remove(slot))
-				return;
+		onDown(k -> keyDown(k));
+		onUp(k -> keyUp(k));
+		onHold(k -> keyHold(k));
+		onPressed(c -> charPressed(c));
 	}
 
 	@:slot(down) function _down(key:KeyCode) {

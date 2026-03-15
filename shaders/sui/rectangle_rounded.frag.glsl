@@ -1,5 +1,6 @@
 #version 450
 
+uniform vec4 color;
 uniform vec4 rect;
 uniform vec3 rectData; // packed values: [radius, softness, border width]
 uniform vec4 bordCol;
@@ -8,9 +9,8 @@ uniform vec4 bordCol;
 #define softness rectData.y
 #define bordWidth rectData.z
 
-layout(location = 0) in vec4 color;
-layout(location = 1) in vec2 fragCoord;
-layout(location = 0) out vec4 fragColor;
+in layout(location = 0) vec2 fragCoord;
+out layout(location = 0) vec4 fragColor;
 
 float sdf(vec2 center, vec2 size) {
     vec2 q = abs(center) - size + radius;

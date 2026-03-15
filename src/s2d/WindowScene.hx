@@ -14,11 +14,10 @@ import s2d.FocusPolicy;
 using se.extensions.StringExt;
 
 @:allow(s2d.Element)
-@:build(s.shortcut.Macro.build())
-class WindowScene {
-	var pending:Array<Element> = [];
-	var entered:Array<Element> = [];
-	var focusedElement(default, set):Element;
+class WindowScene implements s.shortcut.Shortcut {
+	// var pending:Array<Element> = [];
+	// var entered:Array<Element> = [];
+	// var focusedElement(default, set):Element;
 
 	public var window(default, null):Window;
 	public var root(default, set):Element;
@@ -30,31 +29,31 @@ class WindowScene {
 			root.width = w;
 			root.height = h;
 		});
-
-		// mouse events
-		var m = App.input.mouse;
-		m.onMoved(processMouseMoved);
-		m.onScrolled(d -> {
-			processMouseScrolled(d, m.x, m.y);
-			adjustWheelFocus(d);
-		});
-		m.onPressed(processMouseDown);
-		m.onReleased(processMouseUp);
-		m.onHold(processMouseHold);
-		m.onClicked(processMouseClicked);
-		m.onDoubleClicked(processMouseDoubleClicked);
-
-		// keyboard events
-		var k = App.input.keyboard;
-		k.onDown(k -> if (k == Tab) adjustTabFocus());
-		k.onDown(key -> focusedElement?.keyboardDown(key));
-		k.onUp(key -> focusedElement?.keyboardUp(key));
-		k.onHold(key -> focusedElement?.keyboardHold(key));
-		k.onPressed(char -> focusedElement?.keyboardPressed(char));
+		window.onRender(render);
 
 		setRoot(new Element());
-		// temp
-		kha.System.notifyOnFrames(frames -> render());
+
+		// // mouse events
+		// var m = App.input.mouse;
+		// m.onMoved(processMouseMoved);
+		// m.onScrolled(d -> {
+		// 	processMouseScrolled(d, m.x, m.y);
+		// 	adjustWheelFocus(d);
+		// });
+		// m.onPressed(processMouseDown);
+		// m.onReleased(processMouseUp);
+		// m.onHold(processMouseHold);
+		// m.onClicked(processMouseClicked);
+		// m.onDoubleClicked(processMouseDoubleClicked);
+
+		// // keyboard events
+		// var k = App.input.keyboard;
+		// k.onDown(k -> if (k == Tab) adjustTabFocus());
+		// k.onDown(key -> focusedElement?.keyboardDown(key));
+		// k.onUp(key -> focusedElement?.keyboardUp(key));
+		// k.onHold(key -> focusedElement?.keyboardHold(key));
+		// k.onPressed(char -> focusedElement?.keyboardPressed(char));
+
 	}
 
 	public function setRoot(element:Element) {
@@ -76,9 +75,8 @@ class WindowScene {
 	}
 
 	@:access(se.Window)
-	function render() {
-		var target = window.backbuffer;
-		var ctx = target.context2D;
+	function render(target:Texture) {
+		final ctx = target.context2D;
 		ctx.begin();
 		ctx.clear(color);
 		root.render(target);
@@ -215,136 +213,136 @@ class WindowScene {
 	}
 	#end
 
-	function adjustTabFocus() {
-		final i = root.children.indexOf(focusedElement);
-		for (j in 1...root.children.length) {
-			var e = root.children[(i + j) % root.children.length];
-			if (e.enabled && (e.focusPolicy & TabFocus != 0)) {
-				focusedElement = e;
-				return;
-			}
-		}
-	}
+	// function adjustTabFocus() {
+	// 	final i = root.children.indexOf(focusedElement);
+	// 	for (j in 1...root.children.length) {
+	// 		var e = root.children[(i + j) % root.children.length];
+	// 		if (e.enabled && (e.focusPolicy & TabFocus != 0)) {
+	// 			focusedElement = e;
+	// 			return;
+	// 		}
+	// 	}
+	// }
 
-	function adjustWheelFocus(d:Int) {
-		final i = root.children.length + root.children.indexOf(focusedElement);
-		for (j in 1...root.children.length) {
-			var e = root.children[(i + (d > 0 ? j : -j)) % root.children.length];
-			if (e.enabled && (e.focusPolicy & WheelFocus != 0)) {
-				focusedElement = e;
-				return;
-			}
-		}
-	}
+	// function adjustWheelFocus(d:Int) {
+	// 	final i = root.children.length + root.children.indexOf(focusedElement);
+	// 	for (j in 1...root.children.length) {
+	// 		var e = root.children[(i + (d > 0 ? j : -j)) % root.children.length];
+	// 		if (e.enabled && (e.focusPolicy & WheelFocus != 0)) {
+	// 			focusedElement = e;
+	// 			return;
+	// 		}
+	// 	}
+	// }
 
-	function processMouseMoved(x:Int, y:Int, dx:Int, dy:Int):Void {
-		var containsMouse = [];
-		processMouseEvent({
-			accepted: false,
-			x: x,
-			y: y,
-			dx: dx,
-			dy: dy
-		}, (c, m) -> {
-			containsMouse.push(c);
-			if (!entered.contains(c)) {
-				entered.push(c);
-				c.mouseEntered(x, y);
-			}
-			c.mouseMoved(m);
-		});
-		for (c in entered)
-			if (!containsMouse.contains(c)) {
-				entered.remove(c);
-				c.mouseExited(x, y);
-			}
-	}
+	// function processMouseMoved(x:Int, y:Int, dx:Int, dy:Int):Void {
+	// 	var containsMouse = [];
+	// 	processMouseEvent({
+	// 		accepted: false,
+	// 		x: x,
+	// 		y: y,
+	// 		dx: dx,
+	// 		dy: dy
+	// 	}, (c, m) -> {
+	// 		containsMouse.push(c);
+	// 		if (!entered.contains(c)) {
+	// 			entered.push(c);
+	// 			c.mouseEntered(x, y);
+	// 		}
+	// 		c.mouseMoved(m);
+	// 	});
+	// 	for (c in entered)
+	// 		if (!containsMouse.contains(c)) {
+	// 			entered.remove(c);
+	// 			c.mouseExited(x, y);
+	// 		}
+	// }
 
-	function processMouseScrolled(d:Int, x:Int, y:Int):Void {
-		processMouseEvent({
-			accepted: false,
-			delta: d,
-			x: x,
-			y: y
-		}, (c, m) -> c.mouseScrolled(m));
-	}
+	// function processMouseScrolled(d:Int, x:Int, y:Int):Void {
+	// 	processMouseEvent({
+	// 		accepted: false,
+	// 		delta: d,
+	// 		x: x,
+	// 		y: y
+	// 	}, (c, m) -> c.mouseScrolled(m));
+	// }
 
-	function processMouseDown(b:MouseButton, x:Int, y:Int):Void {
-		processMouseEvent({
-			accepted: false,
-			button: b,
-			x: x,
-			y: y
-		}, (c, m) -> {
-			pending.push(c);
-			c.mousePressed(m);
-		});
-	}
+	// function processMouseDown(b:MouseButton, x:Int, y:Int):Void {
+	// 	processMouseEvent({
+	// 		accepted: false,
+	// 		button: b,
+	// 		x: x,
+	// 		y: y
+	// 	}, (c, m) -> {
+	// 		pending.push(c);
+	// 		c.mousePressed(m);
+	// 	});
+	// }
 
-	function processMouseUp(b:MouseButton, x:Int, y:Int):Void {
-		final m = {
-			accepted: false,
-			button: b,
-			x: x,
-			y: y
-		}
-		for (el in pending)
-			el.mouseReleased(m);
-	}
+	// function processMouseUp(b:MouseButton, x:Int, y:Int):Void {
+	// 	final m = {
+	// 		accepted: false,
+	// 		button: b,
+	// 		x: x,
+	// 		y: y
+	// 	}
+	// 	for (el in pending)
+	// 		el.mouseReleased(m);
+	// }
 
-	function processMouseHold(b:MouseButton, x:Int, y:Int):Void {
-		processMouseEvent({
-			accepted: false,
-			button: b,
-			x: x,
-			y: y
-		}, (c, m) -> c.mouseHold(m));
-	}
+	// function processMouseHold(b:MouseButton, x:Int, y:Int):Void {
+	// 	processMouseEvent({
+	// 		accepted: false,
+	// 		button: b,
+	// 		x: x,
+	// 		y: y
+	// 	}, (c, m) -> c.mouseHold(m));
+	// }
 
-	function processMouseClicked(b:MouseButton, x:Int, y:Int):Void {
-		var focusedSet = false;
-		processMouseEvent({
-			accepted: false,
-			button: b,
-			x: x,
-			y: y
-		}, (c, m) -> {
-			c.mouseClicked(m);
-			if (!focusedSet && (c.focusPolicy & ClickFocus != 0)) {
-				focusedSet = true;
-				focusedElement = c;
-			}
-		});
-	}
+	// function processMouseClicked(b:MouseButton, x:Int, y:Int):Void {
+	// 	var focusedSet = false;
+	// 	processMouseEvent({
+	// 		accepted: false,
+	// 		button: b,
+	// 		x: x,
+	// 		y: y
+	// 	}, (c, m) -> {
+	// 		c.mouseClicked(m);
+	// 		if (!focusedSet && (c.focusPolicy & ClickFocus != 0)) {
+	// 			focusedSet = true;
+	// 			focusedElement = c;
+	// 		}
+	// 	});
+	// }
 
-	function processMouseDoubleClicked(b:MouseButton, x:Int, y:Int):Void {
-		processMouseEvent({
-			accepted: false,
-			button: b,
-			x: x,
-			y: y
-		}, (c, m) -> c.mouseDoubleClicked(m));
-	}
+	// function processMouseDoubleClicked(b:MouseButton, x:Int, y:Int):Void {
+	// 	processMouseEvent({
+	// 		accepted: false,
+	// 		button: b,
+	// 		x: x,
+	// 		y: y
+	// 	}, (c, m) -> c.mouseDoubleClicked(m));
+	// }
 
-	function processMouseEvent<T:MouseEvent>(m:T, f:(Element, T) -> Void) {
-		function process(els:Array<Element>) {
-			var i = 0;
-			while (++i <= els.length) {
-				var el = els[els.length - i];
-				if (el.enabled && el.visible) {
-					process(el.children);
-					if (m.accepted)
-						return;
-					if (el.contains(m.x, m.y)) {
-						f(el, m);
-						if (m.accepted)
-							return;
-					}
-				}
-			}
-		}
-		process(root.children);
-	}
+	// function processMouseEvent<T:MouseEvent>(m:T, f:(Element, T) -> Void) {
+	// 	function process(els:Array<Element>) {
+	// 		var i = 0;
+	// 		while (++i <= els.length) {
+	// 			var el = els[els.length - i];
+	// 			if (el.enabled && el.visible) {
+	// 				process(el.children);
+	// 				if (m.accepted)
+	// 					return;
+	// 				if (el.contains(m.x, m.y)) {
+	// 					f(el, m);
+	// 					if (m.accepted)
+	// 						return;
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// 	process(root.children);
+	// }
 
 	function set_root(element:Element) {
 		root = element;
@@ -354,13 +352,13 @@ class WindowScene {
 		return root;
 	}
 
-	function set_focusedElement(value:Element):Element {
-		if (focusedElement != value) {
-			if (focusedElement != null)
-				focusedElement.focused = false;
-			value.focused = true;
-			focusedElement = value;
-		}
-		return focusedElement;
-	}
+	// function set_focusedElement(value:Element):Element {
+	// 	if (focusedElement != value) {
+	// 		if (focusedElement != null)
+	// 			focusedElement.focused = false;
+	// 		value.focused = true;
+	// 		focusedElement = value;
+	// 	}
+	// 	return focusedElement;
+	// }
 }

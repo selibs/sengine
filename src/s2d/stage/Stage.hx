@@ -5,10 +5,9 @@ import se.math.Vec2;
 import se.math.Mat3;
 import se.math.SMath;
 import se.graphics.RenderBuffer;
-import s2d.DrawableElement;
+import s2d.elements.DrawableElement;
 import s2d.stage.Camera;
 import s2d.stage.StageLayer;
-import s2d.graphics.Drawers;
 
 @:access(s2d.stage.objects.Object)
 class Stage extends DrawableElement {
@@ -24,7 +23,7 @@ class Stage extends DrawableElement {
 	public var camera:Camera = new Camera();
 
 	#if (S2D_LIGHTING_ENVIRONMENT == 1)
-	@:isVar public var environmentMap(default, set):se.Assets.ImageAsset;
+	public var environmentMap(default, set):se.Assets.ImageAsset;
 
 	function set_environmentMap(value) {
 		if (value != null) {
@@ -92,6 +91,6 @@ class Stage extends DrawableElement {
 	}
 
 	function draw(target:Texture) {
-		Drawers.stageRenderer.render(target, this);
+		StageRenderer.pipeline.render(target, this);
 	}
 }

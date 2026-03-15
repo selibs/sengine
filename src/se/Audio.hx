@@ -8,10 +8,7 @@ import se.math.Vec3;
 import se.resource.Sound;
 import se.assets.SoundAsset;
 
-#if !macro
-@:build(s.shortcut.Macro.build())
-#end
-class Audio {
+class Audio implements s.shortcut.Shortcut {
 	var asset:SoundAsset = new SoundAsset();
 	var panner:AudioPanner = new AudioPanner();
 
@@ -21,7 +18,7 @@ class Audio {
 	@:readonly @:alias public var duration:Float = sound.length;
 	@:readonly @:alias public var isLoaded:Bool = asset.isLoaded;
 
-	@:isVar public var uncompressed(default, set):Bool;
+	public var uncompressed(default, set):Bool;
 
 	@:alias public var volume:Float = panner.volume;
 	@:alias public var balance:Float = panner.balance;
@@ -75,17 +72,17 @@ class Audio {
 
 @:allow(se.Audio.AudioPanner)
 private class AudioPanner {
-	@:isVar var panner(default, set):StereoPanner;
+	var panner(default, set):StereoPanner;
 
-	@:isVar public var handle(default, set):BaseChannelHandle;
+	public var handle(default, set):BaseChannelHandle;
 
-	@:isVar public var volume(default, set):Float = 1.0;
-	@:isVar public var balance(default, set):Float = 0.0;
-	@:isVar public var location(default, set):Vec3 = new Vec3(0, 0, 0);
-	@:isVar public var maxDistance(default, set):Float = 10.0;
-	@:isVar public var dopplerStrength(default, set):Float = 1.0;
-	@:isVar public var attenuationMode(default, set):AttenuationMode = AttenuationMode.Inverse;
-	@:isVar public var attenuationFactor(default, set):Float = 1.0;
+	public var volume(default, set):Float = 1.0;
+	public var balance(default, set):Float = 0.0;
+	public var location(default, set):Vec3 = new Vec3(0, 0, 0);
+	public var maxDistance(default, set):Float = 10.0;
+	public var dopplerStrength(default, set):Float = 1.0;
+	public var attenuationMode(default, set):AttenuationMode = AttenuationMode.Inverse;
+	public var attenuationFactor(default, set):Float = 1.0;
 
 	public function new() {}
 

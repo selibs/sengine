@@ -5,8 +5,8 @@ import se.math.Mat3;
 import se.math.SMath;
 
 abstract class Object2D<This:Object2D<This>> extends se.Object<This> {
-	@:signal public var visible:Bool = true;
-	@:signal @:isVar public var z(default, set):Float = 0;
+	@:attr public var visible:Bool = true;
+	@:attr public var z(default, set):Float = 0;
 
 	var globalTransform:Mat3 = Mat3.identity();
 

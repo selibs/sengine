@@ -1,4 +1,4 @@
-package s2d;
+package s2d.elements;
 
 import se.Color;
 import se.Texture;

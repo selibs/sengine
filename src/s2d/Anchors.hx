@@ -186,16 +186,12 @@ class ElementAnchors {
 	}
 }
 
-#if !macro
-@:build(s.shortcut.Macro.build())
-@:autoBuild(s.shortcut.Macro.build())
-#end
-abstract class Anchor<A:Anchor<A>> {
+abstract class Anchor<A:Anchor<A>> implements s.shortcut.Shortcut {
 	var bindedLines:Array<A> = [];
 	var updating:Bool = false;
 	var _position:Float = 0.0;
 
-	@:isVar public var bindedTo(default, set):A = null;
+	public var bindedTo(default, set):A = null;
 	public var isBinded(get, never):Bool;
 
 	public var position(get, set):Float;

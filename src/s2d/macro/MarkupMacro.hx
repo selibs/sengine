@@ -30,7 +30,8 @@ class MarkupMacro {
 
 	public static var shortcuts(default, null):Map<String, String> = [
 		"element" => "s2d.Element",
-		"drawable" => "s2d.DrawableElement",
+		"drawable" => "s2d.elements.DrawableElement",
+		"interactive" => "s2d.elements.Interactive",
 		// controls
 		"button" => "s2d.controls.Button",
 		"input" => "s2d.controls.TextInput",
@@ -42,7 +43,7 @@ class MarkupMacro {
 		"edit" => "s2d.elements.TextEdit",
 		// shapes
 		"rectangle" => "s2d.elements.shapes.Rectangle",
-		"rectangle.rounded" => "s2d.elements.shapes.RoundedRectangle",
+		"rectangle.rounded" => "s2d.elements.shapes.RectangleRounded",
 		// layouts
 		"box" => "s2d.layouts.BoxLayout",
 		"vbox" => "s2d.layouts.VBoxLayout",
@@ -54,6 +55,8 @@ class MarkupMacro {
 		// stage
 		"stage" => "s2d.Stage"
 	];
+
+	public static var templates(default, null):Array<String> = ["s2d.elements.Interactive"];
 
 	public static function init() {
 		Compiler.registerCustomMetadata({
@@ -102,10 +105,10 @@ class MarkupMacro {
 		return Context.getType(getTypeName(name)).toComplexType();
 	}
 
-	static function getTypePath(name:String) {
-		switch getType(name) {
+	static function getTypePath(name:String):TypePath {
+		return switch getType(name) {
 			case TPath(tp):
-				return tp;
+				tp;
 			default:
 				throw "Invalid element class: " + name;
 		}
@@ -123,13 +126,37 @@ class MarkupMacro {
 			function addEl(meta:MetadataEntry, expr:Expr, pos:Position, ?name:String, ?ref:Expr) {
 				var elName = name ?? "__el" + i++;
 				var elRef = ref ?? macro @:pos(pos) $i{elName};
-				var elCls = try {
-					getTypePath(meta.name);
-				} catch (e)
-					Context.error(Std.string(e), pos);
+
+				var elTypeName = getTypeName(meta.name);
+				var elCls:TypePath = {
+					pack: null,
+					name: null,
+					sub: null,
+					params: []
+				}
+				elCls.pack = elTypeName.split(".");
+				elCls.name = elCls.pack.pop();
+				var c = elCls.pack[elCls.pack.length - 1].charAt(0);
+				if (c == c.toUpperCase()) {
+					elCls.sub = elCls.name;
+					elCls.name = elCls.pack.pop();
+				}
+
+				var args = meta.params ?? [];
+				if (templates.contains(elTypeName)) {
+					for (a in args) {
+						var name = extractName(a);
+						if (name != null)
+							try {
+								elCls.params.push(TPType(getType(name)));
+							} catch (e)
+								Context.error(Std.string(e), a.pos);
+					}
+					args = [];
+				}
 
 				var elExprs = [];
-				var ctor = macro new $elCls($a{meta.params ?? []});
+				var ctor = macro @:pos(pos) new $elCls($a{args});
 				if (ref == null)
 					elExprs.push(macro @:pos(pos) var $elName = $ctor);
 				else
@@ -147,7 +174,8 @@ class MarkupMacro {
 			if (def != null)
 				expr.expr = switch def {
 					case EConst(CIdent(s)) if (s.charAt(0) == "$"):
-						return transform(macro @:pos(expr.pos) $p{[stack[stack.length - 1].toString(), s.substr(1)]});
+						expr.expr = EField(stack[stack.length - 1], s.substr(1));
+						return transform(expr);
 					case EMeta(m, e) if (m.name.charAt(0) != ":"):
 						switch m.name {
 							case "use":
@@ -203,14 +231,12 @@ class MarkupMacro {
 			type: macro :s2d.Element
 		});
 
-		if (expr != null) {
-			var f = {
+		if (expr != null)
+			field.kind = FFun({
 				args: args,
 				expr: block(transform(expr)),
 				ret: macro :Void
-			}
-			field.kind = FFun(f);
-		}
+			});
 	}
 
 	static function buildStylesheet(field:Field) {

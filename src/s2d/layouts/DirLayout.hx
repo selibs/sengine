@@ -10,7 +10,7 @@ abstract class DirLayout<S:ElementSlots, L:LayoutCell<S>> extends Element {
 	var updating:Bool = false;
 	var cells:Array<CellsSlots<S, L>> = [];
 
-	@:isVar public var spacing(default, set):Float = 10.0;
+	public var spacing(default, set):Float = 10.0;
 	@:inject(syncLayout) public var direction:Direction;
 
 	public function new(?direction:Direction) {

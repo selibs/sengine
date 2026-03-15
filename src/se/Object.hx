@@ -1,13 +1,12 @@
 package se;
 
-#if !macro
-@:build(s.shortcut.Macro.build())
-@:autoBuild(s.shortcut.Macro.build())
-#end
-abstract class Object<T:Object<T>> {
+import haxe.Json;
+
+abstract class Object<T:Object<T>> implements s.shortcut.Shortcut {
 	var _parent:T;
 
-	@:signal public var tag:String = "object";
+	@:attr public var tag:String;
+
 	public var parent(get, set):T;
 	public var children(default, null):ObjectList<T>;
 

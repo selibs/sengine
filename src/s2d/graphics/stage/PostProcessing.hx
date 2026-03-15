@@ -16,15 +16,15 @@ import s2d.graphics.stage.postprocessing.Compositor;
 @:dox(hide)
 class PostProcessing {
 	#if S2D_PP_BLOOM
-	@:isVar public static var bloom(default, never) = new Bloom();
+	public static var bloom(default, never) = new Bloom();
 	#end
 	#if S2D_PP_FISHEYE
-	@:isVar public static var fisheye(default, never) = new Fisheye();
+	public static var fisheye(default, never) = new Fisheye();
 	#end
 	#if S2D_PP_FILTER
-	@:isVar public static var filter(default, never) = new Filter();
+	public static var filter(default, never) = new Filter();
 	#end
 	#if S2D_PP_COMPOSITOR
-	@:isVar public static var compositor(default, never) = new Compositor();
+	public static var compositor(default, never) = new Compositor();
 	#end
 }

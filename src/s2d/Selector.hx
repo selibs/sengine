@@ -55,15 +55,15 @@ abstract Selector(SelectorData) from SelectorData {
 					cb(f(element));
 				case Tag(tag):
 					var slot = _ -> cb(element.tag == tag);
-					element.onTagChanged(slot);
-					slots.push(() -> element.offTagChanged(slot));
+					element.onTagDirty(slot);
+					slots.push(() -> element.offTagDirty(slot));
 					slot(element.tag);
 				case Type(type):
 					cb(Std.isOfType(element, type));
 				case Object(object):
 					cb(object == element);
 				case Properties(fields):
-					for (f in fields.keyValueIterator()) {
+					for (f in fields.keyValueIterator())
 						switch f.value {
 							case Exists:
 								cb(Reflect.hasField(element, f.key));
@@ -78,7 +78,6 @@ abstract Selector(SelectorData) from SelectorData {
 								}
 								slot(Reflect.getProperty(element, f.key));
 						}
-					}
 				case Not(rule):
 					match(rule, b -> cb(!b));
 				case Or(rule1, rule2), And(rule1, rule2):

@@ -1,27 +1,21 @@
 package s2d.graphics;
 
-import kha.Shaders;
-import kha.graphics4.VertexStructure;
 import kha.graphics4.ConstantLocation;
 import se.Texture;
-import s2d.elements.shapes.RoundedRectangle;
+import s2d.elements.shapes.RectangleRounded;
 
 @:access(s2d.Element)
 @:dox(hide)
-class RectDrawer extends ElementDrawer<RoundedRectangle> {
+class RectDrawer extends Drawer2D<RectangleRounded> {
 	var rectCL:ConstantLocation;
 	var rectDataCL:ConstantLocation;
 	var bordColCL:ConstantLocation;
 
-	public function new() {
-		var structure = new VertexStructure();
-		structure.add("vertPos", Float32_3X);
-		structure.add("vertColor", UInt8_4X_Normalized);
-
+	function new() {
 		super({
-			inputLayout: [structure],
-			vertexShader: Reflect.field(Shaders, "drawer_colored_vert"),
-			fragmentShader: Reflect.field(Shaders, "rectangle_frag"),
+			inputLayout: [["vertCoord" => kha.graphics4.VertexData.Float32_2X]],
+			vertexShader: "drawer_colored",
+			fragmentShader: "rectangle_rounded",
 			alphaBlendSource: SourceAlpha,
 			alphaBlendDestination: InverseSourceAlpha,
 			blendSource: SourceAlpha,
@@ -31,20 +25,18 @@ class RectDrawer extends ElementDrawer<RoundedRectangle> {
 
 	override function setup() {
 		super.setup();
+
 		rectCL = pipeline.getConstantLocation("rect");
 		rectDataCL = pipeline.getConstantLocation("rectData");
 		bordColCL = pipeline.getConstantLocation("bordCol");
 	}
 
-	function draw(target:Texture, rectangle:RoundedRectangle) {
-		final ctx = target.context2D, ctx3d = target.context3D;
-		final rect = rectangle._rect;
-		final bordCol = rectangle.border.color;
-
-		ctx3d.setFloat4(rectCL, rectangle.absX, rectangle.absY, rectangle.width, rectangle.height);
-		ctx3d.setFloat3(rectDataCL, rectangle._radius, rectangle.softness, rectangle.border.width);
-		ctx3d.setFloat4(bordColCL, bordCol.r, bordCol.g, bordCol.b, bordCol.a);
-
-		ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+	function draw(target:Texture, rectangle:RectangleRounded) {
+		final ctx = target.context3D;
+		final radius = Math.min(rectangle.radius, Math.min(rectangle.width, rectangle.height) * 0.5);
+		ctx.setFloat4(rectCL, rectangle.absX, rectangle.absY, rectangle.width, rectangle.height);
+		ctx.setFloat3(rectDataCL, radius, rectangle.softness, rectangle.border.width);
+		ctx.setFloat4(bordColCL, rectangle.border.color);
+		ctx.draw();
 	}
 }

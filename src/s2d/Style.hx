@@ -22,7 +22,7 @@ abstract Style(StyleData) from StyleData {
 				var o = e;
 				for (p in props.keys()) {
 					var path = p.split(".");
-					for (f in path.slice(0, path.length - 2))
+					for (f in path.slice(0, path.length - 1))
 						o = Reflect.getProperty(o, f);
 					Reflect.setProperty(o, path[path.length - 1], props[p]);
 				}

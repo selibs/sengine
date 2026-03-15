@@ -1,17 +1,14 @@
 #version 450
 
-uniform sampler2D tex;
 uniform mat3 model;
-uniform mat4 projectionMatrix;
+uniform vec2 viewport;
 
-layout(location = 0) in vec3 vertexPosition;
-layout(location = 1) in vec4 vertexColor;
-layout(location = 0) out vec4 color;
-layout(location = 1) out vec2 fragCoord;
+layout(location = 0) in vec2 vertCoord;
+layout(location = 0) out vec2 fragCoord;
 
 void main() {
-    vec2 size = textureSize(tex, 0);
-    gl_Position = projectionMatrix * vec4(vertexPosition, 1.0);
-    fragCoord = (inverse(model) * vec3(vertexPosition.xy, 1.0)).xy;
-    color = vertexColor;
+    vec3 transformed = model * vec3(vertCoord, 1.0);
+    gl_Position = vec4(transformed.xy, 0.0, 1.0);
+    vec2 uv = transformed.xy * 0.5 + 0.5;
+    fragCoord = vec2(uv.x * viewport.x, (1.0 - uv.y) * viewport.y);
 }

@@ -28,6 +28,12 @@ extern abstract Context2D(Graphics) from Graphics {
 		this.end();
 	}
 
+	public inline function drawScissored(x:Int, y:Int, width:Int, height:Int, commands:Context2D->Void) {
+		this.scissor(x, y, width, height);
+		commands(this);
+		this.disableScissor();
+	}
+
 	public inline function pushTransformation(value:Mat3):Void {
 		this.pushTransformation(value * transform);
 	}

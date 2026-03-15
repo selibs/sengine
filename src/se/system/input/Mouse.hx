@@ -24,10 +24,19 @@ typedef MouseMoveEvent = {
 	var dy:Int;
 }
 
-#if !macro
-@:build(s.shortcut.Macro.build())
-#end
-class Mouse {
+enum abstract MouseButton(Int) from Int to Int {
+	var Left;
+	var Right;
+	var Middle;
+	var Back;
+	var Forward;
+
+	@:to
+	public function toString():String
+		return 'MouseButton.${[Left => "Left", Right => "Right", Middle => "Middle", Back => "Back", Forward => "Forward"].get(this)}';
+}
+
+class Mouse implements s.shortcut.Shortcut {
 	var mouse:kha.input.Mouse;
 
 	var buttonsDown:Array<MouseButton> = [];
@@ -61,9 +70,25 @@ class Mouse {
 
 	@:signal public function doubleClicked(button:MouseButton, x:Int, y:Int);
 
+	@:signal(button) public function buttonPressed(button:MouseButton, x:Int, y:Int);
+
+	@:signal(button) public function buttonReleased(button:MouseButton, x:Int, y:Int);
+
+	@:signal(button) public function buttonHold(button:MouseButton, x:Int, y:Int);
+
+	@:signal(button) public function buttonClicked(button:MouseButton, x:Int, y:Int);
+
+	@:signal(button) public function buttonDoubleClicked(button:MouseButton, x:Int, y:Int);
+
 	public function new(id:Int = 0) {
 		mouse = kha.input.Mouse.get(id);
 		mouse.notify((b, x, y) -> pressed(b, x, y), (b, x, y) -> released(b, x, y), (x, y, dx, dy) -> moved(x, y, dx, dy), d -> scrolled(d), () -> exited());
+
+		onPressed((b, x, y) -> buttonPressed(b, x, y));
+		onReleased((b, x, y) -> buttonReleased(b, x, y));
+		onHold((b, x, y) -> buttonHold(b, x, y));
+		onClicked((b, x, y) -> buttonClicked(b, x, y));
+		onDoubleClicked((b, x, y) -> buttonDoubleClicked(b, x, y));
 	}
 
 	@:slot(pressed)
@@ -129,16 +154,4 @@ class Mouse {
 		mouse.setSystemCursor(value);
 		return cursor = value;
 	}
-}
-
-enum abstract MouseButton(Int) from Int to Int {
-	var Left;
-	var Right;
-	var Middle;
-	var Back;
-	var Forward;
-
-	@:to
-	public function toString():String
-		return 'MouseButton.${[Left => "Left", Right => "Right", Middle => "Middle", Back => "Back", Forward => "Forward"].get(this)}';
 }

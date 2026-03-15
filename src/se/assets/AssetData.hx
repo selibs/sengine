@@ -2,12 +2,9 @@ package se.assets;
 
 import se.resource.Resource;
 
-#if !macro
-@:build(s.shortcut.Macro.build())
-#end
-abstract class AssetData<T:kha.Resource> {
-	@:isVar public var asset(default, null):T = null;
-	@:isVar public var source(default, set):String = "";
+abstract class AssetData<T:kha.Resource> implements s.shortcut.Shortcut {
+	public var asset(default, null):T = null;
+	public var source(default, set):String = "";
 
 	public var isLoaded(get, never):Bool;
 
@@ -25,7 +22,7 @@ abstract class AssetData<T:kha.Resource> {
 		if (isLoaded)
 			f(asset);
 		else if (waitForLoaded)
-            // TODO: once signals
+			// TODO: once signals
 			assetLoaded.connect(f);
 	}
 

@@ -1,22 +1,15 @@
 package se;
 
-import kha.System;
-
 @:allow(se.App)
-class Time {
-	public static var realTime:Float = 0.0;
-	public static var time:Float = 0.0;
+class Time implements s.shortcut.Shortcut {
 	public static var delta:Float = 0.0;
 	public static var scale:Float = 1.0;
 
-	static var timeListeners:Array<{
-		f:Void->Void,
-		time:Float
-	}> = [];
-	static var realTimeListeners:Array<{
-		f:Void->Void,
-		time:Float
-	}> = [];
+	@:signal public static var realTime:Float = 0.0;
+	@:signal public static var time:Float = 0.0;
+
+	static var timeListeners:Array<{f:Void->Void, time:Float}> = [];
+	static var realTimeListeners:Array<{f:Void->Void, time:Float}> = [];
 
 	/**
 		Adds a time listener
@@ -48,22 +41,20 @@ class Time {
 		return Time.realTime - start;
 	}
 
-	static function update() {
-		final rt = System.time;
+	static function update(rt:Float) {
 		delta = (rt - realTime) * scale;
 		realTime = rt;
 		time += delta;
-		for (l in timeListeners) {
+		for (l in timeListeners)
 			if (time >= l.time) {
 				l.f();
 				timeListeners.remove(l);
 			}
-		}
-		for (l in realTimeListeners) {
+
+		for (l in realTimeListeners)
 			if (time >= l.time) {
 				l.f();
 				realTimeListeners.remove(l);
 			}
-		}
 	}
 }

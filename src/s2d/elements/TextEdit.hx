@@ -31,7 +31,7 @@ class TextEdit extends Text {
 	public var cursorVisible:Bool = true;
 	public var cursorColor:Color = Black;
 	public var cursorWidth:Float = 2.0;
-	@:isVar public var cursorPosition(default, set):Int = 0;
+	public var cursorPosition(default, set):Int = 0;
 
 	public var placeholder:String;
 	public var placeholderColor:Color = 0x44000000;
@@ -120,7 +120,7 @@ class TextEdit extends Text {
 		selectionEnd = i > _selectionStart ? i : _selectionEnd;
 	}
 
-	@:slot(focusedChanged)
+	@:slot(focusedDirty)
 	function onFocused(_:Bool) {
 		if (focused) {
 			App.onUndo(undo);
