@@ -34,7 +34,7 @@ class RectDrawer extends Drawer2D<RectangleRounded> {
 	function draw(target:Texture, rectangle:RectangleRounded) {
 		final ctx = target.context3D;
 		final radius = Math.min(rectangle.radius, Math.min(rectangle.width, rectangle.height) * 0.5);
-		ctx.setFloat4(rectCL, rectangle.absX, rectangle.absY, rectangle.width, rectangle.height);
+		ctx.setFloat4(rectCL, rectangle.left.position, rectangle.top.position, rectangle.width, rectangle.height);
 		ctx.setFloat3(rectDataCL, radius, rectangle.softness, rectangle.border.width);
 		ctx.setFloat4(bordColCL, rectangle.border.color);
 		ctx.draw();

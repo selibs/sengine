@@ -1,7 +1,6 @@
 package s2d;
 
 abstract class Object2D<This:Object2D<This>> extends se.Object<This> {
-	@:attr public var visible:Bool = true;
 	@:attr public var z(default, set):Float = 0;
 
 	public var transform:Transform2D = Transform2D.identity();

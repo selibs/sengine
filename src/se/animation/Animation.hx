@@ -7,7 +7,7 @@ abstract class Animation<T> implements s.shortcut.Shortcut {
 	var from:T;
 	var to:T;
 
-	var startTime:Float;
+	var time:Float;
 	var deltaTime:Float;
 	var duration:Float;
 
@@ -26,23 +26,26 @@ abstract class Animation<T> implements s.shortcut.Shortcut {
 	public var active(get, set):Bool;
 	public var running(get, set):Bool;
 
-	public function new(from:T, to:T, duration:Float, tick:T->Void) {
-		this.from = from;
-		this.to = to;
+	public function new(duration:Float, tick:T->Void) {
 		this.duration = duration;
 		this.tick = tick;
 	}
 
-	public function start() {
+	public function start(from:T, to:T) {
 		if (active)
 			return this;
-		startTime = Time.time;
+
+		this.from = from;
+		this.to = to;
+		this.time = Time.time;
 		Time.onTimeChanged(adjust);
+
 		_active = true;
 		_running = true;
 		started();
 		if (running)
 			update(0.0);
+        
 		return this;
 	}
 
@@ -59,7 +62,7 @@ abstract class Animation<T> implements s.shortcut.Shortcut {
 	public function pause() {
 		if (!active || !running)
 			return this;
-		deltaTime = Time.time - startTime;
+		deltaTime = Time.time - this.time;
 		Time.offTimeChanged(adjust);
 		_running = false;
 		paused();
@@ -69,7 +72,7 @@ abstract class Animation<T> implements s.shortcut.Shortcut {
 	public function resume() {
 		if (!active || running)
 			return this;
-		startTime = Time.time - deltaTime;
+		this.time = Time.time - deltaTime;
 		Time.onTimeChanged(adjust);
 		_running = true;
 		resumed();
@@ -77,7 +80,7 @@ abstract class Animation<T> implements s.shortcut.Shortcut {
 	}
 
 	public function restart() {
-		startTime = Time.time;
+		this.time = Time.time;
 		if (!running)
 			Time.onTimeChanged(adjust);
 		_active = true;
@@ -136,7 +139,7 @@ abstract class Animation<T> implements s.shortcut.Shortcut {
 	}
 
 	function adjust(time:Float) {
-		final t = (time - startTime) / duration;
+		final t = (time - this.time) / duration;
 		t < 1.0 ? update(t) : complete();
 	}
 
@@ -151,7 +154,7 @@ abstract class Animation<T> implements s.shortcut.Shortcut {
 
 	function set_active(value:Bool) {
 		if (!active && value)
-			start();
+			start(from, to);
 		else if (active && !value)
 			stop();
 		return value;

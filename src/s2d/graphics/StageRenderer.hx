@@ -68,6 +68,6 @@ class StageRenderer {
 		// render to target
 		ctx.begin();
 		ctx.style.color = White;
-		ctx.drawScaledImage(stage.renderBuffer.tgt, stage.absX, stage.absY, stage.width, stage.height);
+		ctx.drawScaledImage(stage.renderBuffer.tgt, stage.left.position, stage.top.position, stage.width, stage.height);
 	}
 }

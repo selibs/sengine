@@ -35,22 +35,22 @@ class App implements s.shortcut.Shortcut {
 	}
 
 	// aliases
-	extern public static inline function onDropFiles(dropFiles:String->Void)
+	public static inline function onDropFiles(dropFiles:String->Void)
 		System.notifyOnDropFiles(dropFiles);
 
-	extern public static inline function offFropFiles(dropFiles:String->Void)
+	public static inline function offFropFiles(dropFiles:String->Void)
 		System.removeDropListener(dropFiles);
 
-	extern public static inline function onCut(cut:Void->String)
-		@:privateAccess System.notifyOnCutCopyPaste(cut, System.copyListener, System.pasteListener);
+	public static inline function onCut(cut:Void->String)
+		@:privateAccess onCutCopyPaste(cut, System.copyListener, System.pasteListener);
 
-	extern public static inline function onCopy(copy:Void->String)
-		@:privateAccess System.notifyOnCutCopyPaste(System.cutListener, copy, System.pasteListener);
+	public static inline function onCopy(copy:Void->String)
+		@:privateAccess onCutCopyPaste(System.cutListener, copy, System.pasteListener);
 
-	extern public static inline function onPaste(paste:String->Void)
-		@:privateAccess System.notifyOnCutCopyPaste(System.cutListener, System.copyListener, paste);
+	public static inline function onPaste(paste:String->Void)
+		@:privateAccess onCutCopyPaste(System.cutListener, System.copyListener, paste);
 
-	extern public static inline function onCutCopyPaste(cut:Void->String, copy:Void->String, paste:String->Void)
+	public static inline function onCutCopyPaste(cut:Void->String, copy:Void->String, paste:String->Void)
 		System.notifyOnCutCopyPaste(cut, copy, paste);
 
 	static function init(window, setup, start, loadProgress, loadFailed) {
@@ -79,10 +79,11 @@ class App implements s.shortcut.Shortcut {
 		for (i in 0...frames.length) {
 			final g2 = frames[i].g2;
 			final w = windows[i];
-			w.render(w.bA);
-			w.swap();
+
+			w.render(w.backBuffer);
+
 			g2.begin();
-			g2.drawImage(w.bB, 0, 0);
+			g2.drawImage(w.backBuffer, 0, 0);
 			g2.end();
 		}
 	}

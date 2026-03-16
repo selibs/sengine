@@ -33,9 +33,10 @@ class ImageWidget extends DrawableElement {
 		if (image != null) {
 			switch fillMode {
 				case Pad:
-					target.context2D.drawSubImage(image, absX, absY, sourceClip.x, sourceClip.y, sourceClip.width, sourceClip.height);
+					target.context2D.drawSubImage(image, left.position, top.position, sourceClip.x, sourceClip.y, sourceClip.width, sourceClip.height);
 				case Stretch:
-					target.context2D.drawScaledSubImage(image, sourceClip.x, sourceClip.y, sourceClip.width, sourceClip.height, absX, absY, width, height);
+					target.context2D.drawScaledSubImage(image, sourceClip.x, sourceClip.y, sourceClip.width, sourceClip.height, left.position, top.position,
+						width, height);
 				case Cover:
 					var scale = Math.max(width / sourceClip.width, height / sourceClip.height);
 					var scaledWidth = sourceClip.width * scale;
@@ -43,15 +44,15 @@ class ImageWidget extends DrawableElement {
 					var offsetX = (scaledWidth - width) / 2;
 					var offsetY = (scaledHeight - height) / 2;
 					target.context2D.drawScaledSubImage(image, sourceClip.x + offsetX / scale, sourceClip.y + offsetY / scale, width / scale, height / scale,
-						absX, absY, width, height);
+						left.position, top.position, width, height);
 				case Contain:
 					var scale = Math.min(width / sourceClip.width, height / sourceClip.height);
 					var scaledWidth = sourceClip.width * scale;
 					var scaledHeight = sourceClip.height * scale;
 					var offsetX = (width - scaledWidth) / 2;
 					var offsetY = (height - scaledHeight) / 2;
-					target.context2D.drawScaledSubImage(image, sourceClip.x, sourceClip.y, sourceClip.width, sourceClip.height, absX + offsetX,
-						absY + offsetY, scaledWidth, scaledHeight);
+					target.context2D.drawScaledSubImage(image, sourceClip.x, sourceClip.y, sourceClip.width, sourceClip.height, left.position + offsetX,
+						top.position + offsetY, scaledWidth, scaledHeight);
 				default:
 					throw new haxe.exceptions.NotImplementedException("This fill mode is not yet implemented");
 			}

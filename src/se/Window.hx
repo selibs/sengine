@@ -6,8 +6,7 @@ import kha.Window as KhaWindow;
 
 @:allow(se.App)
 class Window implements s.shortcut.Shortcut {
-	var bA:Texture;
-	var bB:Texture;
+	var backBuffer:Texture;
 	var window:KhaWindow;
 
 	@:alias public var x:Int = window.x;
@@ -41,17 +40,14 @@ class Window implements s.shortcut.Shortcut {
 		window = w;
 		width = w.width;
 		height = w.height;
-		bA = new Texture(width, height);
-		bB = new Texture(width, height);
+		backBuffer = new Texture(width, height);
 		App.windows.push(this);
 
 		window.notifyOnResize((w, h) -> {
 			width = w;
 			height = h;
-			bA.unload();
-			bB.unload();
-			bA = new Texture(width, height);
-			bB = new Texture(width, height);
+			backBuffer.unload();
+			backBuffer = new Texture(width, height);
 			resized(w, h);
 		});
 	}
@@ -66,12 +62,6 @@ class Window implements s.shortcut.Shortcut {
 
 	public inline function destroy() {
 		KhaWindow.destroy(window);
-	}
-
-	function swap() {
-		var temp = bA;
-		bA = bB;
-		bB = temp;
 	}
 
 	function syncFramebuffer() {

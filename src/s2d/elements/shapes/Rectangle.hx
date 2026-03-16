@@ -4,10 +4,12 @@ import se.Texture;
 
 class Rectangle extends Shape {
 	function draw(target:Texture) {
+        trace(left.position, top.position, width, height);
+
 		final ctx = target.context2D;
 		ctx.style.color = color;
-		ctx.fillRect(absX, absY, width, height);
+		ctx.fillRect(left.position, top.position, width, height);
 		ctx.style.color = border.color;
-		ctx.drawRect(absX, absY, width, height, border.width);
+		ctx.drawRect(left.position, top.position, width, height, border.width);
 	}
 }

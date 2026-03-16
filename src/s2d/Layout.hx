@@ -14,20 +14,20 @@ class Layout implements s.shortcut.Shortcut {
 		return Math.max(l.minimumHeight, Math.min(height, l.maximumHeight)) + el.top.margin + el.bottom.margin;
 	}
 
-	@:signal public var row(default, set):Int = 0;
-	@:signal public var rowSpan(default, set):Int = 1;
-	@:signal public var column(default, set):Int = 0;
-	@:signal public var columnSpan(default, set):Int = 1;
-	@:signal public var alignment:Alignment = AlignCenter;
-	@:signal public var weight:Float = 1.0;
-	@:signal public var fillWidth:Bool = false;
-	@:signal public var fillHeight:Bool = false;
-	@:signal public var minimumWidth:Float = 0.0;
-	@:signal public var maximumWidth:Float = Math.POSITIVE_INFINITY;
-	@:signal public var minimumHeight:Float = 0.0;
-	@:signal public var maximumHeight:Float = Math.POSITIVE_INFINITY;
-	@:signal public var preferredWidth:Float = Math.NaN;
-	@:signal public var preferredHeight:Float = Math.NaN;
+	@:attr public var row(default, set):Int = 0;
+	@:attr public var rowSpan(default, set):Int = 1;
+	@:attr public var column(default, set):Int = 0;
+	@:attr public var columnSpan(default, set):Int = 1;
+	@:attr public var alignment:Alignment = AlignCenter;
+	@:attr public var weight:Float = 1.0;
+	@:attr public var fillWidth:Bool = false;
+	@:attr public var fillHeight:Bool = false;
+	@:attr public var minimumWidth:Float = 0.0;
+	@:attr public var maximumWidth:Float = Math.POSITIVE_INFINITY;
+	@:attr public var minimumHeight:Float = 0.0;
+	@:attr public var maximumHeight:Float = Math.POSITIVE_INFINITY;
+	@:attr public var preferredWidth:Float = Math.NaN;
+	@:attr public var preferredHeight:Float = Math.NaN;
 
 	public function new() {}
 

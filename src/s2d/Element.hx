@@ -5,7 +5,6 @@ import se.Texture;
 import se.math.SMath;
 import s2d.Style;
 import s2d.Anchors;
-import s2d.FocusPolicy;
 import s2d.geometry.Size;
 import s2d.geometry.Position;
 
@@ -36,96 +35,61 @@ class Element extends Object2D<Element> {
 		ctx.popTransformation();
 	}
 
-	var anchoring:Int = 0;
-
-	@:attr public var focused(default, null):Bool = false;
-
-	public var focusPolicy:FocusPolicy = ClickFocus | TabFocus;
-
-	public var clip:Bool = false; // TODO: stencil test
-	public var opacity:Float = 1.0;
-	public var layout:Layout = new Layout();
-
+	public var left(default, never) = new HorizontalAnchor();
+	public var hCenter(default, never) = new HorizontalAnchor();
+	public var right(default, never) = new HorizontalAnchor();
+	public var top(default, never) = new VerticalAnchor();
+	public var vCenter(default, never) = new VerticalAnchor();
+	public var bottom(default, never) = new VerticalAnchor();
+	public var anchors(default, never) = new Anchors();
 	public var padding(never, set):Float;
-	public var anchors:ElementAnchors;
-	public var left(default, never):HorizontalAnchor = new LeftAnchor();
-	public var hCenter(default, never):HorizontalAnchor = new HCenterAnchor();
-	public var right(default, never):HorizontalAnchor = new RightAnchor();
-	public var top(default, never):VerticalAnchor = new TopAnchor();
-	public var vCenter(default, never):VerticalAnchor = new VCenterAnchor();
-	public var bottom(default, never):VerticalAnchor = new BottomAnchor();
+	public var margins(never, set):Float;
 
-	var _absX(default, set):Float = 0.0;
-	var _absY(default, set):Float = 0.0;
+	public var layout(default, never):Layout = new Layout();
 
-	public var absX(get, set):Float;
-	public var absY(get, set):Float;
+	@:attr public var x:Float = 0.0;
+	@:attr public var y:Float = 0.0;
+	@:attr public var width:Float = 50.0;
+	@:attr public var height:Float = 50.0;
 
-	// cached values
-	var _x:Float = 0.0;
-	var _y:Float = 0.0;
-	var _width:Float = 0.0;
-	var _height:Float = 0.0;
-
-	public var x(default, set):Float = 0.0;
-	public var y(default, set):Float = 0.0;
-	public var width(default, set):Float = 0.0;
-	public var height(default, set):Float = 0.0;
-
-	@:signal public function absXChanged(x:Float):Void;
-
-	@:signal public function absYChanged(x:Float):Void;
-
-	@:signal public function xChanged(x:Float):Void;
-
-	@:signal public function yChanged(x:Float):Void;
-
-	@:signal public function widthChanged(x:Float):Void;
-
-	@:signal public function heightChanged(x:Float):Void;
-
-	public function new() {
-		super();
-
-		anchors = new ElementAnchors(this);
-	}
-
-	override function __childAdded__(child:Element) {
-		super.__childAdded__(child);
-		child._absX = absX + child.x;
-		child._absY = absY + child.y;
-	}
-
-	override function __childRemoved__(child:Element) {
-		super.__childRemoved__(child);
-		child._absX = absX - child.x;
-		child._absY = absY - child.y;
-	}
+	@:attr public var clip:Bool = false; // TODO: stencil test
+	@:attr public var opacity:Float = 1.0;
+	@:attr public var visible:Bool = true;
 
 	public function setPadding(value:Float):Void {
-		padding = value;
+		left.padding = value;
+		top.padding = value;
+		right.padding = value;
+		bottom.padding = value;
 	}
 
-	overload extern public inline function setSize(width:Float, height:Float):Void {
-		setSize(new Size(width, height));
+	public function setMargins(value:Float):Void {
+		left.margin = value;
+		top.margin = value;
+		right.margin = value;
+		bottom.margin = value;
 	}
 
 	overload extern public inline function setSize(size:Size):Void {
-		width = size.width;
-		height = size.height;
+		setSize(size.width, size.height);
 	}
 
-	overload extern public inline function setPosition(x:Float, y:Float):Void {
-		setPosition(new Position(width, height));
+	overload extern public inline function setSize(width:Float, height:Float):Void {
+		this.width = width;
+		this.height = height;
 	}
 
 	overload extern public inline function setPosition(position:Position):Void {
-		x = position.x;
-		y = position.y;
+		setPosition(position.x, position.y);
+	}
+
+	overload extern public inline function setPosition(x:Float, y:Float):Void {
+		this.x = x;
+		this.y = y;
 	}
 
 	overload extern public inline function mapFromGlobal(p:Position):Position {
-		return transform * p - vec2(absX, absY);
+		return transform * p - vec2(left.position, top.position);
 	}
 
 	overload extern public inline function mapFromGlobal(x:Float, y:Float):Position {
@@ -188,7 +152,16 @@ class Element extends Object2D<Element> {
 	}
 
 	function render(target:Texture) {
+        left.flush();
+        hCenter.flush();
+        right.flush();
+        top.flush();
+        vCenter.flush();
+        bottom.flush();
+
+		anchors.flush();
 		flush();
+
 		final ctx = target.context2D;
 		ctx.style.pushOpacity(opacity);
 		for (c in children)
@@ -196,285 +169,212 @@ class Element extends Object2D<Element> {
 		ctx.style.popOpacity();
 	}
 
-	function geometryChanged() {
-		if (_x != x) {
-			xChanged(_x);
-			_x = x;
+	// anchors
+	// TODO: cache anchors
+	@:slot(anchors.leftDirty) function syncLeftAnchor(a)
+		syncAnchor(a, anchors.left, syncLeft);
+
+	@:slot(anchors.hCenterDirty) function syncHCenterAnchor(a)
+		syncAnchor(a, anchors.hCenter, syncHCenter);
+
+	@:slot(anchors.rightDirty) function syncRightAnchor(a)
+		syncAnchor(a, anchors.right, syncRight);
+
+	@:slot(anchors.topDirty) function syncTopAnchor(a)
+		syncAnchor(a, anchors.top, syncTop);
+
+	@:slot(anchors.vCenterDirty) function syncVCenterAnchor(a)
+		syncAnchor(a, anchors.vCenter, syncVCenter);
+
+	@:slot(anchors.bottomDirty) function syncBottomAnchor(a)
+		syncAnchor(a, anchors.bottom, syncBottom);
+
+	function syncAnchor(a1:Anchor, a2:Anchor, slot:Float->Void):Void {
+		if (a1 != null) {
+			a1.offPositionDirty(slot);
+			a1.offPaddingDirty(slot);
 		}
-		if (_y != y) {
-			yChanged(_y);
-			_y = y;
-		}
-		if (_width != width) {
-			widthChanged(_width);
-			_width = width;
-		}
-		if (_height != height) {
-			heightChanged(_height);
-			_height = height;
+		if (a2 != null) {
+			slot(a2.position);
+			a2.onPositionDirty(slot);
+			a2.onPaddingDirty(slot);
 		}
 	}
 
-	function anchor(f:Void->Void) {
-		if (anchoring++ == 0) {
-			f();
-			anchoring--;
-			geometryChanged();
-		} else
-			Log.warning("Possible anchor binding loop detected!");
+	// positions
+
+	@:slot(left.marginDirty) function syncLeft(_) {
+		var a = anchors.left;
+		if (a != null)
+			left.position = a.position + a.padding + left.margin;
 	}
 
-	@:slot(left.positionChanged)
-	function syncLeft(p:Float) @:privateAccess {
-		if (!(right.isBinded && hCenter.isBinded) && anchoring == 0)
-			anchor(() -> {
-				final d = left.position - p;
-				x += d;
-				if (!right.isBinded && !hCenter.isBinded) {
-					hCenter.position += d;
-					right.position += d;
-				} else if (right.isBinded && !hCenter.isBinded) {
-					width -= d;
-					hCenter.position += d * 0.5;
-				} else if (!right.isBinded && hCenter.isBinded) {
-					final d2 = d * 2;
-					width -= d2;
-					right.position += d2;
-				}
-			});
+	@:slot(hCenter.marginDirty) function syncHCenter(_) {
+		var a = anchors.hCenter;
+		if (a != null)
+			hCenter.position = a.position + a.padding + hCenter.margin;
 	}
 
-	@:slot(hCenter.positionChanged)
-	function syncHCenter(p:Float) @:privateAccess {
-		if (!(left.isBinded && right.isBinded) && anchoring == 0)
-			anchor(() -> {
-				final d = hCenter.position - p;
-				if (!left.isBinded && !right.isBinded) {
-					x += d;
-					left.position += d;
-					right.position += d;
-				} else if (left.isBinded && !right.isBinded) {
-					final d2 = d * 2;
-					width += d2;
-					right.position += d2;
-				} else if (!left.isBinded && right.isBinded) {
-					final d2 = d * 2;
-					x += d2;
-					width -= d2;
-					left.position += d2;
-				}
-			});
+	@:slot(right.marginDirty) function syncRight(_) {
+		var a = anchors.right;
+		if (a != null)
+			right.position = a.position - a.padding - right.margin;
 	}
 
-	@:slot(right.positionChanged)
-	function syncRight(p:Float) @:privateAccess {
-		if (!(left.isBinded && hCenter.isBinded) && anchoring == 0)
-			anchor(() -> {
-				final d = right.position - p;
-				if (!left.isBinded && !hCenter.isBinded) {
-					x += d;
-					left.position += d;
-					hCenter.position += d;
-				} else if (left.isBinded && !hCenter.isBinded) {
-					width += d;
-					hCenter.position += d * 0.5;
-				} else if (!left.isBinded && hCenter.isBinded) {
-					x -= d;
-					width += d * 2;
-					left.position -= d;
-				}
-			});
+	@:slot(top.marginDirty) function syncTop(_) {
+		var a = anchors.top;
+		if (a != null)
+			top.position = a.position + a.padding + top.margin;
 	}
 
-	@:slot(top.positionChanged)
-	function syncTop(p:Float) @:privateAccess {
-		if (!(bottom.isBinded && vCenter.isBinded) && anchoring == 0)
-			anchor(() -> {
-				final d = top.position - p;
-				y += d;
-				if (!bottom.isBinded && !vCenter.isBinded) {
-					vCenter.position += d;
-					bottom.position += d;
-				} else if (bottom.isBinded && !vCenter.isBinded) {
-					height -= d;
-					vCenter.position += d * 0.5;
-				} else if (!bottom.isBinded && vCenter.isBinded) {
-					final d2 = d * 2;
-					height -= d2;
-					bottom.position += d2;
-				}
-			});
+	@:slot(vCenter.marginDirty) function syncVCenter(_) {
+		var a = anchors.vCenter;
+		if (a != null)
+			vCenter.position = a.position + a.padding + vCenter.margin;
 	}
 
-	@:slot(vCenter.positionChanged)
-	function syncVCenter(p:Float) @:privateAccess {
-		if (!(top.isBinded && bottom.isBinded) && anchoring == 0)
-			anchor(() -> {
-				final d = vCenter.position - p;
-				if (!top.isBinded && !bottom.isBinded) {
-					y += d;
-					top.position += d;
-					bottom.position += d;
-				} else if (top.isBinded && !bottom.isBinded) {
-					final d2 = d * 2;
-					height += d2;
-					bottom.position += d2;
-				} else if (!top.isBinded && bottom.isBinded) {
-					final d2 = d * 2;
-					y += d2;
-					height -= d2;
-					top.position += d2;
-				}
-			});
+	@:slot(bottom.marginDirty) function syncBottom(_) {
+		var a = anchors.bottom;
+		if (a != null)
+			bottom.position = a.position - a.padding - bottom.margin;
 	}
 
-	@:slot(bottom.positionChanged)
-	function syncBottom(p:Float) @:privateAccess {
-		if (!(top.isBinded && vCenter.isBinded) && anchoring == 0)
-			anchor(() -> {
-				final d = bottom.position - p;
-				if (!top.isBinded && !vCenter.isBinded) {
-					y += d;
-					top.position += d;
-					vCenter.position += d;
-				} else if (top.isBinded && !vCenter.isBinded) {
-					height += d;
-					vCenter.position += d * 0.5;
-				} else if (!top.isBinded && vCenter.isBinded) {
-					y -= d;
-					height += d * 2;
-					top.position -= d;
-				}
-			});
-	}
+	// geometry
 
-	function set__absX(value:Float):Float @:privateAccess {
-		if (!(left.isBinded || right.isBinded || hCenter.isBinded) || anchoring > 0) {
-			final prev = _absX;
-			_absX = value;
-			final d = _absX - prev;
-			if (anchoring == 0)
-				anchor(() -> {
-					left.position += d;
-					hCenter.position += d;
-					right.position += d;
-				});
-			absXChanged(prev);
-			for (c in children)
-				c._absX += d;
-		}
-		return _absX;
-	}
-
-	function set__absY(value:Float):Float @:privateAccess {
-		if (!(top.isBinded || bottom.isBinded || vCenter.isBinded) || anchoring > 0) {
-			final prev = _absY;
-			_absY = value;
-			final d = _absY - prev;
-			if (anchoring == 0)
-				anchor(() -> {
-					top.position += d;
-					vCenter.position += d;
-					bottom.position += d;
-				});
-			absYChanged(prev);
-			for (c in children)
-				c._absY += d;
-		}
-		return _absY;
-	}
-
-	function get_absX() {
-		return _absX;
-	}
-
-	function set_absX(value:Float):Float {
-		x += value - absX;
-		return absX;
-	}
-
-	function get_absY() {
-		return _absY;
-	}
-
-	function set_absY(value:Float):Float {
-		y += value - absY;
-		return absY;
-	}
-
-	function set_x(value:Float):Float {
-		_absX += value - x;
-		x = absX;
+	@:slot(xDirty) function syncX(x:Float) {
+		left.position = x;
 		if (parent != null)
-			x -= parent.absX;
-		return x;
+			left.position += parent.left.position;
 	}
 
-	function set_y(value:Float):Float {
-		_absY += value - y;
-		y = absY;
+	@:slot(yDirty) function syncY(y:Float) {
+		top.position = y;
 		if (parent != null)
-			y -= parent.absY;
-		return y;
+			top.position += parent.top.position;
 	}
 
-	function set_width(value:Float):Float @:privateAccess {
-		if (!((left.isBinded && right.isBinded) || (left.isBinded && hCenter.isBinded) || (right.isBinded && hCenter.isBinded))
-			|| anchoring > 0) {
-			final prev = width;
-			width = value;
-			if (anchoring == 0)
-				anchor(() -> {
-					final d = width - prev;
-					if (!hCenter.isBinded && !right.isBinded) {
-						hCenter.position += d * 0.5;
-						right.position += d;
-					} else if (!left.isBinded && !hCenter.isBinded && right.isBinded) {
-						x -= d;
-						left.position -= d;
-						hCenter.position -= d;
-					} else if (!left.isBinded && hCenter.isBinded && !right.isBinded) {
-						final d0 = d * 0.5;
-						x -= d0;
-						left.position -= d0;
-						right.position += d0;
-					}
-				});
-		}
-		return width;
+	@:slot(widthDirty) function syncWidth(width:Float) {
+		if (anchors.left == null) {
+			if (anchors.right != null && anchors.hCenter == null)
+				left.position = right.position - width;
+			else if (anchors.right == null && anchors.hCenter != null) {
+				final d = width * 0.5;
+				left.position = hCenter.position - d;
+				right.position = hCenter.position + d;
+			}
+		} else if (anchors.right == null && anchors.hCenter == null)
+			right.position = left.position + width;
 	}
 
-	function set_height(value:Float):Float @:privateAccess {
-		if (!((top.isBinded && bottom.isBinded) || (top.isBinded && vCenter.isBinded) || (bottom.isBinded && vCenter.isBinded))
-			|| anchoring > 0) {
-			final prev = height;
-			height = value;
-			if (anchoring == 0)
-				anchor(() -> {
-					final d = height - prev;
-					if (!vCenter.isBinded && !bottom.isBinded) {
-						vCenter.position += d * 0.5;
-						bottom.position += d;
-					} else if (!top.isBinded && !vCenter.isBinded && bottom.isBinded) {
-						y -= d;
-						top.position -= d;
-						vCenter.position -= d;
-					} else if (!top.isBinded && vCenter.isBinded && !bottom.isBinded) {
-						final d0 = d * 0.5;
-						y -= d0;
-						top.position -= d0;
-						bottom.position += d0;
-					}
-				});
+	@:slot(heightDirty) function syncHeight(height:Float) {
+		if (anchors.top == null) {
+			if (anchors.bottom != null && anchors.vCenter == null)
+				top.position = bottom.position - height;
+			else if (anchors.bottom == null && anchors.vCenter != null) {
+				final d = height * 0.5;
+				top.position = vCenter.position - d;
+				bottom.position = vCenter.position + d;
+			}
+		} else if (anchors.bottom == null && anchors.vCenter == null)
+			bottom.position = top.position + height;
+	}
+
+	@:slot(left.positionDirty) function syncLeftPosition(p) {
+		x = left.position;
+		if (parent != null)
+			x -= parent.left.position;
+
+		if (anchors.right == null && anchors.hCenter == null) {
+			right.position = left.position + width;
+			hCenter.position = (left.position + right.position) * 0.5;
+		} else {
+			if (anchors.right != null && anchors.hCenter == null)
+				hCenter.position = (left.position + right.position) * 0.5;
+			else if (anchors.right == null && anchors.hCenter != null)
+				right.position = hCenter.position + (hCenter.position - left.position);
+			width = right.position - left.position;
 		}
-		return height;
+	}
+
+	@:slot(hCenter.positionDirty) function syncHCenterPosition(p) {
+		if (anchors.left == null && anchors.right == null) {
+			var d = width * 0.5;
+			left.position = hCenter.position - d;
+			right.position = hCenter.position + d;
+		} else {
+			if (anchors.left != null && anchors.right == null)
+				right.position = hCenter.position + (hCenter.position - left.position);
+			else if (anchors.left == null && anchors.right != null)
+				left.position = hCenter.position - (right.position - hCenter.position);
+			width = right.position - left.position;
+		}
+	}
+
+	@:slot(right.positionDirty) function syncRightPosition(p) {
+        trace(right);
+		if (anchors.left == null && anchors.hCenter == null) {
+			left.position = right.position - width;
+			hCenter.position = (left.position + right.position) * 0.5;
+		} else {
+			if (anchors.left != null && anchors.hCenter == null)
+				hCenter.position = (left.position + right.position) * 0.5;
+			else if (anchors.left == null && anchors.hCenter != null)
+				left.position = hCenter.position - (right.position - hCenter.position);
+			width = right.position - left.position;
+		}
+	}
+
+	@:slot(top.positionDirty) function syncTopPosition(p) {
+		y = top.position;
+		if (parent != null)
+			y -= parent.top.position;
+
+		if (anchors.bottom == null && anchors.vCenter == null) {
+			bottom.position = top.position + height;
+			vCenter.position = (top.position + bottom.position) * 0.5;
+		} else {
+			if (anchors.bottom != null && anchors.vCenter == null)
+				vCenter.position = (top.position + bottom.position) * 0.5;
+			else if (anchors.bottom == null && anchors.vCenter != null)
+				bottom.position = vCenter.position + (vCenter.position - top.position);
+			height = bottom.position - top.position;
+		}
+	}
+
+	@:slot(vCenter.positionDirty) function syncVCenterPosition(p) {
+		if (anchors.top == null && anchors.bottom == null) {
+			var d = height * 0.5;
+			top.position = vCenter.position - d;
+			bottom.position = vCenter.position + d;
+		} else {
+			if (anchors.top != null && anchors.bottom == null)
+				bottom.position = vCenter.position + (vCenter.position - top.position);
+			else if (anchors.top == null && anchors.bottom != null)
+				top.position = vCenter.position - (bottom.position - vCenter.position);
+			height = bottom.position - top.position;
+		}
+	}
+
+	@:slot(bottom.positionDirty) function syncBottomPosition(p) {
+		if (anchors.top == null && anchors.vCenter == null) {
+			top.position = bottom.position - height;
+			vCenter.position = (top.position + bottom.position) * 0.5;
+		} else {
+			if (anchors.top != null && anchors.vCenter == null)
+				vCenter.position = (top.position + bottom.position) * 0.5;
+			else if (anchors.top == null && anchors.vCenter != null)
+				top.position = vCenter.position - (bottom.position - vCenter.position);
+			height = bottom.position - top.position;
+		}
 	}
 
 	function set_padding(value:Float) {
-		left.padding = value;
-		top.padding = value;
-		right.padding = value;
-		bottom.padding = value;
+		setPadding(value);
+		return value;
+	}
+
+	function set_margins(value:Float) {
+		setMargins(value);
 		return value;
 	}
 }

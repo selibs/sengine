@@ -23,7 +23,7 @@ class Canvas2D extends DrawableElement {
 		tgtCtx.end();
 		texture.context2D.render(true, color, ctx -> paint(ctx));
 		tgtCtx.begin();
-		tgtCtx.drawImage(texture, absX, absY);
+		tgtCtx.drawImage(texture, left.position, top.position);
 	}
 
 	function set_texture(value:Texture):Texture {

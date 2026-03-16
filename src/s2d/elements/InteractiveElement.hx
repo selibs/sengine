@@ -3,10 +3,14 @@ package s2d.elements;
 import se.math.Mat3;
 import se.math.SMath;
 import se.system.input.Mouse;
+import s2d.FocusPolicy;
 
 class InteractiveElement extends Element {
 	@:attr public var enabled:Bool = true;
 	@:attr public var hovered:Bool = false;
+	@:attr public var focused(default, null):Bool = false;
+
+	public var focusPolicy:FocusPolicy = ClickFocus | TabFocus;
 
 	@:signal public function mouseEntered(x:Float, y:Float);
 

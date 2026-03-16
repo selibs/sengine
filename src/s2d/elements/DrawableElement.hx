@@ -9,8 +9,10 @@ abstract class DrawableElement extends Element {
 	abstract function draw(target:Texture):Void;
 
 	override function render(target:Texture) {
+		anchors.flush();
 		flush();
-		final ctx = target.context2D;
+        
+        final ctx = target.context2D;
 		ctx.style.pushOpacity(opacity);
 		var i = 0;
 		while (i < children.length && children[i].z < 0.0) {
