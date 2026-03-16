@@ -188,6 +188,7 @@ class Element extends Object2D<Element> {
 	}
 
 	function render(target:Texture) {
+		flush();
 		final ctx = target.context2D;
 		ctx.style.pushOpacity(opacity);
 		for (c in children)

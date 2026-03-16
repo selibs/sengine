@@ -1,5 +1,6 @@
 package s2d;
 
+import s2d.elements.InteractiveElement;
 import se.Color;
 import se.App;
 import se.Time;
@@ -16,7 +17,8 @@ using se.extensions.StringExt;
 @:allow(s2d.Element)
 class WindowScene implements s.shortcut.Shortcut {
 	// var pending:Array<Element> = [];
-	// var entered:Array<Element> = [];
+	var entered:Array<InteractiveElement> = [];
+
 	// var focusedElement(default, set):Element;
 	public var window(default, null):Window;
 	public var root(default, set):Element;
@@ -76,7 +78,7 @@ class WindowScene implements s.shortcut.Shortcut {
 	function render(target:Texture) {
 		final ctx = target.context2D;
 		ctx.begin();
-        // TODO: revert when all the elements use g4
+		// TODO: revert when all the elements use g4
 		// ctx.pushTransformation(Mat3.orthogonalProjection(0.0, target.width, target.height, 0.0));
 		ctx.clear(color);
 		root.render(target);
@@ -316,24 +318,17 @@ class WindowScene implements s.shortcut.Shortcut {
 	// 		y: y
 	// 	}, (c, m) -> c.mouseDoubleClicked(m));
 	// }
+
 	// function processMouseEvent<T:MouseEvent>(m:T, f:(Element, T) -> Void) {
-	// 	function process(els:Array<Element>) {
-	// 		var i = 0;
-	// 		while (++i <= els.length) {
-	// 			var el = els[els.length - i];
-	// 			if (el.enabled && el.visible) {
-	// 				process(el.children);
-	// 				if (m.accepted)
-	// 					return;
-	// 				if (el.contains(m.x, m.y)) {
-	// 					f(el, m);
-	// 					if (m.accepted)
-	// 						return;
-	// 				}
-	// 			}
+	// 	var i = entered.length;
+	// 	while (--i >= 0) {
+	// 		var el = entered[entered.length - i];
+	// 		if (el.enabled && el.visible) {
+	// 			f(el, m);
+	// 			if (m.accepted)
+	// 				return;
 	// 		}
 	// 	}
-	// 	process(root.children);
 	// }
 
 	function set_root(element:Element) {
