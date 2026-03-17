@@ -55,8 +55,8 @@ abstract Selector(SelectorData) from SelectorData {
 					cb(f(element));
 				case Tag(tag):
 					var slot = _ -> cb(element.tag == tag);
-					element.onTagDirty(slot);
-					slots.push(() -> element.offTagDirty(slot));
+					// element.onTagDirty(slot);
+					// slots.push(() -> element.offTagDirty(slot));
 					slot(element.tag);
 				case Type(type):
 					cb(Std.isOfType(element, type));

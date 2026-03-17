@@ -2,12 +2,12 @@ package s2d;
 
 @:allow(s2d.Element)
 class Anchors implements s.shortcut.Shortcut {
-	@:attr public var left:HorizontalAnchor = null;
-	@:attr public var hCenter:HorizontalAnchor = null;
-	@:attr public var right:HorizontalAnchor = null;
-	@:attr public var top:VerticalAnchor = null;
-	@:attr public var vCenter:VerticalAnchor = null;
-	@:attr public var bottom:VerticalAnchor = null;
+	public var left:HorizontalAnchor = null;
+	public var hCenter:HorizontalAnchor = null;
+	public var right:HorizontalAnchor = null;
+	public var top:VerticalAnchor = null;
+	public var vCenter:VerticalAnchor = null;
+	public var bottom:VerticalAnchor = null;
 
 	public function new() {}
 
@@ -113,7 +113,8 @@ class VerticalAnchor extends Anchor {}
 
 @:allow(s2d.Element)
 abstract class Anchor implements s.shortcut.Shortcut {
-	@:attr public var position:Float = 0.0;
+	@:attr var position:Float = 0.0;
+
 	@:attr public var padding:Float = 0.0;
 	@:attr public var margin:Float = 0.0;
 

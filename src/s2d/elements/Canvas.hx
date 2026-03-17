@@ -6,14 +6,14 @@ import se.graphics.Context2D;
 class Canvas2D extends DrawableElement {
 	var texture(default, set):Texture;
 
-	@:signal public function paint(ctx:Context2D):Void;
+	dynamic function paint(ctx:Context2D):Void {}
 
 	public function new() {
 		super();
 		texture = new Texture(Std.int(width), Std.int(height));
 	}
 
-	@:slot(widthChanged, heightChanged)
+	@:slot(widthDirty, heightDirty)
 	function __syncSizeChanged__(_) {
 		texture = new Texture(Std.int(width), Std.int(height));
 	}

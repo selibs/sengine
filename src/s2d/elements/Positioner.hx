@@ -7,12 +7,12 @@ using se.extensions.ArrayExt;
 @:privateAccess
 class Positioner extends Element {
 	var slots:Map<Element, {
-		widthChanged:Float->Void,
-		leftMarginChanged:Float->Void,
-		rightMarginChanged:Float->Void,
-		heightChanged:Float->Void,
-		topMarginChanged:Float->Void,
-		bottomMarginChanged:Float->Void
+		widthDirty:Float->Void,
+		leftMarginDirty:Float->Void,
+		rightMarginDirty:Float->Void,
+		heightDirty:Float->Void,
+		topMarginDirty:Float->Void,
+		bottomMarginDirty:Float->Void
 	}> = [];
 
 	public var spacing(default, set):Float = 10.0;
@@ -26,12 +26,12 @@ class Positioner extends Element {
 
 	override function __childAdded__(child:Element) {
 		slots.set(child, {
-			widthChanged: (w:Float) -> adjustElementH(child, RightToLeft, w - child.width),
-			leftMarginChanged: (m:Float) -> adjustElementH(child, LeftToRight, child.left.margin - m),
-			rightMarginChanged: (m:Float) -> adjustElementH(child, RightToLeft, m - child.right.margin),
-			heightChanged: (w:Float) -> adjustElementV(child, BottomToTop, w - child.height),
-			topMarginChanged: (m:Float) -> adjustElementV(child, TopToBottom, child.top.margin - m),
-			bottomMarginChanged: (m:Float) -> adjustElementV(child, BottomToTop, m - child.bottom.margin)
+			widthDirty: (w:Float) -> adjustElementH(child, RightToLeft, w - child.width),
+			leftMarginDirty: (m:Float) -> adjustElementH(child, LeftToRight, child.left.margin - m),
+			rightMarginDirty: (m:Float) -> adjustElementH(child, RightToLeft, m - child.right.margin),
+			heightDirty: (w:Float) -> adjustElementV(child, BottomToTop, w - child.height),
+			topMarginDirty: (m:Float) -> adjustElementV(child, TopToBottom, child.top.margin - m),
+			bottomMarginDirty: (m:Float) -> adjustElementV(child, BottomToTop, m - child.bottom.margin)
 		});
 		super.__childAdded__(child);
 	}
@@ -39,6 +39,30 @@ class Positioner extends Element {
 	override function __childRemoved__(child:Element) {
 		super.__childRemoved__(child);
 		slots.remove(child);
+	}
+
+	override function sync() {
+		super.sync();
+
+		if (axis == Horizontal)
+			if (direction & LeftToRight != 0) {
+				if (left.positionIsDirty || left.paddingIsDirty) {
+					var p = left.position + left.padding;
+					for (c in children) {
+						c.left.position = p + c.left.margin;
+						p = c.right.position + c.right.padding;
+					}
+				} else {
+					var d = 0.0;
+					for (c in children) {
+                        c.left.position += d;
+						if (c.left.marginIsDirty) {
+							c.left.position = p + c.left.margin;
+							p = c.right.position + c.right.padding;
+						}
+					}
+				}
+			}
 	}
 
 	@:slot(childAdded)
@@ -60,33 +84,34 @@ class Positioner extends Element {
 
 	function trackElementH(el:Element) {
 		var childSlots = slots.get(el);
-		el.onWidthChanged(childSlots.widthChanged);
-		el.left.onMarginChanged(childSlots.leftMarginChanged);
-		el.right.onMarginChanged(childSlots.rightMarginChanged);
+		el.onWidthDirty(childSlots.widthDirty);
+		el.left.onMarginDirty(childSlots.leftMarginDirty);
+		el.right.onMarginDirty(childSlots.rightMarginDirty);
 	}
 
 	function trackElementV(el:Element) {
 		var childSlots = slots.get(el);
-		el.onHeightChanged(childSlots.heightChanged);
-		el.top.onMarginChanged(childSlots.topMarginChanged);
-		el.bottom.onMarginChanged(childSlots.bottomMarginChanged);
+		el.onHeightDirty(childSlots.heightDirty);
+		el.top.onMarginDirty(childSlots.topMarginDirty);
+		el.bottom.onMarginDirty(childSlots.bottomMarginDirty);
 	}
 
 	function untrackElementH(el:Element) {
 		var childSlots = slots.get(el);
-		el.offWidthChanged(childSlots.widthChanged);
-		el.left.offMarginChanged(childSlots.leftMarginChanged);
-		el.right.offMarginChanged(childSlots.rightMarginChanged);
+		el.offWidthDirty(childSlots.widthDirty);
+		el.left.offMarginDirty(childSlots.leftMarginDirty);
+		el.right.offMarginDirty(childSlots.rightMarginDirty);
 	}
 
 	function untrackElementV(el:Element) {
 		var childSlots = slots.get(el);
-		el.offWidthChanged(childSlots.widthChanged);
-		el.left.offMarginChanged(childSlots.leftMarginChanged);
-		el.right.offMarginChanged(childSlots.rightMarginChanged);
+		el.offWidthDirty(childSlots.widthDirty);
+		el.left.offMarginDirty(childSlots.leftMarginDirty);
+		el.right.offMarginDirty(childSlots.rightMarginDirty);
 	}
 
 	function syncWidth(v:Float) {
+		super.syncWidth();
 		adjustH(RightToLeft, width - v);
 	}
 
@@ -223,23 +248,23 @@ class Positioner extends Element {
 				untrackElementH(c);
 				trackElementV(c);
 			}
-			offWidthChanged(syncWidth);
-			left.offPaddingChanged(syncLeftPadding);
-			right.offPaddingChanged(syncRightPadding);
-			onHeightChanged(syncHeight);
-			top.onPaddingChanged(syncTopPadding);
-			bottom.onPaddingChanged(syncBottomPadding);
+			offWidthDirty(syncWidth);
+			left.offPaddingDirty(syncLeftPadding);
+			right.offPaddingDirty(syncRightPadding);
+			onHeightDirty(syncHeight);
+			top.onPaddingDirty(syncTopPadding);
+			bottom.onPaddingDirty(syncBottomPadding);
 		} else {
 			for (c in children) {
 				untrackElementV(c);
 				trackElementH(c);
 			}
-			offHeightChanged(syncHeight);
-			top.offPaddingChanged(syncTopPadding);
-			bottom.offPaddingChanged(syncBottomPadding);
-			onWidthChanged(syncWidth);
-			left.onPaddingChanged(syncLeftPadding);
-			right.onPaddingChanged(syncRightPadding);
+			offHeightDirty(syncHeight);
+			top.offPaddingDirty(syncTopPadding);
+			bottom.offPaddingDirty(syncBottomPadding);
+			onWidthDirty(syncWidth);
+			left.onPaddingDirty(syncLeftPadding);
+			right.onPaddingDirty(syncRightPadding);
 		}
 		rebuild();
 		return axis;

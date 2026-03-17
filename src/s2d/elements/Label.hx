@@ -44,7 +44,7 @@ class Label extends DrawableElement {
 			textWidth = kravur.width(fontSize, text);
 	}
 
-	@:slot(left.positionDirty, widthDirty)
+	// @:slot(left.positionDirty, widthDirty)
 	function syncHAlignment(_:Float) {
 		textX = left.position;
 		if ((alignment & AlignHCenter) != 0)
@@ -53,7 +53,7 @@ class Label extends DrawableElement {
 			textX += width - textWidth;
 	}
 
-	@:slot(top.positionDirty, heightDirty)
+	// @:slot(top.positionDirty, heightDirty)
 	function syncVAlignment(_:Float) {
 		textY = top.position;
 		if ((alignment & AlignVCenter) != 0)
