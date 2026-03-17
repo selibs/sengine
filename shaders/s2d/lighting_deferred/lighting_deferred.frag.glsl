@@ -1,6 +1,6 @@
 #version 450
 
-#include "s2d/std/lighting"
+#include "s.markup/std/lighting"
 
 uniform mat3 viewProjection;
 #if S2D_LIGHTING_SHADOWS == 1

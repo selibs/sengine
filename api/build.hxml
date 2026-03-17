@@ -5,8 +5,7 @@
 --next
 ../build/project-html5.hxml
 -cp ../libs/slog/src
---macro include('se')
---macro include('s2d')
+--macro include('s')
 --no-output
 -dce no
 -D doc-gen
@@ -17,4 +16,4 @@
 --cmd if exist "build/html/pages" rd /s /q "build/html/pages"
 
 --next
---cmd haxelib run dox -i build -o build/html/pages -in "se|s2d|slog" --title "sengine API" -D version 1.0.0a -D description "sengine libraries APIs" -D source-path https://github.com/selibs/sengine/tree/main/src
+--cmd haxelib run dox -i build -o build/html/pages -in "s|slog" --title "sengine API" -D version 1.0.0a -D description "sengine libraries APIs" -D source-path https://github.com/selibs/sengine/tree/main/src
