@@ -1,6 +1,5 @@
 package s2d;
 
-import se.Log;
 import se.Texture;
 import se.math.SMath;
 import s2d.Style;
@@ -35,26 +34,26 @@ class Element extends Object2D<Element> {
 		ctx.popTransformation();
 	}
 
-	public var left(default, never) = new HorizontalAnchor();
-	public var hCenter(default, never) = new HorizontalAnchor();
-	public var right(default, never) = new HorizontalAnchor();
-	public var top(default, never) = new VerticalAnchor();
-	public var vCenter(default, never) = new VerticalAnchor();
-	public var bottom(default, never) = new VerticalAnchor();
-	public var anchors(default, never) = new Anchors();
+	@:attr.group public var anchors(default, never) = new Anchors();
 	public var padding(never, set):Float;
 	public var margins(never, set):Float;
 
-	public var layout(default, never):Layout = new Layout();
+	@:attr.group public var left(default, never) = new HorizontalAnchor();
+	@:attr.group public var hCenter(default, never) = new HorizontalAnchor();
+	@:attr.group public var right(default, never) = new HorizontalAnchor();
+	@:attr.group public var top(default, never) = new VerticalAnchor();
+	@:attr.group public var vCenter(default, never) = new VerticalAnchor();
+	@:attr.group public var bottom(default, never) = new VerticalAnchor();
 
-	@:attr public var x:Float = 0.0;
-	@:attr public var y:Float = 0.0;
-	@:attr public var width:Float = 50.0;
-	@:attr public var height:Float = 50.0;
+	@:attr public var x(default, set):Float = 0.0;
+	@:attr public var y(default, set):Float = 0.0;
+	@:attr public var width(default, set):Float = 0.0;
+	@:attr public var height(default, set):Float = 0.0;
 
-	@:attr public var clip:Bool = false; // TODO: stencil test
+	public var clip:Bool = false; // TODO: stencil test
 	@:attr public var opacity:Float = 1.0;
 	@:attr public var visible:Bool = true;
+	@:attr.group public var layout(default, never):Layout = new Layout();
 
 	public function setPadding(value:Float):Void {
 		left.padding = value;
@@ -152,16 +151,7 @@ class Element extends Object2D<Element> {
 	}
 
 	function render(target:Texture) {
-        left.flush();
-        hCenter.flush();
-        right.flush();
-        top.flush();
-        vCenter.flush();
-        bottom.flush();
-
-		anchors.flush();
 		flush();
-
 		final ctx = target.context2D;
 		ctx.style.pushOpacity(opacity);
 		for (c in children)
@@ -171,25 +161,25 @@ class Element extends Object2D<Element> {
 
 	// anchors
 	// TODO: cache anchors
-	@:slot(anchors.leftDirty) function syncLeftAnchor(a)
-		syncAnchor(a, anchors.left, syncLeft);
+	@:slot(anchors.leftDirty) function flushLeftAnchor(a)
+		flushAnchor(a, anchors.left, syncLeftAnchor);
 
-	@:slot(anchors.hCenterDirty) function syncHCenterAnchor(a)
-		syncAnchor(a, anchors.hCenter, syncHCenter);
+	@:slot(anchors.hCenterDirty) function flushHCenterAnchor(a)
+		flushAnchor(a, anchors.hCenter, syncHCenterAnchor);
 
-	@:slot(anchors.rightDirty) function syncRightAnchor(a)
-		syncAnchor(a, anchors.right, syncRight);
+	@:slot(anchors.rightDirty) function flushRightAnchor(a)
+		flushAnchor(a, anchors.right, syncRightAnchor);
 
-	@:slot(anchors.topDirty) function syncTopAnchor(a)
-		syncAnchor(a, anchors.top, syncTop);
+	@:slot(anchors.topDirty) function flushTopAnchor(a)
+		flushAnchor(a, anchors.top, syncTopAnchor);
 
-	@:slot(anchors.vCenterDirty) function syncVCenterAnchor(a)
-		syncAnchor(a, anchors.vCenter, syncVCenter);
+	@:slot(anchors.vCenterDirty) function flushVCenterAnchor(a)
+		flushAnchor(a, anchors.vCenter, syncVCenterAnchor);
 
-	@:slot(anchors.bottomDirty) function syncBottomAnchor(a)
-		syncAnchor(a, anchors.bottom, syncBottom);
+	@:slot(anchors.bottomDirty) function flushBottomAnchor(a)
+		flushAnchor(a, anchors.bottom, syncBottomAnchor);
 
-	function syncAnchor(a1:Anchor, a2:Anchor, slot:Float->Void):Void {
+	function flushAnchor(a1:Anchor, a2:Anchor, slot:Float->Void):Void {
 		if (a1 != null) {
 			a1.offPositionDirty(slot);
 			a1.offPaddingDirty(slot);
@@ -203,37 +193,37 @@ class Element extends Object2D<Element> {
 
 	// positions
 
-	@:slot(left.marginDirty) function syncLeft(_) {
+	@:slot(left.marginDirty) function syncLeftAnchor(_) {
 		var a = anchors.left;
 		if (a != null)
 			left.position = a.position + a.padding + left.margin;
 	}
 
-	@:slot(hCenter.marginDirty) function syncHCenter(_) {
+	@:slot(hCenter.marginDirty) function syncHCenterAnchor(_) {
 		var a = anchors.hCenter;
 		if (a != null)
 			hCenter.position = a.position + a.padding + hCenter.margin;
 	}
 
-	@:slot(right.marginDirty) function syncRight(_) {
+	@:slot(right.marginDirty) function syncRightAnchor(_) {
 		var a = anchors.right;
 		if (a != null)
 			right.position = a.position - a.padding - right.margin;
 	}
 
-	@:slot(top.marginDirty) function syncTop(_) {
+	@:slot(top.marginDirty) function syncTopAnchor(_) {
 		var a = anchors.top;
 		if (a != null)
 			top.position = a.position + a.padding + top.margin;
 	}
 
-	@:slot(vCenter.marginDirty) function syncVCenter(_) {
+	@:slot(vCenter.marginDirty) function syncVCenterAnchor(_) {
 		var a = anchors.vCenter;
 		if (a != null)
 			vCenter.position = a.position + a.padding + vCenter.margin;
 	}
 
-	@:slot(bottom.marginDirty) function syncBottom(_) {
+	@:slot(bottom.marginDirty) function syncBottomAnchor(_) {
 		var a = anchors.bottom;
 		if (a != null)
 			bottom.position = a.position - a.padding - bottom.margin;
@@ -241,49 +231,106 @@ class Element extends Object2D<Element> {
 
 	// geometry
 
-	@:slot(xDirty) function syncX(x:Float) {
+	function syncX() {
+		@:bypassAccessor x = left.position;
+		if (parent != null)
+			@:bypassAccessor x -= parent.left.position;
+	}
+
+	function syncY() {
+		@:bypassAccessor y = top.position;
+		if (parent != null)
+			@:bypassAccessor y -= parent.top.position;
+	}
+
+	function syncWidth() {
+		@:bypassAccessor width = right.position - left.position;
+	}
+
+	function syncHeight() {
+		@:bypassAccessor height = bottom.position - top.position;
+	}
+
+	@:slot(xDirty) function flushX(x:Float) {
+		if (anchors.left != null && anchors.hCenter != null || anchors.left != null && anchors.right != null || anchors.hCenter != null
+			&& anchors.right != null)
+			return;
+
 		left.position = x;
 		if (parent != null)
 			left.position += parent.left.position;
+
+		if (anchors.left == null && anchors.hCenter == null && anchors.right == null) {
+			hCenter.position = left.position + width * 0.5;
+			right.position = left.position + width;
+		} else if (anchors.left == null && anchors.hCenter != null && anchors.right == null) {
+			right.position = hCenter.position + (hCenter.position - left.position);
+			syncWidth();
+		} else if (anchors.left == null && anchors.hCenter == null && anchors.right != null) {
+			syncWidth();
+			hCenter.position = left.position + width * 0.5;
+		}
 	}
 
-	@:slot(yDirty) function syncY(y:Float) {
+	@:slot(yDirty) function flushY(y:Float) {
+		if (anchors.top != null && anchors.vCenter != null || anchors.top != null && anchors.bottom != null || anchors.vCenter != null
+			&& anchors.bottom != null)
+			return;
+
 		top.position = y;
 		if (parent != null)
 			top.position += parent.top.position;
+
+		if (anchors.top == null && anchors.vCenter == null && anchors.bottom == null) {
+			vCenter.position = top.position + height * 0.5;
+			bottom.position = top.position + height;
+		} else if (anchors.top == null && anchors.vCenter != null && anchors.bottom == null) {
+			bottom.position = vCenter.position + (vCenter.position - top.position);
+			syncHeight();
+		} else if (anchors.top == null && anchors.vCenter == null && anchors.bottom != null) {
+			syncHeight();
+			vCenter.position = top.position + height * 0.5;
+		}
 	}
 
-	@:slot(widthDirty) function syncWidth(width:Float) {
-		if (anchors.left == null) {
-			if (anchors.right != null && anchors.hCenter == null)
+	@:slot(widthDirty) function flushWidth(width:Float) {
+		if (anchors.hCenter == null && anchors.right == null) {
+			right.position = left.position + width;
+			hCenter.position = left.position + width * 0.5;
+		} else {
+			if (anchors.left == null && anchors.hCenter == null && anchors.right != null) {
 				left.position = right.position - width;
-			else if (anchors.right == null && anchors.hCenter != null) {
-				final d = width * 0.5;
+				hCenter.position = right.position - width * 0.5;
+			} else if (anchors.left == null && anchors.hCenter != null && anchors.right == null) {
+				var d = width * 0.5;
 				left.position = hCenter.position - d;
 				right.position = hCenter.position + d;
-			}
-		} else if (anchors.right == null && anchors.hCenter == null)
-			right.position = left.position + width;
+			} else
+				return;
+			syncX();
+		}
 	}
 
-	@:slot(heightDirty) function syncHeight(height:Float) {
-		if (anchors.top == null) {
-			if (anchors.bottom != null && anchors.vCenter == null)
+	@:slot(heightDirty) function flushHeight(height:Float) {
+		if (anchors.vCenter == null && anchors.bottom == null) {
+			bottom.position = top.position + height;
+			vCenter.position = top.position + height * 0.5;
+		} else {
+			if (anchors.top == null && anchors.vCenter == null && anchors.bottom != null) {
 				top.position = bottom.position - height;
-			else if (anchors.bottom == null && anchors.vCenter != null) {
-				final d = height * 0.5;
+				vCenter.position = bottom.position - height * 0.5;
+			} else if (anchors.top == null && anchors.vCenter != null && anchors.bottom == null) {
+				var d = height * 0.5;
 				top.position = vCenter.position - d;
 				bottom.position = vCenter.position + d;
-			}
-		} else if (anchors.bottom == null && anchors.vCenter == null)
-			bottom.position = top.position + height;
+			} else
+				return;
+			syncY();
+		}
 	}
 
-	@:slot(left.positionDirty) function syncLeftPosition(p) {
-		x = left.position;
-		if (parent != null)
-			x -= parent.left.position;
-
+	@:slot(left.positionDirty) function flushLeftPosition(p) {
+		syncX();
 		if (anchors.right == null && anchors.hCenter == null) {
 			right.position = left.position + width;
 			hCenter.position = (left.position + right.position) * 0.5;
@@ -292,43 +339,45 @@ class Element extends Object2D<Element> {
 				hCenter.position = (left.position + right.position) * 0.5;
 			else if (anchors.right == null && anchors.hCenter != null)
 				right.position = hCenter.position + (hCenter.position - left.position);
-			width = right.position - left.position;
+			syncWidth();
 		}
 	}
 
-	@:slot(hCenter.positionDirty) function syncHCenterPosition(p) {
+	@:slot(hCenter.positionDirty) function flushHCenterPosition(p) {
 		if (anchors.left == null && anchors.right == null) {
 			var d = width * 0.5;
 			left.position = hCenter.position - d;
 			right.position = hCenter.position + d;
+			syncX();
 		} else {
 			if (anchors.left != null && anchors.right == null)
 				right.position = hCenter.position + (hCenter.position - left.position);
-			else if (anchors.left == null && anchors.right != null)
+			else if (anchors.left == null && anchors.right != null) {
 				left.position = hCenter.position - (right.position - hCenter.position);
-			width = right.position - left.position;
+				syncX();
+			}
+			syncWidth();
 		}
 	}
 
-	@:slot(right.positionDirty) function syncRightPosition(p) {
-        trace(right);
+	@:slot(right.positionDirty) function flushRightPosition(p) {
 		if (anchors.left == null && anchors.hCenter == null) {
 			left.position = right.position - width;
 			hCenter.position = (left.position + right.position) * 0.5;
+			syncX();
 		} else {
 			if (anchors.left != null && anchors.hCenter == null)
 				hCenter.position = (left.position + right.position) * 0.5;
-			else if (anchors.left == null && anchors.hCenter != null)
+			else if (anchors.left == null && anchors.hCenter != null) {
 				left.position = hCenter.position - (right.position - hCenter.position);
-			width = right.position - left.position;
+				syncX();
+			}
+			syncWidth();
 		}
 	}
 
-	@:slot(top.positionDirty) function syncTopPosition(p) {
-		y = top.position;
-		if (parent != null)
-			y -= parent.top.position;
-
+	@:slot(top.positionDirty) function flushTopPosition(p) {
+		syncY();
 		if (anchors.bottom == null && anchors.vCenter == null) {
 			bottom.position = top.position + height;
 			vCenter.position = (top.position + bottom.position) * 0.5;
@@ -337,35 +386,79 @@ class Element extends Object2D<Element> {
 				vCenter.position = (top.position + bottom.position) * 0.5;
 			else if (anchors.bottom == null && anchors.vCenter != null)
 				bottom.position = vCenter.position + (vCenter.position - top.position);
-			height = bottom.position - top.position;
+			syncHeight();
 		}
 	}
 
-	@:slot(vCenter.positionDirty) function syncVCenterPosition(p) {
+	@:slot(vCenter.positionDirty) function flushVCenterPosition(p) {
 		if (anchors.top == null && anchors.bottom == null) {
 			var d = height * 0.5;
 			top.position = vCenter.position - d;
 			bottom.position = vCenter.position + d;
+			syncY();
 		} else {
 			if (anchors.top != null && anchors.bottom == null)
 				bottom.position = vCenter.position + (vCenter.position - top.position);
-			else if (anchors.top == null && anchors.bottom != null)
+			else if (anchors.top == null && anchors.bottom != null) {
 				top.position = vCenter.position - (bottom.position - vCenter.position);
-			height = bottom.position - top.position;
+				syncY();
+			}
+			syncHeight();
 		}
 	}
 
-	@:slot(bottom.positionDirty) function syncBottomPosition(p) {
+	@:slot(bottom.positionDirty) function flushBottomPosition(p) {
 		if (anchors.top == null && anchors.vCenter == null) {
 			top.position = bottom.position - height;
 			vCenter.position = (top.position + bottom.position) * 0.5;
+			syncY();
 		} else {
 			if (anchors.top != null && anchors.vCenter == null)
 				vCenter.position = (top.position + bottom.position) * 0.5;
-			else if (anchors.top == null && anchors.vCenter != null)
+			else if (anchors.top == null && anchors.vCenter != null) {
 				top.position = vCenter.position - (bottom.position - vCenter.position);
-			height = bottom.position - top.position;
+				syncY();
+			}
+			syncHeight();
 		}
+	}
+
+	function set_x(value:Float):Float {
+		if (!left.positionIsDirty)
+			x = value;
+		return x;
+	}
+
+	function set_y(value:Float):Float {
+		if (!top.positionIsDirty)
+			y = value;
+		return y;
+	}
+
+	function set_width(value:Float):Float {
+		var c = 0;
+		if (left.positionIsDirty)
+			c++;
+		if (hCenter.positionIsDirty)
+			c++;
+		if (right.positionIsDirty)
+			c++;
+		if (c <= 1)
+			width = value;
+		return width;
+	}
+
+	function set_height(value:Float):Float {
+		var c = 0;
+		if (top.positionIsDirty)
+			c++;
+		if (vCenter.positionIsDirty)
+			c++;
+		if (bottom.positionIsDirty)
+			c++;
+		if (c <= 1)
+			height = value;
+		return height;
 	}
 
 	function set_padding(value:Float) {

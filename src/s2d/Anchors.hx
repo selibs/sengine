@@ -119,7 +119,7 @@ abstract class Anchor implements s.shortcut.Shortcut {
 
 	public function new() {}
 
-    public function toString():String {
-        return Std.string(position);
-    }
+	public function toString():String {
+		return Std.string(position);
+	}
 }
