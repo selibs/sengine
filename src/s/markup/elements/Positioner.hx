@@ -44,7 +44,7 @@ class Positioner extends Element {
 	override function sync() {
 		super.sync();
 
-		if (axis == Horizontal)
+		if (axis == Horizontal) {
 			if (direction & LeftToRight != 0) {
 				if (left.positionIsDirty || left.paddingIsDirty) {
 					var p = left.position + left.padding;
@@ -52,17 +52,35 @@ class Positioner extends Element {
 						c.left.position = p + c.left.margin;
 						p = c.right.position + c.right.padding;
 					}
-				} else {
-					var d = 0.0;
+				} else {}
+			} else if (direction & RightToLeft != 0) {
+				if (right.positionIsDirty || right.paddingIsDirty) {
+					var p = right.position - right.padding;
 					for (c in children) {
-						c.left.position += d;
-						if (c.left.marginIsDirty) {
-							c.left.position = p + c.left.margin;
-							p = c.right.position + c.right.padding;
-						}
+						c.right.position = p - c.right.margin;
+						p = c.left.position - c.left.padding;
 					}
-				}
+				} else {}
 			}
+		} else {
+			if (direction & TopToBottom != 0) {
+				if (top.positionIsDirty || top.paddingIsDirty) {
+					var p = top.position + top.padding;
+					for (c in children) {
+						c.top.position = p + c.top.margin;
+						p = c.bottom.position + c.bottom.padding;
+					}
+				} else {}
+			} else if (direction & RightToLeft != 0) {
+				if (bottom.positionIsDirty || bottom.paddingIsDirty) {
+					var p = bottom.position - bottom.padding;
+					for (c in children) {
+						c.bottom.position = p - c.bottom.margin;
+						p = c.top.position - c.top.padding;
+					}
+				} else {}
+			}
+		}
 	}
 
 	@:slot(childAdded)

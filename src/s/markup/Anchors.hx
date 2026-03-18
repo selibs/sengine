@@ -2,12 +2,12 @@ package s.markup;
 
 @:allow(s.markup.Element)
 class Anchors implements s.shortcut.Shortcut {
-	public var left:HorizontalAnchor = null;
-	public var hCenter:HorizontalAnchor = null;
-	public var right:HorizontalAnchor = null;
-	public var top:VerticalAnchor = null;
-	public var vCenter:VerticalAnchor = null;
-	public var bottom:VerticalAnchor = null;
+	@:attr public var left:HorizontalAnchor = null;
+	@:attr public var hCenter:HorizontalAnchor = null;
+	@:attr public var right:HorizontalAnchor = null;
+	@:attr public var top:VerticalAnchor = null;
+	@:attr public var vCenter:VerticalAnchor = null;
+	@:attr public var bottom:VerticalAnchor = null;
 
 	public function new() {}
 

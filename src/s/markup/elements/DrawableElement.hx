@@ -9,21 +9,14 @@ abstract class DrawableElement extends Element {
 	abstract function draw(target:Texture):Void;
 
 	override function render(target:Texture) {
-		sync();
-		flush();
-
 		final ctx = target.context2D;
 		ctx.style.pushOpacity(opacity);
 		var i = 0;
-		while (i < children.length && children[i].z < 0.0) {
-			Element.renderElement(target, children[i]);
-			i++;
-		}
+		while (i < children.length && children[i].z < 0.0)
+			Element.renderElement(children[i++], target);
 		draw(target);
-		while (i < children.length) {
-			Element.renderElement(target, children[i]);
-			i++;
-		}
+		while (i < children.length)
+			Element.renderElement(children[i++], target);
 		ctx.style.popOpacity();
 	}
 }

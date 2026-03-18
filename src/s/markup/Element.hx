@@ -25,16 +25,18 @@ class Element extends Object2D<Element> {
 		return element.mapToGlobal(p.x, p.y);
 	}
 
-	public static function renderElement(target:Texture, element:Element) {
+	public static function renderElement(element:Element, target:Texture) {
 		if (!element.visible)
 			return;
 		final ctx = target.context2D;
 		ctx.pushTransformation(element.transform);
+		element.sync(target);
 		element.render(target);
+		element.flush();
 		ctx.popTransformation();
 	}
 
-	public var anchors(default, never) = new Anchors();
+	@:attr.group public var anchors(default, never) = new Anchors();
 	public var padding(never, set):Float;
 	public var margins(never, set):Float;
 
@@ -47,26 +49,34 @@ class Element extends Object2D<Element> {
 
 	@:attr public var x(default, set):Float = 0.0;
 	@:attr public var y(default, set):Float = 0.0;
-	@:attr public var width(default, set):Float = 0.0;
-	@:attr public var height(default, set):Float = 0.0;
+	@:attr public var width(default, set):Length = 0.0;
+	@:attr public var height(default, set):Length = 0.0;
 
 	public var clip:Bool = false; // TODO: stencil test
 	@:attr public var opacity:Float = 1.0;
 	@:attr public var visible:Bool = true;
 	@:attr.group public var layout(default, never):Layout = new Layout();
 
-	public function setPadding(value:Float):Void {
-		left.padding = value;
-		top.padding = value;
-		right.padding = value;
-		bottom.padding = value;
+	overload extern public inline function setPadding(value:Float):Void {
+		setPadding(value, value, value, value);
 	}
 
-	public function setMargins(value:Float):Void {
-		left.margin = value;
-		top.margin = value;
-		right.margin = value;
-		bottom.margin = value;
+	overload extern public inline function setPadding(left:Float, top:Float, right:Float, bottom:Float):Void {
+		this.left.padding = left;
+		this.top.padding = top;
+		this.right.padding = right;
+		this.bottom.padding = bottom;
+	}
+
+	overload extern public inline function setMargins(value:Float):Void {
+		setMargins(value, value, value, value);
+	}
+
+	overload extern public inline function setMargins(left:Float, top:Float, right:Float, bottom:Float):Void {
+		this.left.margin = left;
+		this.top.margin = top;
+		this.right.margin = right;
+		this.bottom.margin = bottom;
 	}
 
 	overload extern public inline function setSize(size:Size):Void {
@@ -87,20 +97,29 @@ class Element extends Object2D<Element> {
 		this.y = y;
 	}
 
+	overload extern public inline function mapFromGlobal(x:Float, y:Float):Position {
+		return mapFromGlobal(vec2(x, y));
+	}
+
 	overload extern public inline function mapFromGlobal(p:Position):Position {
 		return transform * p - vec2(left.position, top.position);
 	}
 
-	overload extern public inline function mapFromGlobal(x:Float, y:Float):Position {
-		return mapFromGlobal(vec2(x, y));
+	overload extern public inline function mapToGlobal(x:Float, y:Float):Position {
+		return mapToGlobal(vec2(x, y));
 	}
 
 	overload extern public inline function mapToGlobal(p:Position):Position {
 		return inverse(transform) * p;
 	}
 
-	overload extern public inline function mapToGlobal(x:Float, y:Float):Position {
-		return mapToGlobal(vec2(x, y));
+	overload extern public inline function covers(x:Float, y:Float):Bool {
+		return covers(vec2(x, y));
+	}
+
+	overload extern public inline function covers(p:Position):Bool {
+		p = mapToGlobal(p);
+		return left.position <= p.x && p.x <= right.position && top.position <= p.y && p.y <= bottom.position;
 	}
 
 	public function childAt(x:Float, y:Float):Element {
@@ -127,11 +146,6 @@ class Element extends Object2D<Element> {
 		return null;
 	}
 
-	public function covers(x:Float, y:Float):Bool {
-		var p = mapToGlobal(x, y);
-		return left.position <= p.x && p.x <= right.position && top.position <= p.y && p.y <= bottom.position;
-	}
-
 	public function useStylesheet(stylesheet:Stylesheet) {
 		for (s in stylesheet)
 			useStyle(s);
@@ -150,236 +164,54 @@ class Element extends Object2D<Element> {
 		return style.remove(this);
 	}
 
-	function render(target:Texture) {
-		sync();
-		flush();
+	override function __childAdded__(child:Element) {
+		super.__childAdded__(child);
+		if (!child.isHorizontallyAnchored())
+			child.left.position = left.position + child.x;
+		if (!child.isVerticallyAnchored())
+			child.top.position = top.position + child.y;
+	}
 
+	override function __childRemoved__(child:Element) {
+		super.__childRemoved__(child);
+		if (!child.isHorizontallyAnchored())
+			child.left.position -= left.position;
+		if (!child.isVerticallyAnchored())
+			child.top.position -= top.position;
+	}
+
+	function render(target:Texture) {
 		final ctx = target.context2D;
 		ctx.style.pushOpacity(opacity);
 		for (c in children)
-			Element.renderElement(target, c);
+			Element.renderElement(c, target);
 		ctx.style.popOpacity();
 	}
 
-	function sync() {
-		syncAnchorPosition(anchors.left, left, 1);
-		syncAnchorPosition(anchors.hCenter, hCenter, 1);
-		syncAnchorPosition(anchors.right, right, -1);
-		syncAnchorPosition(anchors.top, top, 1);
-		syncAnchorPosition(anchors.vCenter, vCenter, 1);
-		syncAnchorPosition(anchors.bottom, bottom, -1);
-
-		if (left.positionIsDirty) {
-			syncX();
-			if (anchors.right == null && anchors.hCenter == null) {
-				right.position = left.position + width;
-				hCenter.position = (left.position + right.position) * 0.5;
-			} else {
-				if (anchors.right != null && anchors.hCenter == null)
-					hCenter.position = (left.position + right.position) * 0.5;
-				else if (anchors.right == null && anchors.hCenter != null)
-					right.position = hCenter.position + (hCenter.position - left.position);
-				syncWidth();
-			}
-		}
-
-		if (hCenter.positionIsDirty) {
-			if (anchors.left == null && anchors.right == null) {
-				var d = width * 0.5;
-				left.position = hCenter.position - d;
-				right.position = hCenter.position + d;
-				syncX();
-			} else {
-				if (anchors.left != null && anchors.right == null)
-					right.position = hCenter.position + (hCenter.position - left.position);
-				else if (anchors.left == null && anchors.right != null) {
-					left.position = hCenter.position - (right.position - hCenter.position);
-					syncX();
-				}
-				syncWidth();
-			}
-		}
-
-		if (right.positionIsDirty) {
-			if (anchors.left == null && anchors.hCenter == null) {
-				left.position = right.position - width;
-				hCenter.position = (left.position + right.position) * 0.5;
-				syncX();
-			} else {
-				if (anchors.left != null && anchors.hCenter == null)
-					hCenter.position = (left.position + right.position) * 0.5;
-				else if (anchors.left == null && anchors.hCenter != null) {
-					left.position = hCenter.position - (right.position - hCenter.position);
-					syncX();
-				}
-				syncWidth();
-			}
-		}
-
-		if (top.positionIsDirty) {
-			syncY();
-			if (anchors.bottom == null && anchors.vCenter == null) {
-				bottom.position = top.position + height;
-				vCenter.position = (top.position + bottom.position) * 0.5;
-			} else {
-				if (anchors.bottom != null && anchors.vCenter == null)
-					vCenter.position = (top.position + bottom.position) * 0.5;
-				else if (anchors.bottom == null && anchors.vCenter != null)
-					bottom.position = vCenter.position + (vCenter.position - top.position);
-				syncHeight();
-			}
-		}
-
-		if (vCenter.positionIsDirty) {
-			if (anchors.top == null && anchors.bottom == null) {
-				var d = height * 0.5;
-				top.position = vCenter.position - d;
-				bottom.position = vCenter.position + d;
-				syncY();
-			} else {
-				if (anchors.top != null && anchors.bottom == null)
-					bottom.position = vCenter.position + (vCenter.position - top.position);
-				else if (anchors.top == null && anchors.bottom != null) {
-					top.position = vCenter.position - (bottom.position - vCenter.position);
-					syncY();
-				}
-				syncHeight();
-			}
-		}
-
-		if (bottom.positionIsDirty) {
-			if (anchors.top == null && anchors.vCenter == null) {
-				top.position = bottom.position - height;
-				vCenter.position = (top.position + bottom.position) * 0.5;
-				syncY();
-			} else {
-				if (anchors.top != null && anchors.vCenter == null)
-					vCenter.position = (top.position + bottom.position) * 0.5;
-				else if (anchors.top == null && anchors.vCenter != null) {
-					top.position = vCenter.position - (bottom.position - vCenter.position);
-					syncY();
-				}
-				syncHeight();
-			}
-		}
-
-		if (xIsDirty) {
-			left.position = x;
-			if (parent != null)
-				left.position += parent.left.position;
-
-			if (anchors.left == null && anchors.hCenter == null && anchors.right == null) {
-				hCenter.position = left.position + width * 0.5;
-				right.position = left.position + width;
-			} else if (anchors.left == null && anchors.hCenter != null && anchors.right == null) {
-				right.position = hCenter.position + (hCenter.position - left.position);
-				syncWidth();
-			} else if (anchors.left == null && anchors.hCenter == null && anchors.right != null) {
-				syncWidth();
-				hCenter.position = left.position + width * 0.5;
-			}
-		}
-
-		if (yIsDirty) {
-			top.position = y;
-			if (parent != null)
-				top.position += parent.top.position;
-
-			if (anchors.top == null && anchors.vCenter == null && anchors.bottom == null) {
-				vCenter.position = top.position + height * 0.5;
-				bottom.position = top.position + height;
-			} else if (anchors.top == null && anchors.vCenter != null && anchors.bottom == null) {
-				bottom.position = vCenter.position + (vCenter.position - top.position);
-				syncHeight();
-			} else if (anchors.top == null && anchors.vCenter == null && anchors.bottom != null) {
-				syncHeight();
-				vCenter.position = top.position + height * 0.5;
-			}
-		}
-
-		if (widthIsDirty) {
-			if (anchors.hCenter == null && anchors.right == null) {
-				right.position = left.position + width;
-				hCenter.position = left.position + width * 0.5;
-			} else {
-				if (anchors.left == null && anchors.hCenter == null && anchors.right != null) {
-					left.position = right.position - width;
-					hCenter.position = right.position - width * 0.5;
-				} else if (anchors.left == null && anchors.hCenter != null && anchors.right == null) {
-					var d = width * 0.5;
-					left.position = hCenter.position - d;
-					right.position = hCenter.position + d;
-				} else
-					return;
-				syncX();
-			}
-		}
-
-		if (heightIsDirty) {
-			if (anchors.vCenter == null && anchors.bottom == null) {
-				bottom.position = top.position + height;
-				vCenter.position = top.position + height * 0.5;
-			} else {
-				if (anchors.top == null && anchors.vCenter == null && anchors.bottom != null) {
-					top.position = bottom.position - height;
-					vCenter.position = bottom.position - height * 0.5;
-				} else if (anchors.top == null && anchors.vCenter != null && anchors.bottom == null) {
-					var d = height * 0.5;
-					top.position = vCenter.position - d;
-					bottom.position = vCenter.position + d;
-				} else
-					return;
-				syncY();
-			}
-		}
-	}
-
-	inline function syncAnchorPosition(a:Anchor, l:Anchor, d:Int) {
-		if (a != null)
-			l.position = a.position + (a.padding + l.margin) * d;
-	}
-
-	// geometry
-
-	function syncX() {
-		@:bypassAccessor x = left.position;
-		if (parent != null)
-			@:bypassAccessor x -= parent.left.position;
-	}
-
-	function syncY() {
-		@:bypassAccessor y = top.position;
-		if (parent != null)
-			@:bypassAccessor y -= parent.top.position;
-	}
-
-	function syncWidth() {
-		@:bypassAccessor width = right.position - left.position;
-	}
-
-	function syncHeight() {
-		@:bypassAccessor height = bottom.position - top.position;
+	function sync(target:Texture) {
+		s.markup.macro.ElementMacro.syncAxis("left", "hCenter", "right", "x", "width");
+		s.markup.macro.ElementMacro.syncAxis("top", "vCenter", "bottom", "y", "height");
 	}
 
 	function set_x(value:Float):Float {
-		if (!isHorizontallyBinded())
+		if (!isHorizontallyAnchored())
 			x = value;
 		return x;
 	}
 
 	function set_y(value:Float):Float {
-		if (!isVerticallyBinded())
+		if (!isVerticallyAnchored())
 			y = value;
 		return y;
 	}
 
-	function set_width(value:Float):Float {
+	function set_width(value:Length):Length {
 		if (!isHorizontallyBinded())
 			width = value;
 		return width;
 	}
 
-	function set_height(value:Float):Float {
+	function set_height(value:Length):Length {
 		if (!isVerticallyBinded())
 			height = value;
 		return height;
@@ -393,6 +225,14 @@ class Element extends Object2D<Element> {
 	function set_margins(value:Float) {
 		setMargins(value);
 		return value;
+	}
+
+	function isHorizontallyAnchored() {
+		return anchors.left != null || anchors.hCenter != null || anchors.right != null;
+	}
+
+	function isVerticallyAnchored() {
+		return anchors.top != null || anchors.vCenter != null || anchors.bottom != null;
 	}
 
 	function isHorizontallyBinded() {

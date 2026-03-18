@@ -1,3 +1,3 @@
 package s.system;
 
-typedef Log = s.Log;
+typedef Log = slog.Log;
