@@ -4,79 +4,66 @@ import s.system.Texture;
 import s.system.assets.FontAsset;
 import s.markup.Alignment;
 
-using s.system.extensions.StringExt;
-
 class Label extends DrawableElement {
 	var fontAsset:FontAsset = new FontAsset();
-	@:readonly @:alias var kravur:s.system.resource.Font = fontAsset.asset;
+	var textX:Float = 0.0;
+	var textY:Float = 0.0;
+	var textWidth:Float = 0.0;
+
+	@:attr public var text:String;
+	@:attr public var fontSize(default, set):Int = 14;
+	@:attr public var alignment:Alignment = AlignLeft | AlignTop;
 
 	@:alias public var font:String = fontAsset.source;
-	public var fontSize(default, set):Int = 32;
-
-	public var text(default, set):String;
-	public var textX(default, null):Float = 0.0;
-	public var textY(default, null):Float = 0.0;
-	public var textWidth(default, set):Float = 0.0;
-	@:alias public var textHeight:Int = fontSize;
-
-	public var alignment:Alignment = AlignLeft | AlignTop;
 
 	public function new(text:String = "") {
 		super();
 		this.text = text;
-		color = Black;
 		font = "font_default";
-		fontAsset.onAssetLoaded(_ -> syncTextWidth());
+		fontAsset.onAssetLoaded(_ -> textIsDirty = true);
 	}
 
 	function draw(target:Texture) {
-		if (text.length == 0 || kravur == null)
+		if (text.length == 0 || !fontAsset.isLoaded || fontSize == 0)
 			return;
 		final ctx = target.context2D;
-		ctx.style.font = kravur;
+		ctx.style.font = fontAsset;
 		ctx.style.fontSize = fontSize;
 		ctx.style.color = color;
 		ctx.drawString(text, textX, textY);
 	}
 
-	function syncTextWidth() {
-		if (kravur != null && text != "")
-			textWidth = kravur.width(fontSize, text);
+	override function sync(target:Texture) {
+		if (text.length == 0 || !fontAsset.isLoaded || fontSize == 0)
+			return;
+		super.sync(target);
+		syncTextSize();
 	}
 
-	// @:slot(left.positionDirty, widthDirty)
-	function syncHAlignment(_:Float) {
-		textX = left.position;
-		if ((alignment & AlignHCenter) != 0)
-			textX += (width - textWidth) * 0.5;
-		else if ((alignment & AlignRight) != 0)
-			textX += width - textWidth;
+	function syncTextSize() {
+		final textWidthIsDirty = textIsDirty || fontSizeIsDirty;
+
+		if (textWidthIsDirty)
+			textWidth = fontAsset.asset.width(fontSize, text);
+
+		final hIsDirty = alignmentIsDirty || textWidthIsDirty;
+		final vIsDirty = alignmentIsDirty || fontSizeIsDirty;
+
+		if ((alignment & AlignHCenter) != 0 && (hIsDirty || hCenter.positionIsDirty))
+			textX = hCenter.position - textWidth * 0.5;
+		else if ((alignment & AlignRight) != 0 && (hIsDirty || hCenter.positionIsDirty))
+			textX = right.position - textWidth;
+		else if (hIsDirty || left.positionIsDirty)
+			textX = left.position;
+
+		if ((alignment & AlignVCenter) != 0 && (vIsDirty || vCenter.positionIsDirty))
+			textY = vCenter.position - fontSize * 0.5;
+		else if ((alignment & AlignBottom) != 0 && (vIsDirty || vCenter.positionIsDirty))
+			textY = bottom.position - fontSize;
+		else if (vIsDirty || top.positionIsDirty)
+			textY = top.position;
 	}
 
-	// @:slot(top.positionDirty, heightDirty)
-	function syncVAlignment(_:Float) {
-		textY = top.position;
-		if ((alignment & AlignVCenter) != 0)
-			textY += (height - fontSize) * 0.5;
-		else if ((alignment & AlignBottom) != 0)
-			textY += height - fontSize;
-	}
-
-	function set_text(value:String):String {
-		text = value;
-		syncTextWidth();
-		return text;
-	}
-
-	function set_fontSize(value:Int) {
-		fontSize = value < 0 ? 0 : value;
-		syncTextWidth();
-		return value;
-	}
-
-	function set_textWidth(value:Float):Float {
-		textWidth = value;
-		syncHAlignment(0.0);
-		return textWidth;
-	}
+	function set_fontSize(value:Int):Int
+		return fontSize = value > 0 ? value : 0;
 }

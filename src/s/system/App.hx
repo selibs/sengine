@@ -54,23 +54,23 @@ class App implements s.shortcut.Shortcut {
 		System.notifyOnCutCopyPaste(cut, copy, paste);
 
 	static function init(window, setup, start, loadProgress, loadFailed) {
-		input = {
-			mouse: new Mouse(),
-			keyboard: new Keyboard()
-		}
+		input = {mouse: new Mouse(), keyboard: new Keyboard()}
+		System.notifyOnApplicationState(() -> state = Foreground, () -> state = Resume, () -> state = Pause, () -> state = Background, () -> state = Shutdown);
 		s.system.resource.Resource.loadShelf({
 			fonts: ["font_default"],
 			images: ["image_default"]
-		}, _ -> if (start != null) start(), loadProgress, loadFailed);
+		}, _ -> {
+			Aura.init();
+			Shader.compileShaders();
 
-		Aura.init();
-		Shader.compileShaders();
+			if (setup != null)
+				setup(new Window(window));
 
-		if (setup != null)
-			setup(new Window(window));
+			System.notifyOnFrames(render);
 
-		System.notifyOnApplicationState(() -> state = Foreground, () -> state = Resume, () -> state = Pause, () -> state = Background, () -> state = Shutdown);
-		System.notifyOnFrames(render);
+			if (start != null)
+				start();
+		}, loadProgress, loadFailed);
 	}
 
 	static function render(frames:Array<Framebuffer>) {

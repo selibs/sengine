@@ -50,4 +50,23 @@ extern enum abstract Alignment(Int) from Int to Int {
 			for (element in elements)
 				element.y = v - element.height;
 	}
+
+	public inline function toString():String {
+		var strs = [];
+		
+		if (this & AlignLeft != 0)
+			strs.push("AlignLeft");
+		if (this & AlignHCenter != 0)
+			strs.push("AlignHCenter");
+		if (this & AlignRight != 0)
+			strs.push("AlignRight");
+		if (this & AlignTop != 0)
+			strs.push("AlignTop");
+		if (this & AlignVCenter != 0)
+			strs.push("AlignVCenter");
+		if (this & AlignBottom != 0)
+			strs.push("AlignBottom");
+
+		return strs.join(" + ");
+	}
 }

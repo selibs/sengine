@@ -4,7 +4,7 @@ import s.system.Color;
 import s.system.Texture;
 
 abstract class DrawableElement extends Element {
-	@:signal public var color:Color = White;
+	@:attr public var color:Color = Black;
 
 	abstract function draw(target:Texture):Void;
 
