@@ -80,6 +80,7 @@ class WindowScene implements s.shortcut.Shortcut {
 		// TODO: revert when all the elements use g4
 		// ctx.pushTransformation(Mat3.orthogonalProjection(0.0, target.width, target.height, 0.0));
 		ctx.clear(color);
+        root.syncTree(target);
 		Element.renderElement(root, target);
 		// ctx.popTransformation();
 		#if (S2D_UI_DEBUG_ELEMENT_BOUNDS == 1)

@@ -30,9 +30,7 @@ class Element extends Object2D<Element> {
 			return;
 		final ctx = target.context2D;
 		ctx.pushTransformation(element.transform);
-		element.sync(target);
 		element.render(target);
-		element.flush();
 		ctx.popTransformation();
 	}
 
@@ -186,6 +184,13 @@ class Element extends Object2D<Element> {
 		for (c in children)
 			Element.renderElement(c, target);
 		ctx.style.popOpacity();
+	}
+
+	function syncTree(target:Texture) {
+		sync(target);
+        for (c in children)
+            c.syncTree(target);
+		flush();
 	}
 
 	function sync(target:Texture) {
