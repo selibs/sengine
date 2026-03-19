@@ -21,9 +21,9 @@ class ElementMacro {
 
 		function syncPos()
 			return macro {
-				@:bypassAccessor $p = $s.position;
+				$p = $s.position;
 				if (parent != null)
-					@:bypassAccessor $p -= parent.$start.position;
+					$p -= parent.$start.position;
 			}
 
 		function syncLength()
