@@ -1,8 +1,8 @@
 package s.markup.widgets;
 
-import s.system.Texture;
-import s.system.assets.ImageAsset;
-import s.system.resource.Image;
+import s.Texture;
+import s.assets.ImageAsset;
+import s.resource.Image;
 import s.markup.elements.DrawableElement;
 import s.markup.geometry.Rect;
 

@@ -1,34 +1,27 @@
 package s.markup.elements;
 
-import s.system.Texture;
-import s.system.graphics.Context2D;
+import s.Texture;
+import s.graphics.Context2D;
 
 class Canvas2D extends DrawableElement {
-	var texture(default, set):Texture;
-
-	dynamic function paint(ctx:Context2D):Void {}
+	var texture:Texture;
 
 	public function new() {
 		super();
-		texture = new Texture(Std.int(width), Std.int(height));
+		texture = new Texture(Std.int(width.real), Std.int(height.real));
 	}
 
-	@:slot(widthDirty, heightDirty)
-	function __syncSizeChanged__(_) {
-		texture = new Texture(Std.int(width), Std.int(height));
+	public inline function paint(f:Context2D->Void):Void
+		texture.context2D.render(true, color, f);
+
+	override function sync(target:Texture) {
+		super.sync(target);
+		if (width.realIsDirty || height.realIsDirty) {
+			texture.unload();
+			texture = new Texture(Std.int(width.real), Std.int(height.real));
+		}
 	}
 
-	function draw(target:Texture) {
-		final tgtCtx = target.context2D;
-		tgtCtx.end();
-		texture.context2D.render(true, color, ctx -> paint(ctx));
-		tgtCtx.begin();
-		tgtCtx.drawImage(texture, left.position, top.position);
-	}
-
-	function set_texture(value:Texture):Texture {
-		texture?.unload();
-		texture = value;
-		return texture;
-	}
+	function draw(target:Texture)
+		target.context2D.drawImage(texture, left.position, top.position);
 }

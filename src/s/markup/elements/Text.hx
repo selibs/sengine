@@ -1,23 +1,23 @@
 package s.markup.elements;
 
-import s.system.Texture;
+import s.Texture;
 import s.markup.Alignment;
 
 enum ElideMode {
 	/**(default)**/
-	None;
+	ElideNone;
 
-	Left;
-	Middle;
-	Right;
+	ElideLeft;
+	ElideMiddle;
+	ElideRight;
 }
 
 enum WrapMode {
 	/**(default)**/
-	None;
+	NoWrap;
 
-	Word;
-	Anywhere;
+	WordWrap;
+	WrapAnywhere;
 	Wrap;
 }
 
@@ -31,8 +31,8 @@ enum LineHeightMode {
 class Text extends Label {
 	@:attr var lines:Array<TextLine> = [];
 
-	@:attr public var wrapMode:WrapMode = None;
-	@:attr public var elideMode:ElideMode = None;
+	@:attr public var wrapMode:WrapMode = NoWrap;
+	@:attr public var elideMode:ElideMode = ElideNone;
 
 	@:attr public var lineHeight:Float = 1.0;
 	@:attr public var lineHeightMode:LineHeightMode = Proportional;
@@ -59,13 +59,18 @@ class Text extends Label {
 		if (!fontAsset.isLoaded)
 			return;
 
-		final elideRelayoutIsDirty = elideMode != None
+		final elideRelayoutIsDirty = elideMode != ElideNone
 			&& (elideModeIsDirty || height.realIsDirty || width.realIsDirty || fontSizeIsDirty || lineHeightIsDirty || lineHeightModeIsDirty);
 
-		if (textIsDirty || fontSizeIsDirty || maxLineCountIsDirty || wrapModeIsDirty || (width.realIsDirty && wrapMode != None) || elideRelayoutIsDirty)
+		if (textIsDirty
+			|| fontSizeIsDirty
+			|| maxLineCountIsDirty
+			|| wrapModeIsDirty
+			|| (width.realIsDirty && wrapMode != NoWrap)
+			|| elideRelayoutIsDirty)
 			wrapText();
 
-		if (elideMode != None && (linesIsDirty || elideRelayoutIsDirty))
+		if (elideMode != ElideNone && (linesIsDirty || elideRelayoutIsDirty))
 			elideText();
 
 		if (linesIsDirty || fontSizeIsDirty) {
@@ -222,7 +227,7 @@ class Text extends Label {
 		}
 
 		switch wrapMode {
-			case None:
+			case NoWrap:
 				var line = new StringBuf();
 				var i = 0;
 				while (i < text.length) {
@@ -242,7 +247,7 @@ class Text extends Label {
 					var str = line.toString();
 					pushLine(str, k.stringWidth(str));
 				}
-			case Anywhere:
+			case WrapAnywhere:
 				var line = new StringBuf();
 				var lineWidth = 0.0;
 				var i = 0;
@@ -271,7 +276,7 @@ class Text extends Label {
 				}
 				if (!maxReached())
 					pushLine(line.toString(), lineWidth);
-			case Word, Wrap:
+			case WordWrap, Wrap:
 				var line = new StringBuf();
 				var lineWidth = 0.0;
 				var word = new StringBuf();
@@ -282,7 +287,7 @@ class Text extends Label {
 						return false;
 
 					var value = word.toString();
-					if (wrapMode == Word || wordWidth <= maxWidth || maxWidth <= 0) {
+					if (wrapMode == WordWrap || wordWidth <= maxWidth || maxWidth <= 0) {
 						if (lineWidth > 0 && maxWidth > 0 && lineWidth + wordWidth > maxWidth) {
 							if (pushLine(line.toString(), lineWidth))
 								return true;
@@ -363,7 +368,7 @@ class Text extends Label {
 		var removedLines = false;
 		var changed = false;
 
-		if (elideMode == Left) {
+		if (elideMode == ElideLeft) {
 			while (lineCount > 1 && visibleHeight > maxHeight) {
 				lines.shift();
 				visibleHeight -= realLineHeight;
@@ -371,7 +376,7 @@ class Text extends Label {
 				changed = true;
 			}
 			changed = elideLine(lines[0], removedLines) || changed;
-		} else if (elideMode == Middle) {
+		} else if (elideMode == ElideMiddle) {
 			while (lineCount > 1 && visibleHeight > maxHeight) {
 				lines.shift();
 				visibleHeight -= realLineHeight;
@@ -384,7 +389,7 @@ class Text extends Label {
 				}
 			}
 			changed = elideLine(lines[Std.int(lineCount * 0.5)], removedLines) || changed;
-		} else if (elideMode == Right) {
+		} else if (elideMode == ElideRight) {
 			while (lineCount > 1 && visibleHeight > maxHeight) {
 				lines.pop();
 				visibleHeight -= realLineHeight;
@@ -421,7 +426,7 @@ class Text extends Label {
 
 		final maxWidth = totalWidth - ellipsisWidth;
 
-		if (elideMode == Left) {
+		if (elideMode == ElideLeft) {
 			var body = "";
 			var bodyWidth = 0.0;
 			var i = line.text.length - 1;
@@ -436,7 +441,7 @@ class Text extends Label {
 			}
 			line.text = ellipsis + body;
 			line.width = ellipsisWidth + bodyWidth;
-		} else if (elideMode == Middle) {
+		} else if (elideMode == ElideMiddle) {
 			var left = new StringBuf();
 			var right = "";
 			var leftWidth = 0.0;
@@ -465,7 +470,7 @@ class Text extends Label {
 
 			line.text = left.toString() + ellipsis + right;
 			line.width = leftWidth + ellipsisWidth + rightWidth;
-		} else if (elideMode == Right) {
+		} else if (elideMode == ElideRight) {
 			var body = new StringBuf();
 			var bodyWidth = 0.0;
 			var i = 0;

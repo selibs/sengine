@@ -1,7 +1,7 @@
 package s.markup.geometry;
 
-import s.system.math.Vec2;
-import s.system.math.SMath;
+import s.math.Vec2;
+import s.math.SMath;
 
 extern abstract Size(Vec2) from Vec2 to Vec2 {
 	public var width(get, set):Float;

@@ -42,8 +42,14 @@ class MarkupMacro {
 		"text" => "s.markup.elements.Text",
 		"edit" => "s.markup.elements.TextEdit",
 		// shapes
+		"circle" => "s.markup.elements.shapes.Circle",
+		"ellipse" => "s.markup.elements.shapes.Ellipse",
+		"triangle" => "s.markup.elements.shapes.Triangle",
 		"rectangle" => "s.markup.elements.shapes.Rectangle",
-		"rectangle.rounded" => "s.markup.elements.shapes.RectangleRounded",
+		// gradients
+		"gradient.linear" => "s.markup.elements.gradients.LinearGradient",
+		"gradient.radial" => "s.markup.elements.gradients.RadialGradient",
+		"gradient.conic" => "s.markup.elements.gradients.ConicGradient",
 		// layouts
 		"box" => "s.markup.layouts.BoxLayout",
 		"vbox" => "s.markup.layouts.VBoxLayout",

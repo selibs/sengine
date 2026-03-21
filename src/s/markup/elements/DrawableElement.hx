@@ -1,10 +1,30 @@
 package s.markup.elements;
 
-import s.system.Color;
-import s.system.Texture;
+import s.Color;
+import s.Texture;
+import s.math.Vec2;
+import s.markup.elements.ElementPoint;
 
 abstract class DrawableElement extends Element {
-	@:attr public var color:Color = Black;
+	private static inline function syncPoint(element:DrawableElement, target:Texture, rp:Vec2, p:ElementPoint, pIsDirty:Bool) {
+		p.x.self.resolve(element.width.real, target.width, target.height);
+		p.y.self.resolve(element.height.real, target.width, target.height);
+		if (pIsDirty || p.xIsDirty || p.x.realIsDirty)
+			rp.x = element.left.position + p.x.real;
+		if (pIsDirty || p.yIsDirty || p.y.realIsDirty)
+			rp.y = element.top.position + p.y.real;
+	}
+
+	private static inline function syncPointNormalize(element:DrawableElement, target:Texture, rp:Vec2, p:ElementPoint, pIsDirty:Bool) {
+		p.x.self.resolve(element.width.real, target.width, target.height);
+		p.y.self.resolve(element.height.real, target.width, target.height);
+		if (pIsDirty || p.xIsDirty || p.x.realIsDirty)
+			rp.x = p.x.real / element.width.real;
+		if (pIsDirty || p.yIsDirty || p.y.realIsDirty)
+			rp.y = p.y.real / element.height.real;
+	}
+
+	@:attr public var color:Color = White;
 
 	abstract function draw(target:Texture):Void;
 

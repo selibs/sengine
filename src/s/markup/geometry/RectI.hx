@@ -1,6 +1,6 @@
 package s.markup.geometry;
 
-import s.system.math.Vec4I;
+import s.math.Vec4I;
 
 @:forward(x, y)
 @:forward.new

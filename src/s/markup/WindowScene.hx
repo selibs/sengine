@@ -1,18 +1,18 @@
 package s.markup;
 
-import s.system.Color;
-import s.system.App;
-import s.system.Time;
-import s.system.Texture;
-import s.system.math.Mat3;
-import s.system.Window;
-import s.system.input.Mouse;
-import s.system.graphics.Context2D;
+import s.Color;
+import s.App;
+import s.Time;
+import s.Texture;
+import s.math.Mat3;
+import s.Window;
+import s.input.Mouse;
+import s.graphics.Context2D;
 import s.markup.Anchors;
 import s.markup.FocusPolicy;
 import s.markup.elements.InteractiveElement;
 
-using s.system.extensions.StringExt;
+using s.extensions.StringExt;
 
 @:allow(s.markup.Element)
 class WindowScene implements s.shortcut.Shortcut {
@@ -73,16 +73,13 @@ class WindowScene implements s.shortcut.Shortcut {
 		return null;
 	}
 
-	@:access(s.system.Window)
+	@:access(s.Window)
 	function render(target:Texture) {
 		final ctx = target.context2D;
+		root.syncTree(target);
 		ctx.begin();
-		// TODO: revert when all the elements use g4
-		// ctx.pushTransformation(Mat3.orthogonalProjection(0.0, target.width, target.height, 0.0));
 		ctx.clear(color);
-        root.syncTree(target);
 		Element.renderElement(root, target);
-		// ctx.popTransformation();
 		#if (S2D_UI_DEBUG_ELEMENT_BOUNDS == 1)
 		var e = elementAt(App.input.mouse.x, App.input.mouse.y);
 		if (e != null)
@@ -121,25 +118,25 @@ class WindowScene implements s.shortcut.Shortcut {
 		ctx.fillRect(e.left.position - lm, e.top.position - tm, e.width.real + lm + rm, e.height.real + tm + bm);
 
 		// margins
-		style.color = s.system.Color.rgb(0.75, 0.25, 0.75);
+		style.color = s.Color.rgb(0.75, 0.25, 0.75);
 		ctx.fillRect(e.left.position - lm, e.top.position, lm, e.height.real);
 		ctx.fillRect(e.left.position - lm, e.top.position - tm, lm + e.width.real + rm, tm);
 		ctx.fillRect(e.left.position + e.width.real, e.top.position, rm, e.height.real);
 		ctx.fillRect(e.left.position - lm, e.top.position + e.height.real, lm + e.width.real + rm, bm);
 
 		// padding
-		style.color = s.system.Color.rgb(0.75, 0.75, 0.25);
+		style.color = s.Color.rgb(0.75, 0.75, 0.25);
 		ctx.fillRect(e.left.position, e.top.position, lp, e.height.real);
 		ctx.fillRect(e.left.position + lp, e.top.position, e.width.real - lp - rp, tp);
 		ctx.fillRect(e.left.position + e.width.real - rp, e.top.position, rp, e.height.real);
 		ctx.fillRect(e.left.position + lp, e.top.position + e.height.real - bp, e.width.real - lp - rp, bp);
 
 		// content
-		style.color = s.system.Color.rgb(0.25, 0.75, 0.75);
+		style.color = s.Color.rgb(0.25, 0.75, 0.75);
 		ctx.fillRect(e.left.position + lp, e.top.position + tp, e.width.real - lp - rp, e.height.real - tp - bp);
 
 		// labels
-		style.color = s.system.Color.rgb(1.0, 1.0, 1.0);
+		style.color = s.Color.rgb(1.0, 1.0, 1.0);
 		style.opacity = 1.0;
 		final fs = style.fontSize + 5;
 

@@ -1,6 +1,6 @@
 package s.markup.geometry;
 
-import s.system.math.Vec4I;
+import s.math.Vec4I;
 
 @:forward.new
 extern abstract BoundsI(Vec4I) from Vec4I to Vec4I {

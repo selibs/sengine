@@ -1,6 +1,6 @@
 package s.markup.graphics.stage;
 
-import s.system.graphics.shaders.Shader;
+import s.graphics.shaders.Shader;
 import s.markup.stage.Stage;
 
 @:dox(hide)

@@ -1,7 +1,7 @@
 package s.markup;
 
-import s.system.Texture;
-import s.system.math.SMath;
+import s.Texture;
+import s.math.SMath;
 import s.markup.Style;
 import s.markup.Anchors;
 import s.markup.geometry.Size;
@@ -165,17 +165,17 @@ class Element extends Object2D<Element> {
 	override function __childAdded__(child:Element) {
 		super.__childAdded__(child);
 		if (!child.isHorizontallyAnchored())
-			child.left.position = left.position + child.x;
+			child.left.self.position = left.position + child.x;
 		if (!child.isVerticallyAnchored())
-			child.top.position = top.position + child.y;
+			child.top.self.position = top.position + child.y;
 	}
 
 	override function __childRemoved__(child:Element) {
 		super.__childRemoved__(child);
 		if (!child.isHorizontallyAnchored())
-			child.left.position -= left.position;
+			child.left.self.position -= left.position;
 		if (!child.isVerticallyAnchored())
-			child.top.position -= top.position;
+			child.top.self.position -= top.position;
 	}
 
 	function render(target:Texture) {
@@ -188,8 +188,8 @@ class Element extends Object2D<Element> {
 
 	function syncTree(target:Texture) {
 		sync(target);
-        for (c in children)
-            c.syncTree(target);
+		for (c in children)
+			c.syncTree(target);
 		flush();
 	}
 

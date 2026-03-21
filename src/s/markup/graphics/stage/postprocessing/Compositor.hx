@@ -4,8 +4,8 @@ import kha.Shaders;
 import kha.arrays.Float32Array;
 import kha.graphics4.TextureUnit;
 import kha.graphics4.ConstantLocation;
-import s.system.Color;
-import s.system.Texture;
+import s.Color;
+import s.Texture;
 
 class Compositor extends PPEffect {
 	var textureMapTU:TextureUnit;
@@ -46,10 +46,10 @@ class Compositor extends PPEffect {
 		// final ctx3d = target.context3D;
 
 		// ctx.begin();
-		// ctx3d.scissor(0, letterBoxHeight, s.system.sengine.width, s.system.sengine.height - letterBoxHeight * 2);
+		// ctx3d.scissor(0, letterBoxHeight, s.sengine.width, s.sengine.height - letterBoxHeight * 2);
 		// ctx3d.setPipeline(pipeline);
-		// ctx3d.setIndexBuffer(@:privateAccess s.system.sengine.indices);
-		// ctx3d.setVertexBuffer(@:privateAccess s.system.sengine.vertices);
+		// ctx3d.setIndexBuffer(@:privateAccess s.sengine.indices);
+		// ctx3d.setVertexBuffer(@:privateAccess s.sengine.vertices);
 		// ctx3d.setTexture(textureMapTU, Renderer.buffer.src);
 		// ctx3d.setFloats(paramsCL, params);
 		// ctx3d.draw();

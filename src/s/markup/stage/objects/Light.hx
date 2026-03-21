@@ -1,7 +1,7 @@
 package s.markup.stage.objects;
 
 #if (S2D_LIGHTING == 1)
-import s.system.Color;
+import s.Color;
 
 class Light extends LayerObject {
 	public var color:Color = "white";

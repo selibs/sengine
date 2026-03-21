@@ -5,7 +5,7 @@ import s.markup.Direction;
 import s.markup.layouts.DirLayout;
 import s.markup.layouts.LayoutCell;
 
-using s.system.extensions.ArrayExt;
+using s.extensions.ArrayExt;
 
 class HBoxLayout extends DirLayout<ElementHSlots, HLayoutCell> {
 	var fillWidthCellsNum:Int = 0;

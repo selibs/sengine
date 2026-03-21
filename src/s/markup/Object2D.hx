@@ -1,6 +1,6 @@
 package s.markup;
 
-abstract class Object2D<This:Object2D<This>> extends s.system.Object<This> {
+abstract class Object2D<This:Object2D<This>> extends s.Object<This> {
 	public var z(default, set):Float = 0;
 	public var transform:Transform2D = Transform2D.identity();
 

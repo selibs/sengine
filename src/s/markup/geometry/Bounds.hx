@@ -1,7 +1,7 @@
 package s.markup.geometry;
 
-import s.system.math.Vec4;
-import s.system.math.SMath;
+import s.math.Vec4;
+import s.math.SMath;
 
 @:forward.new
 extern abstract Bounds(Vec4) from Vec4 to Vec4 {

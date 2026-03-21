@@ -1,10 +1,10 @@
 package s.markup.stage;
 
-import s.system.Texture;
-import s.system.math.Vec2;
-import s.system.math.Mat3;
-import s.system.math.SMath;
-import s.system.graphics.RenderBuffer;
+import s.Texture;
+import s.math.Vec2;
+import s.math.Mat3;
+import s.math.SMath;
+import s.graphics.RenderBuffer;
 import s.markup.elements.DrawableElement;
 import s.markup.stage.Camera;
 import s.markup.stage.StageLayer;
@@ -23,7 +23,7 @@ class Stage extends DrawableElement {
 	public var camera:Camera = new Camera();
 
 	#if (S2D_LIGHTING_ENVIRONMENT == 1)
-	public var environmentMap(default, set):s.system.Assets.ImageAsset;
+	public var environmentMap(default, set):s.Assets.ImageAsset;
 
 	function set_environmentMap(value) {
 		if (value != null) {

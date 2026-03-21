@@ -1,10 +1,10 @@
 package s.markup.stage.objects;
 
-import s.system.math.Vec2;
+import s.math.Vec2;
 import s.markup.geometry.Mesh;
 import s.markup.geometry.Rect;
 
-using s.system.extensions.VectorExt;
+using s.extensions.VectorExt;
 
 class Sprite extends LayerObject {
 	public var mesh:Mesh;

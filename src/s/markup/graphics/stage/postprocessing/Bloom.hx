@@ -3,7 +3,7 @@ package s.markup.graphics.stage.postprocessing;
 import kha.Shaders;
 import kha.graphics4.TextureUnit;
 import kha.graphics4.ConstantLocation;
-import s.system.Texture;
+import s.Texture;
 
 class Bloom extends PPEffect {
 	var textureMapTU:TextureUnit;
@@ -32,8 +32,8 @@ class Bloom extends PPEffect {
 
 		// ctx.begin();
 		// ctx3d.setPipeline(pipeline);
-		// ctx3d.setIndexBuffer(@:privateAccess s.system.sengine.indices);
-		// ctx3d.setVertexBuffer(@:privateAccess s.system.sengine.vertices);
+		// ctx3d.setIndexBuffer(@:privateAccess s.sengine.indices);
+		// ctx3d.setVertexBuffer(@:privateAccess s.sengine.vertices);
 		// ctx3d.setTexture(textureMapTU, Renderer.buffer.src);
 		// ctx3d.setTextureParameters(textureMapTU, Clamp, Clamp, LinearFilter, LinearFilter, LinearMipFilter);
 		// ctx3d.setFloat3(paramsCL, radius, threshold, intensity);

@@ -1,7 +1,7 @@
 package s.markup.stage;
 
-import s.system.math.Mat3;
-import s.system.math.SMath;
+import s.math.Mat3;
+import s.math.SMath;
 import s.markup.stage.objects.StageObject;
 
 @:allow(s.markup.stage.Stage)

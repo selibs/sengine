@@ -306,9 +306,11 @@ extern inline function pt2pc(value:Float):Float
 @:allow(s.markup.Length)
 @:allow(s.markup.Element)
 private class LengthData implements s.shortcut.Shortcut {
+	var percentValue:Float = 0.0;
+
 	@:attr var real:Float = 0.0;
 
-	public var value:Float = 0.0;
+	public var value(default, set):Float = 0.0;
 	public var unit:LengthUnit = Pixel;
 
 	public function new(value:Float, unit:LengthUnit) {
@@ -319,5 +321,26 @@ private class LengthData implements s.shortcut.Shortcut {
 				this.real = value;
 			default:
 		}
+	}
+
+	public function resolve(plength:Float, vwidth:Float, vheight:Float) {
+		switch unit {
+			case s.markup.Length.LengthUnit.Percent:
+				real = plength * percentValue;
+			case s.markup.Length.LengthUnit.ViewportWidth:
+				real = vwidth * percentValue;
+			case s.markup.Length.LengthUnit.ViewportHeight:
+				real = vheight * percentValue;
+			case s.markup.Length.LengthUnit.ViewportMinimum:
+				real = Math.min(vwidth, vheight) * percentValue;
+			case s.markup.Length.LengthUnit.ViewportMaximum:
+				real = Math.max(vwidth, vheight) * percentValue;
+			case _:
+		}
+	}
+
+	inline function set_value(v:Float):Float {
+		percentValue = v * 0.01;
+		return value = v;
 	}
 }

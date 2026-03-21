@@ -3,9 +3,9 @@ package s.markup.graphics.stage;
 #if (S2D_LIGHTING_SHADOWS == 1)
 import kha.graphics4.IndexBuffer;
 import kha.graphics4.VertexBuffer;
-import s.system.math.Vec2;
-import s.system.math.Mat3;
-import s.system.math.SMath;
+import s.math.Vec2;
+import s.math.Mat3;
+import s.math.SMath;
 import s.markup.stage.objects.Sprite;
 import s.markup.graphics.stage.lighting.ShadowPass;
 

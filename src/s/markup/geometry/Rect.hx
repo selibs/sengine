@@ -1,7 +1,7 @@
 package s.markup.geometry;
 
-import s.system.math.Vec4;
-import s.system.math.SMath;
+import s.math.Vec4;
+import s.math.SMath;
 
 @:forward(x, y)
 @:forward.new

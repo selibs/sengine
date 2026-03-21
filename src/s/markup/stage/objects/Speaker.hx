@@ -1,10 +1,10 @@
 package s.markup.stage.objects;
 
 import aura.dsp.panner.Panner;
-import s.system.Audio;
-import s.system.math.SMath;
+import s.Audio;
+import s.math.SMath;
 
-@:access(s.system.Audio)
+@:access(s.Audio)
 class Speaker extends StageObject {
 	var audio:Audio = new Audio();
 

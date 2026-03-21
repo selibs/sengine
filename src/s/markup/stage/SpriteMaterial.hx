@@ -6,7 +6,7 @@ import kha.graphics4.VertexBuffer;
 import s.markup.graphics.StageRenderer;
 #end
 #end
-import s.system.assets.ImageAsset;
+import s.assets.ImageAsset;
 import s.markup.stage.objects.Sprite;
 
 @:access(s.markup.stage.objects.Sprite)

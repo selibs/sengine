@@ -1,8 +1,8 @@
 package s.markup;
 
-import s.system.math.Vec3;
-import s.system.math.Vec2;
-import s.system.math.Mat3;
+import s.math.Vec3;
+import s.math.Vec2;
+import s.math.Mat3;
 
 @:forward()
 @:forward.new

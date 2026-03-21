@@ -3,7 +3,7 @@ package s.markup.layouts;
 import s.markup.Direction;
 import s.markup.layouts.LayoutCell;
 
-using s.system.extensions.ArrayExt;
+using s.extensions.ArrayExt;
 
 @:dox(hide)
 abstract class DirLayout<S:ElementSlots, L:LayoutCell<S>> extends Element {

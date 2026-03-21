@@ -3,8 +3,8 @@ package s.markup.graphics.stage.postprocessing;
 import kha.Shaders;
 import kha.graphics4.TextureUnit;
 import kha.graphics4.ConstantLocation;
-import s.system.Texture;
-import s.system.math.Mat3;
+import s.Texture;
+import s.math.Mat3;
 
 class Filter extends PPEffect {
 	var textureMapTU:TextureUnit;
@@ -33,8 +33,8 @@ class Filter extends PPEffect {
 
 		// ctx.begin();
 		// ctx3d.setPipeline(pipeline);
-		// ctx3d.setIndexBuffer(@:privateAccess s.system.sengine.indices);
-		// ctx3d.setVertexBuffer(@:privateAccess s.system.sengine.vertices);
+		// ctx3d.setIndexBuffer(@:privateAccess s.sengine.indices);
+		// ctx3d.setVertexBuffer(@:privateAccess s.sengine.vertices);
 		// ctx3d.setTexture(textureMapTU, Renderer.buffer.src);
 		// for (kernel in kernels) {
 		// 	ctx3d.setMat3(kernelCL, kernel);

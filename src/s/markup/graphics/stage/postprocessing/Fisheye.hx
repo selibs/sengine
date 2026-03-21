@@ -3,8 +3,8 @@ package s.markup.graphics.stage.postprocessing;
 import kha.Shaders;
 import kha.graphics4.TextureUnit;
 import kha.graphics4.ConstantLocation;
-import s.system.Texture;
-import s.system.math.Vec2;
+import s.Texture;
+import s.math.Vec2;
 
 class Fisheye extends PPEffect {
 	var textureMapTU:TextureUnit;
@@ -32,8 +32,8 @@ class Fisheye extends PPEffect {
 
 		// ctx.begin();
 		// ctx3d.setPipeline(pipeline);
-		// ctx3d.setIndexBuffer(@:privateAccess s.system.sengine.indices);
-		// ctx3d.setVertexBuffer(@:privateAccess s.system.sengine.vertices);
+		// ctx3d.setIndexBuffer(@:privateAccess s.sengine.indices);
+		// ctx3d.setVertexBuffer(@:privateAccess s.sengine.vertices);
 		// ctx3d.setTexture(textureMapTU, Renderer.buffer.src);
 		// ctx3d.setVec2(positionCL, position);
 		// ctx3d.setFloat(strengthCL, strength);

@@ -1,6 +1,6 @@
 package s.markup.geometry;
 
-import s.system.math.Vec2I;
+import s.math.Vec2I;
 
 extern abstract SizeI(Vec2I) from Vec2I to Vec2I {
 	public var width(get, set):Int;

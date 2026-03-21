@@ -1,7 +1,7 @@
 package s.markup.geometry;
 
 import haxe.ds.Vector;
-import s.system.math.Vec2;
+import s.math.Vec2;
 
 @:forward(length)
 extern abstract Mesh(Vector<Vec2>) {

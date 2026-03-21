@@ -108,19 +108,35 @@ class Anchors implements s.shortcut.Shortcut {
 	}
 }
 
-class HorizontalAnchor extends Anchor {}
-class VerticalAnchor extends Anchor {}
+typedef HorizontalAnchor = Anchor<HorizontalAnchorLine>;
+typedef VerticalAnchor = Anchor<VerticalAnchorLine>;
+
+@:forward()
+@:forward.new
+@:allow(s.markup.Element)
+extern abstract Anchor<T:AnchorLine>(T) {
+	private var self(get, never):T;
+
+	public var position(get, never):Float;
+
+	public inline function toString():String
+		return Std.string(position);
+
+	private inline function get_self()
+		return this;
+
+	private inline function get_position()
+		return this.position;
+}
+
+private class HorizontalAnchorLine extends AnchorLine {}
+private class VerticalAnchorLine extends AnchorLine {}
 
 @:allow(s.markup.Element)
-abstract class Anchor implements s.shortcut.Shortcut {
-	@:attr var position:Float = 0.0;
-
+abstract class AnchorLine implements s.shortcut.Shortcut {
+	@:attr public var position:Float = 0.0;
 	@:attr public var padding:Float = 0.0;
 	@:attr public var margin:Float = 0.0;
 
 	public function new() {}
-
-	public function toString():String {
-		return Std.string(position);
-	}
 }

@@ -1,12 +1,12 @@
 package s.markup.elements;
 
-import s.system.App;
-import s.system.Timer;
-import s.system.Color;
-import s.system.Texture;
-import s.system.input.Keyboard;
+import s.App;
+import s.Timer;
+import s.Color;
+import s.Texture;
+import s.input.Keyboard;
 
-using s.system.extensions.StringExt;
+using s.extensions.StringExt;
 
 class TextEdit extends Text {
 	var _cursorVisible:Bool = false;

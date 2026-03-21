@@ -1,14 +1,15 @@
 package s.markup.elements;
 
-import s.system.math.Mat3;
-import s.system.math.SMath;
-import s.system.input.Mouse;
+import s.math.Mat3;
+import s.math.SMath;
+import s.input.Mouse;
 import s.markup.FocusPolicy;
 
 class InteractiveElement extends Element {
 	@:attr public var enabled:Bool = true;
-	@:attr public var hovered:Bool = false;
 	@:attr public var focused(default, null):Bool = false;
+
+	@:signal public var hovered:Bool = false;
 
 	public var focusPolicy:FocusPolicy = ClickFocus | TabFocus;
 
@@ -40,13 +41,13 @@ class InteractiveElement extends Element {
 
 	@:signal(button) public function mouseButtonDoubleClicked(button:MouseButton, m:MouseEvent);
 
-	override function render(target:s.system.Texture) {
+	override function render(target:s.Texture) {
 		update(target.context2D.transform);
 		super.render(target);
 	}
 
 	function update(t:Mat3) {
-		var m = s.system.App.input.mouse;
+		var m = s.App.input.mouse;
 		var mx = m.x;
 		var my = m.y;
 

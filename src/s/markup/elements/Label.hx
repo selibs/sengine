@@ -1,7 +1,7 @@
 package s.markup.elements;
 
-import s.system.Texture;
-import s.system.assets.FontAsset;
+import s.Texture;
+import s.assets.FontAsset;
 import s.markup.Alignment;
 
 class Label extends DrawableElement {
