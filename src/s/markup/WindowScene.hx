@@ -115,25 +115,25 @@ class WindowScene implements s.shortcut.Shortcut {
 		final bp = e.bottom.padding;
 
 		style.color = Black;
-		ctx.fillRect(e.left.position - lm, e.top.position - tm, e.width.real + lm + rm, e.height.real + tm + bm);
+		ctx.fillRect(e.left.position - lm, e.top.position - tm, e.width + lm + rm, e.height + tm + bm);
 
 		// margins
 		style.color = s.Color.rgb(0.75, 0.25, 0.75);
-		ctx.fillRect(e.left.position - lm, e.top.position, lm, e.height.real);
-		ctx.fillRect(e.left.position - lm, e.top.position - tm, lm + e.width.real + rm, tm);
-		ctx.fillRect(e.left.position + e.width.real, e.top.position, rm, e.height.real);
-		ctx.fillRect(e.left.position - lm, e.top.position + e.height.real, lm + e.width.real + rm, bm);
+		ctx.fillRect(e.left.position - lm, e.top.position, lm, e.height);
+		ctx.fillRect(e.left.position - lm, e.top.position - tm, lm + e.width + rm, tm);
+		ctx.fillRect(e.left.position + e.width, e.top.position, rm, e.height);
+		ctx.fillRect(e.left.position - lm, e.top.position + e.height, lm + e.width + rm, bm);
 
 		// padding
 		style.color = s.Color.rgb(0.75, 0.75, 0.25);
-		ctx.fillRect(e.left.position, e.top.position, lp, e.height.real);
-		ctx.fillRect(e.left.position + lp, e.top.position, e.width.real - lp - rp, tp);
-		ctx.fillRect(e.left.position + e.width.real - rp, e.top.position, rp, e.height.real);
-		ctx.fillRect(e.left.position + lp, e.top.position + e.height.real - bp, e.width.real - lp - rp, bp);
+		ctx.fillRect(e.left.position, e.top.position, lp, e.height);
+		ctx.fillRect(e.left.position + lp, e.top.position, e.width - lp - rp, tp);
+		ctx.fillRect(e.left.position + e.width - rp, e.top.position, rp, e.height);
+		ctx.fillRect(e.left.position + lp, e.top.position + e.height - bp, e.width - lp - rp, bp);
 
 		// content
 		style.color = s.Color.rgb(0.25, 0.75, 0.75);
-		ctx.fillRect(e.left.position + lp, e.top.position + tp, e.width.real - lp - rp, e.height.real - tp - bp);
+		ctx.fillRect(e.left.position + lp, e.top.position + tp, e.width - lp - rp, e.height - tp - bp);
 
 		// labels
 		style.color = s.Color.rgb(1.0, 1.0, 1.0);
@@ -145,7 +145,7 @@ class WindowScene implements s.shortcut.Shortcut {
 			ctx.drawString("margins", e.left.position - lm + 5, e.top.position - tm + 5);
 		if (tp >= fs)
 			ctx.drawString("padding", e.left.position + 5, e.top.position + 5);
-		if (e.height.real >= fs)
+		if (e.height >= fs)
 			ctx.drawString("content", e.left.position + lp + 5, e.top.position + tp + 5);
 
 		// labels - values
@@ -159,15 +159,15 @@ class WindowScene implements s.shortcut.Shortcut {
 			final strheight = style.font.height(style.fontSize);
 			if (m >= strWidth) {
 				if (i == 0)
-					ctx.drawString(str, e.left.position - (m + strWidth) / 2, e.top.position + e.height.real / 2);
+					ctx.drawString(str, e.left.position - (m + strWidth) / 2, e.top.position + e.height / 2);
 				else if (i == 2)
-					ctx.drawString(str, e.left.position + e.width.real + (m - strWidth) / 2, e.top.position + e.height.real / 2);
+					ctx.drawString(str, e.left.position + e.width + (m - strWidth) / 2, e.top.position + e.height / 2);
 			}
 			if (m >= strheight) {
 				if (i == 1)
-					ctx.drawString(str, e.left.position + e.width.real / 2, e.top.position - (m + strheight) / 2);
+					ctx.drawString(str, e.left.position + e.width / 2, e.top.position - (m + strheight) / 2);
 				else if (i == 3)
-					ctx.drawString(str, e.left.position + e.width.real / 2, e.top.position + e.height.real + (m - strheight) / 2);
+					ctx.drawString(str, e.left.position + e.width / 2, e.top.position + e.height + (m - strheight) / 2);
 			}
 			++i;
 		}
@@ -180,15 +180,15 @@ class WindowScene implements s.shortcut.Shortcut {
 			final strheight = style.font.height(style.fontSize);
 			if (p >= strWidth) {
 				if (i == 0)
-					ctx.drawString(str, e.left.position + (p - strWidth) / 2, e.top.position + e.height.real / 2);
+					ctx.drawString(str, e.left.position + (p - strWidth) / 2, e.top.position + e.height / 2);
 				else if (i == 2)
-					ctx.drawString(str, e.left.position + e.width.real - (p + strWidth) / 2, e.top.position + e.height.real / 2);
+					ctx.drawString(str, e.left.position + e.width - (p + strWidth) / 2, e.top.position + e.height / 2);
 			}
 			if (p >= strheight) {
 				if (i == 1)
-					ctx.drawString(str, e.left.position + e.width.real / 2, e.top.position + (p - strheight) / 2);
+					ctx.drawString(str, e.left.position + e.width / 2, e.top.position + (p - strheight) / 2);
 				else if (i == 3)
-					ctx.drawString(str, e.left.position + e.width.real / 2, e.top.position + e.height.real - (p + strheight) / 2);
+					ctx.drawString(str, e.left.position + e.width / 2, e.top.position + e.height - (p + strheight) / 2);
 			}
 			++i;
 		}
@@ -199,7 +199,7 @@ class WindowScene implements s.shortcut.Shortcut {
 			App.input.mouse.y - style.font.height(style.fontSize));
 
 		style.fontSize = 16;
-		final rect = '${Std.int(e.width.real)} × ${Std.int(e.height.real)} at (${Std.int(e.left.position)}, ${Std.int(e.top.position)})';
+		final rect = '${Std.int(e.width)} × ${Std.int(e.height)} at (${Std.int(e.left.position)}, ${Std.int(e.top.position)})';
 		ctx.drawString(rect, App.input.mouse.x
 			- style.font.widthOfCharacters(style.fontSize, rect.toCharArray(), 0, rect.length),
 			App.input.mouse.y

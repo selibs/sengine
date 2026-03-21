@@ -60,13 +60,13 @@ class Text extends Label {
 			return;
 
 		final elideRelayoutIsDirty = elideMode != ElideNone
-			&& (elideModeIsDirty || height.realIsDirty || width.realIsDirty || fontSizeIsDirty || lineHeightIsDirty || lineHeightModeIsDirty);
+			&& (elideModeIsDirty || heightIsDirty || widthIsDirty || fontSizeIsDirty || lineHeightIsDirty || lineHeightModeIsDirty);
 
 		if (textIsDirty
 			|| fontSizeIsDirty
 			|| maxLineCountIsDirty
 			|| wrapModeIsDirty
-			|| (width.realIsDirty && wrapMode != NoWrap)
+			|| (widthIsDirty && wrapMode != NoWrap)
 			|| elideRelayoutIsDirty)
 			wrapText();
 
@@ -132,7 +132,7 @@ class Text extends Label {
 
 	function wrapText() {
 		var k = fontAsset.asset._get(fontSize);
-		var maxWidth = Math.abs(width.real);
+		var maxWidth = Math.abs(width);
 		lines = [];
 
 		inline function isNewline(c:Int):Bool
@@ -359,7 +359,7 @@ class Text extends Label {
 		if (lineCount == 0)
 			return;
 
-		final maxHeight = Math.abs(height.real);
+		final maxHeight = Math.abs(height);
 		final realLineHeight = switch lineHeightMode {
 			case Proportional: fontSize * lineHeight;
 			case Fixed: lineHeight;
@@ -410,7 +410,7 @@ class Text extends Label {
 
 		final k = fontAsset.asset._get(fontSize);
 		final ellipsisWidth = k.stringWidth(ellipsis);
-		final totalWidth = Math.abs(width.real);
+		final totalWidth = Math.abs(width);
 
 		inline function charWidth(c:Int):Float
 			return @:privateAccess k.getCharWidth(c);

@@ -1,12 +1,11 @@
 package s.markup.elements.shapes;
 
-import s.Texture;
-
+@:allow(s.markup.graphics.shapes.ShapeDrawer)
 abstract class Shape extends DrawableElement {
 	var realRadius:Float = 0.0;
 
 	@:attr public var radius:Float;
-	public var border = {width: 0.0, color: s.Color.Transparent};
+	public var border = {width: 0.0, color: Color.Transparent};
 
 	public function new(radius:Float = 5.0) {
 		super();
@@ -16,9 +15,9 @@ abstract class Shape extends DrawableElement {
 	override function sync(target:Texture) {
 		super.sync(target);
 
-		if (radiusIsDirty || width.realIsDirty || height.realIsDirty) {
+		if (radiusIsDirty || widthIsDirty || heightIsDirty) {
 			realRadius = Math.max(0.0, radius);
-			realRadius = Math.min(realRadius, Math.min(width.real, height.real) * 0.5);
+			realRadius = Math.min(realRadius, Math.min(width, height) * 0.5);
 		}
 	}
 }

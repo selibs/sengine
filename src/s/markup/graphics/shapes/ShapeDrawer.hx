@@ -7,11 +7,14 @@ import s.math.Mat3;
 import s.graphics.shaders.Shader;
 
 @:allow(s.markup.elements.shapes.Shape)
-@:access(s.markup.elements.DrawableElement)
 abstract class ShapeDrawer<T:s.markup.elements.shapes.Shape> extends DrawableElementDrawer<T> {
 	var radiusCL:ConstantLocation;
 	var borderWidthCL:ConstantLocation;
 	var borderColorCL:ConstantLocation;
+
+	public function new(fragmentShader:String) {
+		super(fragmentShader);
+	}
 
 	override function setup() {
 		super.setup();

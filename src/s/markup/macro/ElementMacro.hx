@@ -27,23 +27,9 @@ class ElementMacro {
 			}
 
 		function syncLength()
-			return macro $l.self.real = $e.position - $s.position;
-
-		var lcap = length.charAt(0).toUpperCase() + length.substr(1);
-		var minl = "minimum" + lcap;
-		var maxl = "maximum" + lcap;
+			return macro @:bypassAccessor $l = $e.position - $s.position;
 
 		return macro {
-			if ($noBind) {
-				var pl = 0.0;
-				if (parent != null) {
-					layout.$maxl.self.resolve(parent.$length.real, target.width, target.height);
-					layout.$minl.self.resolve(parent.$length.real, target.width, target.height);
-					pl = Math.min(layout.$maxl.real, Math.max(layout.$minl.real, parent.$length.real));
-				}
-				$l.self.resolve(pl, target.width, target.height);
-			}
-
 			if ($noAnchor && parent != null && parent.$start.positionIsDirty)
 				$s.self.position = parent.$start.position + $p;
 
@@ -57,7 +43,7 @@ class ElementMacro {
 			if ($s.positionIsDirty) {
 				${syncPos()};
 				if ($ae == null && $ac == null) {
-					$e.self.position = $s.position + $l.real;
+					$e.self.position = $s.position + $l;
 					$c.self.position = ($s.position + $e.position) * 0.5;
 				} else {
 					if ($ae != null && $ac == null)
@@ -70,7 +56,7 @@ class ElementMacro {
 
 			if ($c.positionIsDirty) {
 				if ($as == null && $ae == null) {
-					var d = $l.real * 0.5;
+					var d = $l * 0.5;
 					$s.self.position = $c.position - d;
 					$e.self.position = $c.position + d;
 					${syncPos()};
@@ -87,7 +73,7 @@ class ElementMacro {
 
 			if ($e.positionIsDirty) {
 				if ($as == null && $ac == null) {
-					$s.self.position = $e.position - $l.real;
+					$s.self.position = $e.position - $l;
 					$c.self.position = ($s.position + $e.position) * 0.5;
 					${syncPos()};
 				} else {
@@ -107,27 +93,27 @@ class ElementMacro {
 					$s.self.position += parent.$start.position;
 
 				if ($as == null && $ac == null && $ae == null) {
-					$c.self.position = $s.position + $l.real * 0.5;
-					$e.self.position = $s.position + $l.real;
+					$c.self.position = $s.position + $l * 0.5;
+					$e.self.position = $s.position + $l;
 				} else if ($as == null && $ac != null && $ae == null) {
 					$e.self.position = $c.position + ($c.position - $s.position);
 					${syncLength()};
 				} else if ($as == null && $ac == null && $ae != null) {
 					${syncLength()};
-					$c.self.position = $s.position + $l.real * 0.5;
+					$c.self.position = $s.position + $l * 0.5;
 				}
 			}
 
-			if ($i{length + "IsDirty"} || $l.realIsDirty) {
+			if ($i{length + "IsDirty"}) {
 				if ($ac == null && $ae == null) {
-					$e.self.position = $s.position + $l.real;
-					$c.self.position = $s.position + $l.real * 0.5;
+					$e.self.position = $s.position + $l;
+					$c.self.position = $s.position + $l * 0.5;
 				} else if ($as == null && $ac == null && $ae != null) {
-					$s.self.position = $e.position - $l.real;
-					$c.self.position = $e.position - $l.real * 0.5;
+					$s.self.position = $e.position - $l;
+					$c.self.position = $e.position - $l * 0.5;
 					${syncPos()};
 				} else if ($as == null && $ac != null && $ae == null) {
-					var d = $l.real * 0.5;
+					var d = $l * 0.5;
 					$s.self.position = $c.position - d;
 					$e.self.position = $c.position + d;
 					${syncPos()};

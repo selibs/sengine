@@ -8,16 +8,21 @@ import haxe.macro.Context;
 class ShaderMacro {
 	#if macro
 	public static function build() {
-		var fields = Context.getBuildFields();
-		var cls = Context.getLocalClass()?.get();
-
-		if (cls == null || cls.isAbstract)
+		final fields = Context.getBuildFields();
+		final clsRef = Context.getLocalClass();
+		if (clsRef == null)
 			return fields;
 
-		var tp = {pack: cls.pack, name: cls.name}
+		final cls = clsRef.get();
+		// Generic shader bases cannot own a usable static singleton because
+		// the field would depend on class type parameters.
+		if (cls.isAbstract || cls.params.length > 0 || Lambda.exists(fields, f -> f.name == "shader"))
+			return fields;
+
+		final tp:TypePath = {pack: cls.pack, name: cls.name};
 		fields.push({
 			name: "shader",
-			access: [APrivate, AStatic],
+			access: [APublic, AStatic],
 			kind: FProp("default", "never", TPath(tp), macro new $tp()),
 			pos: cls.pos
 		});

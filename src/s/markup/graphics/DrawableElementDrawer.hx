@@ -7,7 +7,6 @@ import s.graphics.shaders.Shader;
 import s.markup.elements.DrawableElement;
 
 @:allow(s.markup.elements.DrawableElement)
-@:access(s.markup.elements.DrawableElement)
 abstract class DrawableElementDrawer<T:DrawableElement> extends Shader {
 	var projectionCL:ConstantLocation;
 	var modelCL:ConstantLocation;
@@ -45,7 +44,7 @@ abstract class DrawableElementDrawer<T:DrawableElement> extends Shader {
 		final ctx = target.context3D;
 		ctx.setMat3(projectionCL, Mat3.orthogonalProjection(0.0, target.width, target.height, 0.0));
 		ctx.setMat3(modelCL, target.context2D.transform);
-		ctx.setFloat4(rectCL, element.left.position, element.top.position, element.width.real, element.height.real);
+		ctx.setFloat4(rectCL, element.left.position, element.top.position, element.width, element.height);
 		ctx.setFloat4(colorCL, element.color.RGBA);
 	}
 

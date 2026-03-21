@@ -6,26 +6,22 @@ uniform float radius;
 uniform float borderWidth;
 uniform vec4 borderColor;
 
-uniform vec2 center;
-uniform vec2 scale;
-
 #define softness 0.5
 
 layout(location = 0) in vec2 fragPos;
 layout(location = 1) in vec2 fragUV;
 layout(location = 0) out vec4 fragColor;
 
-float sdf(vec2 p, vec2 c, vec2 r) {
-    vec2 q = (p - c) / r;
-    return (length(q) - 1.0) * min(r.x, r.y);
+float sdf(vec2 p, vec2 r) {
+    vec2 safeR = max(r, vec2(1e-5));
+    vec2 q = p / safeR;
+    return (length(q) - 1.0) * min(safeR.x, safeR.y);
 }
 
 void main() {
-    vec2 s = max(abs(scale), vec2(1e-5));
-    float maxRadius = min(rect.z / (2.0 * s.x), rect.w / (2.0 * s.y));
-    float baseRadius = clamp(radius, 0.0, maxRadius);
-    vec2 radii = baseRadius * s;
-    float dist = sdf(fragPos, center, radii);
+    vec2 halfSize = rect.zw * 0.5;
+    vec2 center = rect.xy + halfSize;
+    float dist = sdf(fragPos - center, halfSize);
 
     float fill = 1.0 - smoothstep(-softness, softness, dist);
     float border = clamp(fill - (1.0 - smoothstep(-softness, softness, dist + borderWidth)), 0.0, 1.0);

@@ -8,7 +8,7 @@ class Canvas2D extends DrawableElement {
 
 	public function new() {
 		super();
-		texture = new Texture(Std.int(width.real), Std.int(height.real));
+		texture = new Texture(Std.int(width), Std.int(height));
 	}
 
 	public inline function paint(f:Context2D->Void):Void
@@ -16,9 +16,9 @@ class Canvas2D extends DrawableElement {
 
 	override function sync(target:Texture) {
 		super.sync(target);
-		if (width.realIsDirty || height.realIsDirty) {
+		if (widthIsDirty || heightIsDirty) {
 			texture.unload();
-			texture = new Texture(Std.int(width.real), Std.int(height.real));
+			texture = new Texture(Std.int(width), Std.int(height));
 		}
 	}
 

@@ -16,10 +16,10 @@ class Layout implements s.shortcut.Shortcut {
 	}
 
 	@:attr public var alignment:Alignment = None;
-	@:attr public var minimumWidth:Length = 0.0;
-	@:attr public var maximumWidth:Length = Math.POSITIVE_INFINITY;
-	@:attr public var minimumHeight:Length = 0.0;
-	@:attr public var maximumHeight:Length = Math.POSITIVE_INFINITY;
+	@:attr public var minimumWidth:Float = 0.0;
+	@:attr public var maximumWidth:Float = Math.POSITIVE_INFINITY;
+	@:attr public var minimumHeight:Float = 0.0;
+	@:attr public var maximumHeight:Float = Math.POSITIVE_INFINITY;
 
 	@:attr public var row(default, set):Int = 0;
 	@:attr public var rowSpan(default, set):Int = 1;

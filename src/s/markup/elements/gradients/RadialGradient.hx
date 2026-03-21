@@ -4,8 +4,8 @@ package s.markup.elements.gradients;
 class RadialGradient extends Gradient {
 	public function new() {
 		super();
-		start = {x: "50%", y: "50%"};
-		end = {x: "100%", y: "50%"};
+		start = {x: 0.5, y: 0.5};
+		end = {x: 1.0, y: 0.5};
 	}
 
 	function draw(target:Texture) {

@@ -23,9 +23,16 @@ class TriangleDrawer extends ShapeDrawer<Triangle> {
 
 	override function setUniforms(target:Texture, element:Triangle) {
 		super.setUniforms(target, element);
+		final l = element.left.position;
+		final t = element.top.position;
+		final w = element.width;
+		final h = element.height;
+		final p1 = element.point1;
+		final p2 = element.point2;
+		final p3 = element.point3;
 		final ctx = target.context3D;
-		ctx.setVec2(point1CL, element.realPoint1);
-		ctx.setVec2(point2CL, element.realPoint2);
-		ctx.setVec2(point3CL, element.realPoint3);
+		ctx.setVec2(point1CL, {x: l + p1.x * w, y: t + p1.y * h});
+		ctx.setVec2(point2CL, {x: l + p2.x * w, y: t + p2.y * h});
+		ctx.setVec2(point3CL, {x: l + p3.x * w, y: t + p3.y * h});
 	}
 }

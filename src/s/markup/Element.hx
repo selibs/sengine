@@ -9,21 +9,29 @@ import s.markup.geometry.Position;
 
 @:allow(s.markup.WindowScene)
 class Element extends Object2D<Element> {
-	overload extern public static inline function mapToElement(element:Element, x:Float, y:Float):Position {
+	overload extern public static inline function mapToElement(element:Element, x:Float, y:Float):Position
 		return element.mapFromGlobal(x, y);
-	}
 
-	overload extern public static inline function mapToElement(element:Element, p:Position):Position {
+	overload extern public static inline function mapToElement(element:Element, p:Position):Position
 		return element.mapFromGlobal(p.x, p.y);
-	}
 
-	overload extern public static inline function mapFromElement(element:Element, x:Float, y:Float):Position {
+	overload extern public static inline function mapFromElement(element:Element, x:Float, y:Float):Position
 		return element.mapToGlobal(x, y);
-	}
 
-	overload extern public static inline function mapFromElement(element:Element, p:Position):Position {
+	overload extern public static inline function mapFromElement(element:Element, p:Position):Position
 		return element.mapToGlobal(p.x, p.y);
-	}
+
+	overload extern public static inline function mapToElementNormalized(element:Element, x:Float, y:Float):Position
+		return element.mapFromGlobalNormalized(x, y);
+
+	overload extern public static inline function mapToElementNormalized(element:Element, p:Position):Position
+		return element.mapFromGlobalNormalized(p.x, p.y);
+
+	overload extern public static inline function mapFromElementNormalized(element:Element, x:Float, y:Float):Position
+		return element.mapToGlobalNormalized(x, y);
+
+	overload extern public static inline function mapFromElementNormalized(element:Element, p:Position):Position
+		return element.mapToGlobalNormalized(p.x, p.y);
 
 	public static function renderElement(element:Element, target:Texture) {
 		if (!element.visible)
@@ -47,8 +55,8 @@ class Element extends Object2D<Element> {
 
 	@:attr public var x(default, set):Float = 0.0;
 	@:attr public var y(default, set):Float = 0.0;
-	@:attr public var width(default, set):Length = 0.0;
-	@:attr public var height(default, set):Length = 0.0;
+	@:attr public var width(default, set):Float = 0.0;
+	@:attr public var height(default, set):Float = 0.0;
 
 	public var clip:Bool = false; // TODO: stencil test
 	@:attr public var opacity:Float = 1.0;
@@ -95,25 +103,32 @@ class Element extends Object2D<Element> {
 		this.y = y;
 	}
 
-	overload extern public inline function mapFromGlobal(x:Float, y:Float):Position {
+	overload extern public inline function mapFromGlobal(x:Float, y:Float):Position
 		return mapFromGlobal(vec2(x, y));
-	}
 
-	overload extern public inline function mapFromGlobal(p:Position):Position {
+	overload extern public inline function mapFromGlobal(p:Position):Position
 		return transform * p - vec2(left.position, top.position);
-	}
 
-	overload extern public inline function mapToGlobal(x:Float, y:Float):Position {
+	overload extern public inline function mapToGlobal(x:Float, y:Float):Position
 		return mapToGlobal(vec2(x, y));
-	}
 
-	overload extern public inline function mapToGlobal(p:Position):Position {
+	overload extern public inline function mapToGlobal(p:Position):Position
 		return inverse(transform) * p;
-	}
 
-	overload extern public inline function covers(x:Float, y:Float):Bool {
+	overload extern public inline function mapFromGlobalNormalized(x:Float, y:Float):Position
+		return mapFromGlobalNormalized(vec2(x, y));
+
+	overload extern public inline function mapFromGlobalNormalized(p:Position):Position
+		return mapFromGlobal(p) / vec2(width, height);
+
+	overload extern public inline function mapToGlobalNormalized(x:Float, y:Float):Position
+		return mapToGlobalNormalized(vec2(x, y));
+
+	overload extern public inline function mapToGlobalNormalized(p:Position):Position
+		return mapToGlobal(p) / vec2(width, height);
+
+	overload extern public inline function covers(x:Float, y:Float):Bool
 		return covers(vec2(x, y));
-	}
 
 	overload extern public inline function covers(p:Position):Bool {
 		p = mapToGlobal(p);
@@ -239,13 +254,13 @@ class Element extends Object2D<Element> {
 		return y;
 	}
 
-	function set_width(value:Length):Length {
+	function set_width(value:Float):Float {
 		if (!isHorizontallyBinded())
 			width = value;
 		return width;
 	}
 
-	function set_height(value:Length):Length {
+	function set_height(value:Float):Float {
 		if (!isVerticallyBinded())
 			height = value;
 		return height;
