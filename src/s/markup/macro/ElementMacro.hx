@@ -29,9 +29,20 @@ class ElementMacro {
 		function syncLength()
 			return macro $l.self.real = $e.position - $s.position;
 
+		var lcap = length.charAt(0).toUpperCase() + length.substr(1);
+		var minl = "minimum" + lcap;
+		var maxl = "maximum" + lcap;
+
 		return macro {
-			if ($noBind)
-				$l.self.resolve(parent == null ? 0.0 : parent.$length.real, target.width, target.height);
+			if ($noBind) {
+				var pl = 0.0;
+				if (parent != null) {
+					layout.$maxl.self.resolve(parent.$length.real, target.width, target.height);
+					layout.$minl.self.resolve(parent.$length.real, target.width, target.height);
+					pl = Math.min(layout.$maxl.real, Math.max(layout.$minl.real, parent.$length.real));
+				}
+				$l.self.resolve(pl, target.width, target.height);
+			}
 
 			if ($noAnchor && parent != null && parent.$start.positionIsDirty)
 				$s.self.position = parent.$start.position + $p;

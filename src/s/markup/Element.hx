@@ -162,6 +162,11 @@ class Element extends Object2D<Element> {
 		return style.remove(this);
 	}
 
+	@:slot(parentChanged)
+	function syncParent(prev:Element) {
+		fit();
+	}
+
 	override function __childAdded__(child:Element) {
 		super.__childAdded__(child);
 		if (!child.isHorizontallyAnchored())
@@ -194,8 +199,32 @@ class Element extends Object2D<Element> {
 	}
 
 	function sync(target:Texture) {
+		if (layout.alignmentIsDirty)
+			fit();
+
 		s.markup.macro.ElementMacro.syncAxis("left", "hCenter", "right", "x", "width");
 		s.markup.macro.ElementMacro.syncAxis("top", "vCenter", "bottom", "y", "height");
+	}
+
+	function fit() {
+		if (parent == null || layout.alignment == Alignment.None)
+			return;
+
+		anchors.clear();
+
+		if (layout.alignment & Alignment.AlignRight != 0) {
+			anchors.right = parent.right;
+		} else if (layout.alignment & Alignment.AlignHCenter != 0)
+			anchors.hCenter = parent.hCenter;
+		else
+			anchors.left = parent.left;
+
+		if (layout.alignment & Alignment.AlignBottom != 0)
+			anchors.bottom = parent.bottom;
+		else if (layout.alignment & Alignment.AlignVCenter != 0)
+			anchors.vCenter = parent.vCenter;
+		else
+			anchors.top = parent.top;
 	}
 
 	function set_x(value:Float):Float {

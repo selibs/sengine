@@ -3,6 +3,8 @@ package s.markup;
 import s.markup.Element;
 
 extern enum abstract Alignment(Int) from Int to Int {
+	var None:Int = 0;
+
 	var AlignLeft:Int = 1 << 0;
 	var AlignRight:Int = 1 << 1;
 	var AlignHCenter:Int = 1 << 2;
@@ -53,7 +55,7 @@ extern enum abstract Alignment(Int) from Int to Int {
 
 	public inline function toString():String {
 		var strs = [];
-		
+
 		if (this & AlignLeft != 0)
 			strs.push("AlignLeft");
 		if (this & AlignHCenter != 0)
