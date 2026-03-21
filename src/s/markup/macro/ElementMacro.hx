@@ -16,6 +16,7 @@ class ElementMacro {
 
 		var p = macro $i{pos};
 		var l = macro $i{length};
+		var ld = macro $i{length + "IsDirty"};
 		var noBind = macro $as == null && $ac == null || $as == null && $ae == null || $ac == null && $ae == null;
 		var noAnchor = macro $as == null && $ac == null && $ae == null;
 
@@ -27,9 +28,14 @@ class ElementMacro {
 			}
 
 		function syncLength()
-			return macro @:bypassAccessor $l = $e.position - $s.position;
+			return macro {
+				@:bypassAccessor $l = $e.position - $s.position;
+				lengthChanged = true;
+			}
 
 		return macro {
+			var lengthChanged = false;
+
 			if ($noAnchor && (positionIsDirty || position == Relative && parent != null && parent.$start.positionIsDirty)) {
 				$s.self.position = $p;
 				if (position == Relative)
@@ -107,7 +113,7 @@ class ElementMacro {
 				}
 			}
 
-			if ($i{length + "IsDirty"}) {
+			if ($ld) {
 				if ($ac == null && $ae == null) {
 					$e.self.position = $s.position + $l;
 					$c.self.position = $s.position + $l * 0.5;
@@ -122,6 +128,9 @@ class ElementMacro {
 					${syncPos()};
 				}
 			}
+
+			if (lengthChanged)
+				$ld = true;
 		}
 	}
 }

@@ -3,36 +3,10 @@ package s.markup.elements;
 import s.Texture;
 import s.markup.Alignment;
 
-enum ElideMode {
-	/**(default)**/
-	ElideNone;
-
-	ElideLeft;
-	ElideMiddle;
-	ElideRight;
-}
-
-enum WrapMode {
-	/**(default)**/
-	NoWrap;
-
-	WordWrap;
-	WrapAnywhere;
-	Wrap;
-}
-
-enum LineHeightMode {
-	/**(default)**/
-	Proportional;
-
-	Fixed;
-}
-
 class Text extends Label {
 	@:attr var lines:Array<TextLine> = [];
 
 	@:attr public var wrapMode:WrapMode = NoWrap;
-	@:attr public var elideMode:ElideMode = ElideNone;
 
 	@:attr public var lineHeight:Float = 1.0;
 	@:attr public var lineHeightMode:LineHeightMode = Proportional;
@@ -59,14 +33,22 @@ class Text extends Label {
 		if (!fontAsset.isLoaded)
 			return;
 
+		final contentLeft = left.position + left.padding;
+		final contentRight = right.position - right.padding;
+		final contentTop = top.position + top.padding;
+		final contentBottom = bottom.position - bottom.padding;
+		final contentHCenter = (contentLeft + contentRight) * 0.5;
+		final contentVCenter = (contentTop + contentBottom) * 0.5;
+		final hBoundsIsDirty = left.positionIsDirty || left.paddingIsDirty || right.positionIsDirty || right.paddingIsDirty;
+		final vBoundsIsDirty = top.positionIsDirty || top.paddingIsDirty || bottom.positionIsDirty || bottom.paddingIsDirty;
 		final elideRelayoutIsDirty = elideMode != ElideNone
-			&& (elideModeIsDirty || heightIsDirty || widthIsDirty || fontSizeIsDirty || lineHeightIsDirty || lineHeightModeIsDirty);
+			&& (elideModeIsDirty || heightIsDirty || widthIsDirty || vBoundsIsDirty || fontSizeIsDirty || lineHeightIsDirty || lineHeightModeIsDirty);
 
 		if (textIsDirty
 			|| fontSizeIsDirty
 			|| maxLineCountIsDirty
 			|| wrapModeIsDirty
-			|| (widthIsDirty && wrapMode != NoWrap)
+			|| ((widthIsDirty || hBoundsIsDirty) && wrapMode != NoWrap)
 			|| elideRelayoutIsDirty)
 			wrapText();
 
@@ -78,32 +60,32 @@ class Text extends Label {
 			textX = Math.POSITIVE_INFINITY;
 			if ((alignment & AlignHCenter) != 0)
 				for (l in lines) {
-					l.x = hCenter.position - l.width * 0.5;
+					l.x = contentHCenter - l.width * 0.5;
 					textWidth = Math.max(textWidth, l.width);
 					textX = Math.min(textX, l.x);
 				}
 			else if ((alignment & AlignRight) != 0)
 				for (l in lines) {
-					l.x = right.position - l.width;
+					l.x = contentRight - l.width;
 					textWidth = Math.max(textWidth, l.width);
 					textX = Math.min(textX, l.x);
 				}
 			else
 				for (l in lines) {
-					l.x = left.position;
+					l.x = contentLeft;
 					textWidth = Math.max(textWidth, l.width);
 					textX = Math.min(textX, l.x);
 				}
 		} else {
-			if ((alignmentIsDirty || hCenter.positionIsDirty) && (alignment & AlignHCenter) != 0)
+			if ((alignmentIsDirty || hBoundsIsDirty) && (alignment & AlignHCenter) != 0)
 				for (l in lines)
-					l.x = hCenter.position - l.width * 0.5;
-			else if ((alignmentIsDirty || right.positionIsDirty) && (alignment & AlignRight) != 0)
+					l.x = contentHCenter - l.width * 0.5;
+			else if ((alignmentIsDirty || hBoundsIsDirty) && (alignment & AlignRight) != 0)
 				for (l in lines)
-					l.x = right.position - l.width;
-			else if (alignmentIsDirty || left.positionIsDirty)
+					l.x = contentRight - l.width;
+			else if (alignmentIsDirty || hBoundsIsDirty)
 				for (l in lines)
-					l.x = left.position;
+					l.x = contentLeft;
 		}
 
 		if (linesIsDirty || fontSizeIsDirty || lineHeightIsDirty || lineHeightModeIsDirty) {
@@ -116,14 +98,14 @@ class Text extends Label {
 			textHeight = lineCount * realLineHeight;
 		}
 
-		var vDirty = alignmentIsDirty || textHeightIsDirty;
+		var vDirty = alignmentIsDirty || textHeightIsDirty || vBoundsIsDirty;
 
-		if ((vDirty || vCenter.positionIsDirty) && (alignment & AlignVCenter) != 0)
-			textY = vCenter.position - textHeight * 0.5;
-		else if ((vDirty || bottom.positionIsDirty) && (alignment & AlignBottom) != 0)
-			textY = bottom.position - textHeight;
-		else if (vDirty || top.positionIsDirty)
-			textY = top.position;
+		if (vDirty && (alignment & AlignVCenter) != 0)
+			textY = contentVCenter - textHeight * 0.5;
+		else if (vDirty && (alignment & AlignBottom) != 0)
+			textY = contentBottom - textHeight;
+		else if (vDirty)
+			textY = contentTop;
 
 		if (linesIsDirty || textYIsDirty)
 			for (i in 0...lineCount)
@@ -132,7 +114,7 @@ class Text extends Label {
 
 	function wrapText() {
 		var k = fontAsset.asset._get(fontSize);
-		var maxWidth = Math.abs(width);
+		var maxWidth = Math.max(0.0, Math.abs(width) - left.padding - right.padding);
 		lines = [];
 
 		inline function isNewline(c:Int):Bool
@@ -359,7 +341,7 @@ class Text extends Label {
 		if (lineCount == 0)
 			return;
 
-		final maxHeight = Math.abs(height);
+		final maxHeight = Math.max(0.0, Math.abs(height) - top.padding - bottom.padding);
 		final realLineHeight = switch lineHeightMode {
 			case Proportional: fontSize * lineHeight;
 			case Fixed: lineHeight;
@@ -404,99 +386,4 @@ class Text extends Label {
 			textHeight = visibleHeight;
 		}
 	}
-
-	function elideLine(line:TextLine, forceEllipsis:Bool = false):Bool {
-		static final ellipsis = "...";
-
-		final k = fontAsset.asset._get(fontSize);
-		final ellipsisWidth = k.stringWidth(ellipsis);
-		final totalWidth = Math.abs(width);
-
-		inline function charWidth(c:Int):Float
-			return @:privateAccess k.getCharWidth(c);
-
-		if (!forceEllipsis && line.width <= totalWidth)
-			return false;
-
-		if (totalWidth <= ellipsisWidth || line.text.length == 0) {
-			line.text = ellipsis;
-			line.width = ellipsisWidth;
-			return true;
-		}
-
-		final maxWidth = totalWidth - ellipsisWidth;
-
-		if (elideMode == ElideLeft) {
-			var body = "";
-			var bodyWidth = 0.0;
-			var i = line.text.length - 1;
-			while (i >= 0) {
-				var c = line.text.charCodeAt(i);
-				var cw = charWidth(c);
-				if (bodyWidth + cw > maxWidth)
-					break;
-				body = line.text.charAt(i) + body;
-				bodyWidth += cw;
-				i--;
-			}
-			line.text = ellipsis + body;
-			line.width = ellipsisWidth + bodyWidth;
-		} else if (elideMode == ElideMiddle) {
-			var left = new StringBuf();
-			var right = "";
-			var leftWidth = 0.0;
-			var rightWidth = 0.0;
-			var leftIndex = 0;
-			var rightIndex = line.text.length - 1;
-			var takeLeft = true;
-
-			while (leftIndex <= rightIndex) {
-				var index = takeLeft ? leftIndex : rightIndex;
-				var c = line.text.charCodeAt(index);
-				var cw = charWidth(c);
-				if (leftWidth + rightWidth + cw > maxWidth)
-					break;
-				if (takeLeft) {
-					left.addChar(c);
-					leftWidth += cw;
-					leftIndex++;
-				} else {
-					right = line.text.charAt(index) + right;
-					rightWidth += cw;
-					rightIndex--;
-				}
-				takeLeft = !takeLeft;
-			}
-
-			line.text = left.toString() + ellipsis + right;
-			line.width = leftWidth + ellipsisWidth + rightWidth;
-		} else if (elideMode == ElideRight) {
-			var body = new StringBuf();
-			var bodyWidth = 0.0;
-			var i = 0;
-			while (i < line.text.length) {
-				var c = line.text.charCodeAt(i);
-				var cw = charWidth(c);
-				if (bodyWidth + cw > maxWidth)
-					break;
-				body.addChar(c);
-				bodyWidth += cw;
-				i++;
-			}
-			line.text = body.toString() + ellipsis;
-			line.width = bodyWidth + ellipsisWidth;
-		}
-
-		return true;
-	}
-}
-
-@:structInit
-@:allow(s.markup.elements.Text)
-private class TextLine {
-	var text:String;
-	var width:Float = 0.0;
-	var height:Float = 0.0;
-	var x:Float = 0.0;
-	var y:Float = 0.0;
 }

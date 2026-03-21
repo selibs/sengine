@@ -6,6 +6,7 @@ import s.markup.Alignment;
 
 class Label extends DrawableElement {
 	var fontAsset:FontAsset = new FontAsset();
+	@:attr var displayText:String = "";
 	@:attr var textX:Float = 0.0;
 	@:attr var textY:Float = 0.0;
 	@:attr var textWidth:Float = 0.0;
@@ -14,6 +15,7 @@ class Label extends DrawableElement {
 	@:attr public var text:String;
 	@:attr public var fontSize(default, set):Int = 14;
 	@:attr public var alignment:Alignment = AlignLeft | AlignTop;
+	@:attr public var elideMode:ElideMode = ElideNone;
 
 	@:alias public var font:String = fontAsset.source;
 
@@ -30,13 +32,13 @@ class Label extends DrawableElement {
 	}
 
 	function draw(target:Texture) {
-		if (text.length == 0 || !fontAsset.isLoaded || fontSize == 0)
+		if (displayText.length == 0 || !fontAsset.isLoaded || fontSize == 0)
 			return;
 		final ctx = target.context2D;
 		ctx.style.font = fontAsset;
 		ctx.style.fontSize = fontSize;
 		ctx.style.color = color;
-		ctx.drawString(text, textX, textY);
+		ctx.drawString(displayText, textX, textY);
 	}
 
 	override function sync() {
@@ -45,27 +47,132 @@ class Label extends DrawableElement {
 	}
 
 	function syncText() {
-		if (textIsDirty || fontSizeIsDirty)
-			textWidth = fontAsset.asset.width(fontSize, text);
+		if (!fontAsset.isLoaded)
+			return;
+
+		final hBoundsIsDirty = left.positionIsDirty || left.paddingIsDirty || right.positionIsDirty || right.paddingIsDirty;
+		final contentWidthIsDirty = widthIsDirty || hBoundsIsDirty;
+		final textLayoutIsDirty = textIsDirty || fontSizeIsDirty || elideModeIsDirty || elideMode != ElideNone && contentWidthIsDirty;
+
+		if (textLayoutIsDirty) {
+			var line:TextLine = {
+				text: text,
+				width: fontAsset.asset.width(fontSize, text)
+			};
+			if (elideMode != ElideNone)
+				elideLine(line);
+			displayText = line.text;
+			textWidth = line.width;
+		}
 		if (fontSizeIsDirty)
 			textHeight = fontSize;
 
-		final hIsDirty = alignmentIsDirty || textWidthIsDirty;
-		final vIsDirty = alignmentIsDirty || fontSizeIsDirty;
+		final contentLeft = left.position + left.padding;
+		final contentRight = right.position - right.padding;
+		final contentTop = top.position + top.padding;
+		final contentBottom = bottom.position - bottom.padding;
 
-		if ((hIsDirty || hCenter.positionIsDirty) && (alignment & AlignHCenter) != 0)
-			textX = hCenter.position - textWidth * 0.5;
-		else if ((hIsDirty || right.positionIsDirty) && (alignment & AlignRight) != 0)
-			textX = right.position - textWidth;
-		else if (hIsDirty || left.positionIsDirty)
-			textX = left.position;
+		final hIsDirty = alignmentIsDirty || textWidthIsDirty || hBoundsIsDirty;
+		final vIsDirty = alignmentIsDirty || textHeightIsDirty || top.positionIsDirty || top.paddingIsDirty || bottom.positionIsDirty || bottom.paddingIsDirty;
 
-		if ((vIsDirty || vCenter.positionIsDirty) && (alignment & AlignVCenter) != 0)
-			textY = vCenter.position - textHeight * 0.5;
-		else if ((vIsDirty || bottom.positionIsDirty) && (alignment & AlignBottom) != 0)
-			textY = bottom.position - textHeight;
-		else if (vIsDirty || top.positionIsDirty)
-			textY = top.position;
+		if (hIsDirty && (alignment & AlignHCenter) != 0)
+			textX = (contentLeft + contentRight) * 0.5 - textWidth * 0.5;
+		else if (hIsDirty && (alignment & AlignRight) != 0)
+			textX = contentRight - textWidth;
+		else if (hIsDirty)
+			textX = contentLeft;
+
+		if (vIsDirty && (alignment & AlignVCenter) != 0)
+			textY = (contentTop + contentBottom) * 0.5 - textHeight * 0.5;
+		else if (vIsDirty && (alignment & AlignBottom) != 0)
+			textY = contentBottom - textHeight;
+		else if (vIsDirty)
+			textY = contentTop;
+	}
+
+	function elideLine(line:TextLine, forceEllipsis:Bool = false):Bool {
+		static final ellipsis = "...";
+
+		final k = fontAsset.asset._get(fontSize);
+		final ellipsisWidth = k.stringWidth(ellipsis);
+		final totalWidth = Math.max(0.0, Math.abs(width) - left.padding - right.padding);
+
+		inline function charWidth(c:Int):Float
+			return @:privateAccess k.getCharWidth(c);
+
+		if (!forceEllipsis && line.width <= totalWidth)
+			return false;
+
+		if (totalWidth <= ellipsisWidth || line.text.length == 0) {
+			line.text = ellipsis;
+			line.width = ellipsisWidth;
+			return true;
+		}
+
+		final maxWidth = totalWidth - ellipsisWidth;
+
+		if (elideMode == ElideLeft) {
+			var body = "";
+			var bodyWidth = 0.0;
+			var i = line.text.length - 1;
+			while (i >= 0) {
+				var c = line.text.charCodeAt(i);
+				var cw = charWidth(c);
+				if (bodyWidth + cw > maxWidth)
+					break;
+				body = line.text.charAt(i) + body;
+				bodyWidth += cw;
+				i--;
+			}
+			line.text = ellipsis + body;
+			line.width = ellipsisWidth + bodyWidth;
+		} else if (elideMode == ElideMiddle) {
+			var left = new StringBuf();
+			var right = "";
+			var leftWidth = 0.0;
+			var rightWidth = 0.0;
+			var leftIndex = 0;
+			var rightIndex = line.text.length - 1;
+			var takeLeft = true;
+
+			while (leftIndex <= rightIndex) {
+				var index = takeLeft ? leftIndex : rightIndex;
+				var c = line.text.charCodeAt(index);
+				var cw = charWidth(c);
+				if (leftWidth + rightWidth + cw > maxWidth)
+					break;
+				if (takeLeft) {
+					left.addChar(c);
+					leftWidth += cw;
+					leftIndex++;
+				} else {
+					right = line.text.charAt(index) + right;
+					rightWidth += cw;
+					rightIndex--;
+				}
+				takeLeft = !takeLeft;
+			}
+
+			line.text = left.toString() + ellipsis + right;
+			line.width = leftWidth + ellipsisWidth + rightWidth;
+		} else if (elideMode == ElideRight) {
+			var body = new StringBuf();
+			var bodyWidth = 0.0;
+			var i = 0;
+			while (i < line.text.length) {
+				var c = line.text.charCodeAt(i);
+				var cw = charWidth(c);
+				if (bodyWidth + cw > maxWidth)
+					break;
+				body.addChar(c);
+				bodyWidth += cw;
+				i++;
+			}
+			line.text = body.toString() + ellipsis;
+			line.width = bodyWidth + ellipsisWidth;
+		}
+
+		return true;
 	}
 
 	function set_fontSize(value:Int):Int
