@@ -12,8 +12,8 @@ abstract class Shape extends DrawableElement {
 		this.radius = radius;
 	}
 
-	override function sync(target:Texture) {
-		super.sync(target);
+	override function sync() {
+		super.sync();
 
 		if (radiusIsDirty || widthIsDirty || heightIsDirty) {
 			realRadius = Math.max(0.0, radius);

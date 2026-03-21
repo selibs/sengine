@@ -7,6 +7,11 @@ import s.markup.Anchors;
 import s.markup.geometry.Size;
 import s.markup.geometry.Position;
 
+enum ElementPosition {
+	Relative;
+	Absolute;
+}
+
 @:allow(s.markup.WindowScene)
 class Element extends Object2D<Element> {
 	overload extern public static inline function mapToElement(element:Element, x:Float, y:Float):Position
@@ -42,10 +47,11 @@ class Element extends Object2D<Element> {
 		ctx.popTransformation();
 	}
 
-	@:attr.group public var anchors(default, never) = new Anchors();
 	public var padding(never, set):Float;
 	public var margins(never, set):Float;
+	@:attr.group public var anchors(default, never) = new Anchors();
 
+	@:attr public var position:ElementPosition = Relative;
 	@:attr.group public var left(default, never) = new HorizontalAnchor();
 	@:attr.group public var hCenter(default, never) = new HorizontalAnchor();
 	@:attr.group public var right(default, never) = new HorizontalAnchor();
@@ -177,11 +183,6 @@ class Element extends Object2D<Element> {
 		return style.remove(this);
 	}
 
-	@:slot(parentChanged)
-	function syncParent(prev:Element) {
-		fit();
-	}
-
 	override function __childAdded__(child:Element) {
 		super.__childAdded__(child);
 		if (!child.isHorizontallyAnchored())
@@ -206,40 +207,20 @@ class Element extends Object2D<Element> {
 		ctx.style.popOpacity();
 	}
 
-	function syncTree(target:Texture) {
-		sync(target);
-		for (c in children)
-			c.syncTree(target);
-		flush();
-	}
-
-	function sync(target:Texture) {
-		if (layout.alignmentIsDirty)
-			fit();
-
+	function sync() {
 		s.markup.macro.ElementMacro.syncAxis("left", "hCenter", "right", "x", "width");
 		s.markup.macro.ElementMacro.syncAxis("top", "vCenter", "bottom", "y", "height");
 	}
 
-	function fit() {
-		if (parent == null || layout.alignment == Alignment.None)
-			return;
+	function syncChild(c:Element) {
+		c.syncTree();
+	}
 
-		anchors.clear();
-
-		if (layout.alignment & Alignment.AlignRight != 0) {
-			anchors.right = parent.right;
-		} else if (layout.alignment & Alignment.AlignHCenter != 0)
-			anchors.hCenter = parent.hCenter;
-		else
-			anchors.left = parent.left;
-
-		if (layout.alignment & Alignment.AlignBottom != 0)
-			anchors.bottom = parent.bottom;
-		else if (layout.alignment & Alignment.AlignVCenter != 0)
-			anchors.vCenter = parent.vCenter;
-		else
-			anchors.top = parent.top;
+	function syncTree() {
+		sync();
+		for (c in children)
+			syncChild(c);
+		flush();
 	}
 
 	function set_x(value:Float):Float {

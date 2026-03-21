@@ -22,7 +22,7 @@ class ElementMacro {
 		function syncPos()
 			return macro {
 				$p = $s.position;
-				if (parent != null)
+				if (position == Relative && parent != null)
 					$p -= parent.$start.position;
 			}
 
@@ -30,8 +30,11 @@ class ElementMacro {
 			return macro @:bypassAccessor $l = $e.position - $s.position;
 
 		return macro {
-			if ($noAnchor && parent != null && parent.$start.positionIsDirty)
-				$s.self.position = parent.$start.position + $p;
+			if ($noAnchor && (positionIsDirty || position == Relative && parent != null && parent.$start.positionIsDirty)) {
+				$s.self.position = $p;
+				if (position == Relative)
+					$s.self.position += parent.$start.position;
+			}
 
 			if ($as != null && (anchors.$sd || $as.positionIsDirty || $as.paddingIsDirty))
 				$s.self.position = $as.position + $as.padding + $s.margin;
@@ -89,7 +92,7 @@ class ElementMacro {
 
 			if ($i{pos + "IsDirty"} && $noAnchor) {
 				$s.self.position = $p;
-				if (parent != null)
+				if (position == Relative && parent != null)
 					$s.self.position += parent.$start.position;
 
 				if ($as == null && $ac == null && $ae == null) {

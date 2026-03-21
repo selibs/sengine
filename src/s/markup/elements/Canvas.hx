@@ -14,8 +14,8 @@ class Canvas2D extends DrawableElement {
 	public inline function paint(f:Context2D->Void):Void
 		texture.context2D.render(true, color, f);
 
-	override function sync(target:Texture) {
-		super.sync(target);
+	override function sync() {
+		super.sync();
 		if (widthIsDirty || heightIsDirty) {
 			texture.unload();
 			texture = new Texture(Std.int(width), Std.int(height));

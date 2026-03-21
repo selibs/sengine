@@ -39,8 +39,8 @@ class Label extends DrawableElement {
 		ctx.drawString(text, textX, textY);
 	}
 
-	override function sync(target:Texture) {
-		super.sync(target);
+	override function sync() {
+		super.sync();
 		syncText();
 	}
 

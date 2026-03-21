@@ -16,10 +16,16 @@ class Layout implements s.shortcut.Shortcut {
 	}
 
 	@:attr public var alignment:Alignment = None;
+	@:attr public var fillWidth:Bool = false;
+	@:attr public var fillHeight:Bool = false;
 	@:attr public var minimumWidth:Float = 0.0;
 	@:attr public var maximumWidth:Float = Math.POSITIVE_INFINITY;
 	@:attr public var minimumHeight:Float = 0.0;
 	@:attr public var maximumHeight:Float = Math.POSITIVE_INFINITY;
+	@:attr public var preferredWidth:Float = Math.NaN;
+	@:attr public var preferredHeight:Float = Math.NaN;
+	@:attr public var fillWidthFactor(default, set):Float = 1.0;
+	@:attr public var fillHeightFactor(default, set):Float = 1.0;
 
 	@:attr public var row(default, set):Int = 0;
 	@:attr public var rowSpan(default, set):Int = 1;
@@ -28,6 +34,12 @@ class Layout implements s.shortcut.Shortcut {
 	@:attr public var weight:Float = 1.0;
 
 	public function new() {}
+
+	inline function set_fillWidthFactor(value:Float):Float
+		return fillWidthFactor = value < 0 ? 0 : value;
+
+	inline function set_fillHeightFactor(value:Float):Float
+		return fillHeightFactor = value < 0 ? 0 : value;
 
 	inline function set_row(value:Int):Int
 		return row = value < 0 ? 0 : value;

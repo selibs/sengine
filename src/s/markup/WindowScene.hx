@@ -75,8 +75,9 @@ class WindowScene implements s.shortcut.Shortcut {
 
 	@:access(s.Window)
 	function render(target:Texture) {
+		root.syncTree();
+		
 		final ctx = target.context2D;
-		root.syncTree(target);
 		ctx.begin();
 		ctx.clear(color);
 		Element.renderElement(root, target);

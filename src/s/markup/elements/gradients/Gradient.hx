@@ -32,8 +32,8 @@ abstract class Gradient extends DrawableElement {
 		gradient = new Texture(1, resolution);
 	}
 
-	override function sync(target:Texture) {
-		super.sync(target);
+	override function sync() {
+		super.sync();
 
 		if (stopsIsDirty || resolutionIsDirty || interpolationIsDirty) {
 			if (resolutionIsDirty) {
