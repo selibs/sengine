@@ -6,7 +6,6 @@ import s.markup.Alignment;
 
 class Label extends DrawableElement {
 	var fontAsset:FontAsset = new FontAsset();
-	@:attr var displayText:String = "";
 	@:attr var textX:Float = 0.0;
 	@:attr var textY:Float = 0.0;
 	@:attr var textWidth:Float = 0.0;
@@ -19,10 +18,11 @@ class Label extends DrawableElement {
 
 	@:alias public var font:String = fontAsset.source;
 
-	@:readonly @:alias public var contentX:Float = textX;
-	@:readonly @:alias public var contentY:Float = textY;
-	@:readonly @:alias public var contentWidth:Float = textWidth;
-	@:readonly @:alias public var contentHeight:Float = textHeight;
+	public var displayText(default, null):String = "";
+	@:readonly @:alias public var displayX:Float = textX;
+	@:readonly @:alias public var displayY:Float = textY;
+	@:readonly @:alias public var displayWidth:Float = textWidth;
+	@:readonly @:alias public var displayHeight:Float = textHeight;
 
 	public function new(text:String = "") {
 		super();

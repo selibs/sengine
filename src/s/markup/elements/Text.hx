@@ -32,7 +32,7 @@ class Text extends Label {
 	override function syncText() {
 		if (!fontAsset.isLoaded)
 			return;
-
+		
 		final contentLeft = left.position + left.padding;
 		final contentRight = right.position - right.padding;
 		final contentTop = top.position + top.padding;
@@ -107,9 +107,19 @@ class Text extends Label {
 		else if (vDirty)
 			textY = contentTop;
 
-		if (linesIsDirty || textYIsDirty)
+		if (linesIsDirty || textYIsDirty) {
 			for (i in 0...lineCount)
 				lines[i].y = textY + lines[i].height * i;
+			if (linesIsDirty) {
+				var buf = new StringBuf();
+				for (i in 0...lines.length) {
+					buf.add(lines[i].text);
+					if (i < lines.length - 1)
+						buf.add("\n");
+				}
+				displayText = buf.toString();
+			}
+		}
 	}
 
 	function wrapText() {

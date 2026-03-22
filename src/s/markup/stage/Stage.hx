@@ -75,7 +75,7 @@ class Stage extends DrawableElement {
 		return local2ScreenSpace(world2LocalSpace(point));
 	}
 
-	@:slot(widthChanged, heightChanged)
+	// @:slot(widthChanged, heightChanged)
 	function __syncSizeChanged__(_) {
 		renderBuffer.resize(Std.int(width), Std.int(height));
 		aspectRatio = width / height;
@@ -91,6 +91,6 @@ class Stage extends DrawableElement {
 	}
 
 	function draw(target:Texture) {
-		StageRenderer.pipeline.render(target, this);
+		// StageRenderer.pipeline.render(target, this);
 	}
 }

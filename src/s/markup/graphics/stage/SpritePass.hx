@@ -1,5 +1,6 @@
 package s.markup.graphics.stage;
 
+import s.graphics.shaders.Shader;
 #if (S2D_LIGHTING != 1)
 import kha.Shaders;
 import kha.graphics4.VertexStructure;
@@ -19,9 +20,9 @@ class SpritePass extends StageRenderPass {
 	var cropRectCL:ConstantLocation;
 	#end
 
-	public function new(inputLayout:Array<VertexStructure>) {
+	public function new() {
 		super({
-			inputLayout: inputLayout,
+			// inputLayout: inputLayout,
 			vertexShader: Reflect.field(Shaders, "sprite_vert"),
 			fragmentShader: Reflect.field(Shaders, "sprite_frag"),
 			alphaBlendSource: SourceAlpha,
@@ -31,7 +32,7 @@ class SpritePass extends StageRenderPass {
 		});
 	}
 
-	function setup() {
+	override function setup() {
 		viewProjectionCL = pipeline.getConstantLocation("viewProjection");
 		textureMapTU = pipeline.getTextureUnit("textureMap");
 		#if (S2D_SPRITE_INSTANCING != 1)
@@ -46,9 +47,9 @@ class SpritePass extends StageRenderPass {
 		ctx.begin();
 		ctx.clear(stage.color);
 		ctx.setPipeline(pipeline);
-		ctx.setIndexBuffer(Drawers.indices2D);
+		ctx.setIndexBuffer(Shader.indices2D);
 		#if (S2D_SPRITE_INSTANCING != 1)
-		ctx.setVertexBuffer(Drawers.vertices2D);
+		ctx.setVertexBuffer(Shader.vertices2D);
 		#end
 		ctx.setMat3(viewProjectionCL, stage.viewProjection);
 		for (layer in stage.layers) {

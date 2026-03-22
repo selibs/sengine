@@ -6,9 +6,8 @@
 ../build/project-html5.hxml
 -cp ../libs/slog/src
 --macro include('s')
---macro exclude('s.markup.controls')
---macro exclude('s.markup.layouts')
 --no-output
+-L slog
 -dce no
 -D doc-gen
 -xml build/api.xml

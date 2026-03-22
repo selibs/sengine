@@ -2,44 +2,116 @@ package s;
 
 import haxe.Json;
 
+/**
+ * Generic tree node with parent/child relationships and hierarchy change signals.
+ *
+ * The type parameter represents the concrete node type stored in the hierarchy.
+ * This is the base structural container used by higher-level scene and markup
+ * objects in the engine.
+ *
+ * The class is intentionally small:
+ * - it manages parent and child ownership
+ * - it provides tag-based lookup helpers
+ * - it emits hierarchy change signals
+ *
+ * It does not define transform, rendering, or update behavior on its own.
+ */
 abstract class Object<T:Object<T>> implements s.shortcut.Shortcut {
 	var _parent:T;
 
+	/**
+	 * Optional application-defined tag used for lookup.
+	 *
+	 * Tags are not required to be unique. Methods such as
+	 * [`getChild`](s.Object.getChild), [`getChildren`](s.Object.getChildren), and
+	 * [`findChild`](s.Object.findChild) use this field for simple structural
+	 * queries.
+	 */
 	@:attr public var tag:String;
 
+	/**
+	 * Parent node or `null` if this node is detached.
+	 *
+	 * Assigning this field re-parents the node. Most code should use
+	 * [`setParent`](s.Object.setParent), [`removeParent`](s.Object.removeParent),
+	 * [`addChild`](s.Object.addChild), or [`removeChild`](s.Object.removeChild)
+	 * instead of mutating internal storage directly.
+	 */
 	public var parent(get, set):T;
+	/**
+	 * Direct child nodes.
+	 *
+	 * The list manages ownership: adding a node here updates its parent, and
+	 * removing it detaches it.
+	 */
 	public var children(default, null):ObjectList<T>;
 
+	/** Fired when the parent changes. */
 	@:signal public function parentChanged(previous:T):Void;
 
+	/** Fired when a direct child is added. */
 	@:signal public function childAdded(child:T):Void;
 
+	/** Fired when a direct child is removed. */
 	@:signal public function childRemoved(child:T):Void;
 
+	/** Fired when any descendant is added anywhere below this node. */
 	@:signal public function descendantAdded(descendant:T):Void;
 
+	/** Fired when any descendant is removed anywhere below this node. */
 	@:signal public function descendantRemoved(descendant:T):Void;
 
+	/** Creates an empty node with no parent and no children. */
 	public function new() {
 		children = new ObjectList(cast this);
 	}
 
+	/**
+	 * Sets the parent node.
+	 *
+	 * This is equivalent to adding the node to `value.children`.
+	 *
+	 * @param value New parent node.
+	 */
 	public function setParent(value:T):Void {
 		parent = value;
 	}
 
+	/** Detaches this node from its parent. */
 	public function removeParent():Void {
 		parent = null;
 	}
 
+	/**
+	 * Adds a direct child.
+	 *
+	 * If the child already belongs to another parent, it is re-parented.
+	 *
+	 * @param value Child node to add.
+	 * @return The added child or `null` if it is already present.
+	 */
 	public function addChild(value:T) {
 		return children.add(value);
 	}
 
+	/**
+	 * Removes a direct child.
+	 *
+	 * @param value Child node to remove.
+	 * @return `true` if the child was removed.
+	 */
 	public function removeChild(value:T) {
 		return children.remove(value);
 	}
 
+	/**
+	 * Returns the first direct child with the given tag.
+	 *
+	 * This only checks direct children and does not recurse into descendants.
+	 *
+	 * @param tag Tag to match.
+	 * @return The found child or `null`.
+	 */
 	public function getChild(tag:String):T {
 		for (c in children)
 			if (c.tag == tag)
@@ -47,10 +119,26 @@ abstract class Object<T:Object<T>> implements s.shortcut.Shortcut {
 		return null;
 	}
 
+	/**
+	 * Returns all direct children with the given tag.
+	 *
+	 * This only checks direct children and does not recurse into descendants.
+	 *
+	 * @param tag Tag to match.
+	 * @return Matching direct children.
+	 */
 	public function getChildren(tag:String):Array<T> {
 		return children.filter(e -> e.tag == tag);
 	}
 
+	/**
+	 * Searches the full descendant tree for the first node with the given tag.
+	 *
+	 * Search order is depth-first in child order.
+	 *
+	 * @param tag Tag to match.
+	 * @return The found descendant or `null`.
+	 */
 	public function findChild(tag:String):T {
 		for (child in children)
 			if (child.tag == tag)
@@ -63,16 +151,26 @@ abstract class Object<T:Object<T>> implements s.shortcut.Shortcut {
 		return null;
 	}
 
+	/** Returns an iterator over direct children. */
 	public function iterator() {
 		return children.iterator();
 	}
 
+	/**
+	 * Traverses all descendants depth-first and applies a callback.
+	 *
+	 * The callback receives each descendant, not the root node itself.
+	 *
+	 * @param f Callback invoked for each descendant.
+	 * @return This node.
+	 */
 	public function traverse(f:T->Void) {
 		for (child in children)
 			f(child.traverse(f));
 		return cast this;
 	}
 
+	/** Returns a debug-friendly string containing the class name and tag. */
 	public function toString():String {
 		return '${Type.getClassName(Type.getClass(this))} #$tag';
 	}

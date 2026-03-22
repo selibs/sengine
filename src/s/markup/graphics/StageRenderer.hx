@@ -49,7 +49,7 @@ class StageRenderer {
 		#end
 		lightingPass = new LightingPass(structures);
 		#else
-		spritePass = new SpritePass(structures);
+		// spritePass = new SpritePass(structures);
 		#end
 	}
 

@@ -5,108 +5,324 @@ import s.math.Vec4;
 import s.math.SMath;
 import s.math.SMath.mix as MathMix;
 
+/**
+ * Packed 32-bit color value with convenience accessors for RGB, HSV, and HSL channels.
+ *
+ * `Color` stores channels in `0xAARRGGBB` order and exposes normalized floating-point
+ * component accessors in the `0.0..1.0` range unless noted otherwise.
+ *
+ * It is designed to be pleasant to use in gameplay, rendering, UI, and animation
+ * code. You can treat it as:
+ * - a packed integer color
+ * - a set of normalized component properties
+ * - a small conversion hub between RGB, HSV, HSL, vectors, strings, and `kha.Color`
+ *
+ * Typical usage:
+ * ```haxe
+ * var c = Color.fromString("#ff8844");
+ * c.a = 0.5;
+ * c.h += 0.1;
+ * ```
+ *
+ * This abstract can be converted from and to `Int`, `String`, `kha.Color`, [`Vec3`](s.math.Vec3),
+ * and [`Vec4`](s.math.Vec4).
+ *
+ * @see https://en.wikipedia.org/wiki/RGBA_color_model
+ * @see https://en.wikipedia.org/wiki/HSL_and_HSV
+ */
 @:forward.new
 extern enum abstract Color(Int) from Int to Int {
+	/** Fully opaque black. */
 	final Black = 0xff000000;
+	/** Fully opaque white. */
 	final White = 0xffffffff;
+	/** Fully opaque red. */
 	final Red = 0xffff0000;
+	/** Fully opaque blue. */
 	final Blue = 0xff0000ff;
+	/** Fully opaque green. */
 	final Green = 0xff00ff00;
+	/** Fully opaque magenta. */
 	final Magenta = 0xffff00ff;
+	/** Fully opaque yellow. */
 	final Yellow = 0xffffff00;
+	/** Fully opaque cyan. */
 	final Cyan = 0xff00ffff;
+	/** Fully opaque purple. */
 	final Purple = 0xff800080;
+	/** Fully opaque pink. */
 	final Pink = 0xffffc0cb;
+	/** Fully opaque orange. */
 	final Orange = 0xffffa500;
+	/** Fully transparent black. */
 	final Transparent = 0x00000000;
 
+	/** Red channel in the `0.0..1.0` range. */
 	public var r(get, set):Float;
+	/** Green channel in the `0.0..1.0` range. */
 	public var g(get, set):Float;
+	/** Blue channel in the `0.0..1.0` range. */
 	public var b(get, set):Float;
+	/** Alpha channel in the `0.0..1.0` range. */
 	public var a(get, set):Float;
+	/**
+	 * Hue component in the `0.0..1.0` range.
+	 *
+	 * `0.0` and `1.0` represent the same hue.
+	 */
 	public var h(get, set):Float;
+	/** Saturation component in the `0.0..1.0` range of the HSV color model. */
 	public var s(get, set):Float;
+	/** Value component in the `0.0..1.0` range of the HSV color model. */
 	public var v(get, set):Float;
+	/** RGB channels as a normalized `Vec3` in `(r, g, b)` order. */
 	public var RGB(get, set):Vec3;
+	/** RGBA channels as a normalized `Vec4` in `(r, g, b, a)` order. */
 	public var RGBA(get, set):Vec4;
+	/** HSV channels as a normalized `Vec3` in `(h, s, v)` order. */
 	public var HSV(get, set):Vec3;
+	/** HSVA channels as a normalized `Vec4` in `(h, s, v, a)` order. */
 	public var HSVA(get, set):Vec4;
+	/** HSL channels as a normalized `Vec3` in `(h, s, l)` order. */
 	public var HSL(get, set):Vec3;
+	/** HSLA channels as a normalized `Vec4` in `(h, s, l, a)` order. */
 	public var HSLA(get, set):Vec4;
 
+	/**
+	 * Creates a random opaque color.
+	 *
+	 * Each RGB channel is chosen independently in the `0.0..1.0` range.
+	 *
+	 * @return A random color with alpha set to `1.0`.
+	 */
 	public static inline function random():Color {
 		return rgba(Math.random(), Math.random(), Math.random());
 	}
 
+	/**
+	 * Linearly interpolates between two colors.
+	 *
+	 * Interpolation is performed on normalized RGBA channels.
+	 *
+	 * @param a Start color.
+	 * @param b End color.
+	 * @param t Interpolation factor in the `0.0..1.0` range.
+	 * @return The interpolated color.
+	 */
 	overload public static inline function mix(a:Color, b:Color, t:Float):Color {
 		return MathMix(a.RGBA, b.RGBA, t);
 	}
 
+	/**
+	 * Linearly interpolates between two colors using an 8-bit interpolation factor.
+	 *
+	 * `0` returns `a`, `255` returns `b`.
+	 *
+	 * @param a Start color.
+	 * @param b End color.
+	 * @param t Interpolation factor in the `0..255` range.
+	 * @return The interpolated color.
+	 */
 	overload public static inline function mix(a:Color, b:Color, t:Int):Color {
 		return mix(a, b, t / 255);
 	}
 
+	/**
+	 * Creates an opaque color from 8-bit RGB components.
+	 *
+	 * @param r Red channel in the `0..255` range.
+	 * @param g Green channel in the `0..255` range.
+	 * @param b Blue channel in the `0..255` range.
+	 * @return A color with alpha set to `255`.
+	 */
 	overload public static inline function rgb(r:Int, g:Int, b:Int):Color {
 		return rgb(r / 255, g / 255, b / 255);
 	}
 
+	/**
+	 * Creates an opaque color from normalized RGB components.
+	 *
+	 * @param r Red channel in the `0.0..1.0` range.
+	 * @param g Green channel in the `0.0..1.0` range.
+	 * @param b Blue channel in the `0.0..1.0` range.
+	 * @return A color with alpha set to `1.0`.
+	 */
 	overload public static inline function rgb(r:Float, g:Float, b:Float):Color {
 		return rgba(r, g, b);
 	}
 
+	/**
+	 * Creates a color from 8-bit RGBA components.
+	 *
+	 * @param r Red channel in the `0..255` range.
+	 * @param g Green channel in the `0..255` range.
+	 * @param b Blue channel in the `0..255` range.
+	 * @param a Alpha channel in the `0..255` range.
+	 * @return The resulting color.
+	 */
 	overload public static inline function rgba(r:Int, g:Int, b:Int, a:Int = 255):Color {
 		return rgba(r / 255, g / 255, b / 255, a / 255);
 	}
 
+	/**
+	 * Creates a color from 8-bit RGB components and a normalized alpha value.
+	 *
+	 * @param r Red channel in the `0..255` range.
+	 * @param g Green channel in the `0..255` range.
+	 * @param b Blue channel in the `0..255` range.
+	 * @param a Alpha channel in the `0.0..1.0` range.
+	 * @return The resulting color.
+	 */
 	overload public static inline function rgba(r:Int, g:Int, b:Int, a:Float = 1.0):Color {
 		return rgba(r / 255, g / 255, b / 255, a);
 	}
 
+	/**
+	 * Creates a color from normalized RGBA components.
+	 *
+	 * @param r Red channel in the `0.0..1.0` range.
+	 * @param g Green channel in the `0.0..1.0` range.
+	 * @param b Blue channel in the `0.0..1.0` range.
+	 * @param a Alpha channel in the `0.0..1.0` range.
+	 * @return The resulting color.
+	 */
 	overload public static inline function rgba(r:Float, g:Float, b:Float, a:Float = 1.0):Color {
 		return (Std.int(a * 255) << 24) | (Std.int(r * 255) << 16) | (Std.int(g * 255) << 8) | Std.int(b * 255);
 	}
 
+	/**
+	 * Creates a color from normalized HSV components.
+	 *
+	 * @param h Hue in the `0.0..1.0` range.
+	 * @param s Saturation in the `0.0..1.0` range.
+	 * @param v Value in the `0.0..1.0` range.
+	 * @return The resulting color.
+	 */
 	overload public static inline function hsv(h:Float, s:Float, v:Float):Color {
 		return rgb2hsv(rgb(h, s, v));
 	}
 
+	/**
+	 * Creates a color from HSV components using common degree and percent ranges.
+	 *
+	 * @param h Hue in degrees, usually `0..360`.
+	 * @param s Saturation in percent, usually `0..100`.
+	 * @param v Value in percent, usually `0..100`.
+	 * @return The resulting color.
+	 */
 	overload public static inline function hsv(h:Int, s:Int, v:Int):Color {
 		return hsv(h / 360, s / 100, v / 100);
 	}
 
+	/**
+	 * Creates a color from HSV components and a normalized alpha value.
+	 *
+	 * @param h Hue in degrees, usually `0..360`.
+	 * @param s Saturation in percent, usually `0..100`.
+	 * @param v Value in percent, usually `0..100`.
+	 * @param a Alpha channel in the `0.0..1.0` range.
+	 * @return The resulting color.
+	 */
 	overload public static inline function hsva(h:Int, s:Int, v:Int, a:Float = 1.0):Color {
 		return hsva(h / 360, s / 100, v / 100, a);
 	}
 
+	/**
+	 * Creates a color from HSV components and an 8-bit alpha value.
+	 *
+	 * @param h Hue in degrees, usually `0..360`.
+	 * @param s Saturation in percent, usually `0..100`.
+	 * @param v Value in percent, usually `0..100`.
+	 * @param a Alpha channel in the `0..255` range.
+	 * @return The resulting color.
+	 */
 	overload public static inline function hsva(h:Int, s:Int, v:Int, a:Int = 255):Color {
 		return hsva(h / 360, s / 100, v / 100, a / 255);
 	}
 
+	/**
+	 * Creates a color from normalized HSVA components.
+	 *
+	 * @param h Hue in the `0.0..1.0` range.
+	 * @param s Saturation in the `0.0..1.0` range.
+	 * @param v Value in the `0.0..1.0` range.
+	 * @param a Alpha channel in the `0.0..1.0` range.
+	 * @return The resulting color.
+	 */
 	overload public static inline function hsva(h:Float, s:Float, v:Float, a:Float = 1.0):Color {
 		return rgb2hsv(rgba(h, s, v, a));
 	}
 
+	/**
+	 * Creates a color from normalized HSL components.
+	 *
+	 * @param h Hue in the `0.0..1.0` range.
+	 * @param s Saturation in the `0.0..1.0` range.
+	 * @param l Lightness in the `0.0..1.0` range.
+	 * @return The resulting color.
+	 */
 	overload public static inline function hsl(h:Float, s:Float, l:Float):Color {
 		return rgb2hsl(rgb(h, s, l));
 	}
 
+	/**
+	 * Creates a color from HSL components and an 8-bit alpha value.
+	 *
+	 * @param h Hue in degrees, usually `0..360`.
+	 * @param s Saturation in percent, usually `0..100`.
+	 * @param l Lightness in percent, usually `0..100`.
+	 * @param a Alpha channel in the `0..255` range.
+	 * @return The resulting color.
+	 */
 	overload public static inline function hsla(h:Int, s:Int, l:Int, a:Int = 255):Color {
 		return hsla(h / 360, s / 100, l / 100, a / 255);
 	}
 
+	/**
+	 * Creates a color from HSL components and a normalized alpha value.
+	 *
+	 * @param h Hue in degrees, usually `0..360`.
+	 * @param s Saturation in percent, usually `0..100`.
+	 * @param l Lightness in percent, usually `0..100`.
+	 * @param a Alpha channel in the `0.0..1.0` range.
+	 * @return The resulting color.
+	 */
 	overload public static inline function hsla(h:Int, s:Int, l:Int, a:Float = 1.0):Color {
 		return hsla(s / 360, h / 100, l / 100, a);
 	}
 
+	/**
+	 * Creates a color from normalized HSLA components.
+	 *
+	 * @param h Hue in the `0.0..1.0` range.
+	 * @param s Saturation in the `0.0..1.0` range.
+	 * @param l Lightness in the `0.0..1.0` range.
+	 * @param a Alpha channel in the `0.0..1.0` range.
+	 * @return The resulting color.
+	 */
 	overload public static inline function hsla(h:Float, s:Float, l:Float, a:Float = 1.0):Color {
 		return rgb2hsl(rgba(h, s, l, a));
 	}
 
+	/**
+	 * Converts a hue value into a fully saturated RGB color.
+	 *
+	 * @param hue Hue in the `0.0..1.0` range.
+	 * @return The RGB color for that hue.
+	 */
 	public static inline function hue2rgb(hue:Float):Color {
 		var rgb = abs(hue * 6.0 - vec3(3, 2, 4)) * vec3(1, -1, -1) + vec3(-1, 2, 2);
 		return clamp(rgb, 0.0, 1.0);
 	}
 
+	/**
+	 * Converts an RGB color to an HCV representation.
+	 *
+	 * The returned vector is stored as `(hue, chroma, value)`.
+	 *
+	 * @param color Source RGB color.
+	 * @return The converted HCV value.
+	 */
 	public static inline function rgb2hcv(color:Color):Color {
 		var rgb:Vec3 = color;
 		var p = (rgb.g < rgb.b) ? vec4(rgb.bg, -1.0, 2.0 / 3.0) : vec4(rgb.gb, 0.0, -1.0 / 3.0);
@@ -116,12 +332,24 @@ extern enum abstract Color(Int) from Int to Int {
 		return vec3(h, c, q.x);
 	}
 
+	/**
+	 * Converts an HSV color to RGB.
+	 *
+	 * @param color Source HSV color.
+	 * @return The converted RGB color.
+	 */
 	public static inline function hsv2rgb(color:Color):Color {
 		var hsv:Vec3 = color;
 		var rgb:Vec3 = hue2rgb(hsv.x);
 		return ((rgb - 1.0) * hsv.y + 1.0) * hsv.z;
 	}
 
+	/**
+	 * Converts an HSL color to RGB.
+	 *
+	 * @param color Source HSL color.
+	 * @return The converted RGB color.
+	 */
 	public static inline function hsl2rgb(color:Color):Color {
 		var hsl:Vec3 = color;
 		var rgb:Vec3 = hue2rgb(hsl.x);
@@ -129,12 +357,24 @@ extern enum abstract Color(Int) from Int to Int {
 		return (rgb - 0.5) * c + hsl.z;
 	}
 
+	/**
+	 * Converts an RGB color to HSV.
+	 *
+	 * @param color Source RGB color.
+	 * @return The converted HSV color.
+	 */
 	public static inline function rgb2hsv(color:Color):Color {
 		var hcv:Vec3 = rgb2hcv(color);
 		var s = hcv.y / (hcv.z + 1e-10);
 		return vec3(hcv.x, s, hcv.z);
 	}
 
+	/**
+	 * Converts an RGB color to HSL.
+	 *
+	 * @param rgb Source RGB color.
+	 * @return The converted HSL color.
+	 */
 	public static inline function rgb2hsl(rgb:Color):Color {
 		var hcv:Vec3 = rgb2hcv(rgb);
 		var z = hcv.z - hcv.y * 0.5;
@@ -142,19 +382,49 @@ extern enum abstract Color(Int) from Int to Int {
 		return vec3(hcv.x, s, z);
 	}
 
+	/**
+	 * Converts an sRGB color to linear RGB.
+	 *
+	 * @param srgb Source color in sRGB space.
+	 * @return The converted linear RGB color.
+	 */
 	public static inline function srgb2rgb(srgb:Color):Color {
 		return pow(srgb, vec3(2.1632601288));
 	}
 
+	/**
+	 * Converts a linear RGB color to sRGB.
+	 *
+	 * @param rgb Source color in linear RGB space.
+	 * @return The converted sRGB color.
+	 */
 	public static inline function rgb2srgb(rgb:Color):Color {
 		return pow(rgb, vec3(0.46226525728));
 	}
 
+	/**
+	 * Converts a `kha.Color` to `Color`.
+	 *
+	 * @param value Source `kha.Color`.
+	 * @return The converted color.
+	 */
 	@:from
 	public static inline function fromColor(value:kha.Color):Color {
 		return value.value;
 	}
 
+	/**
+	 * Parses a color from a name or hexadecimal string.
+	 *
+	 * Supported names include `black`, `white`, `red`, `blue`, `green`, `magenta`,
+	 * `yellow`, `cyan`, `purple`, `pink`, `orange`, and `transparent`.
+	 *
+	 * Supported hexadecimal formats are `#rgb`, `#rrggbb`, and `#aarrggbb`.
+	 *
+	 * @param value Color name or hexadecimal literal.
+	 * @return The parsed color.
+	 * @throws String If the string cannot be parsed as a color.
+	 */
 	@:from
 	public static inline function fromString(value:String):Color {
 		return switch (value.toLowerCase()) {
@@ -201,31 +471,65 @@ extern enum abstract Color(Int) from Int to Int {
 		}
 	}
 
+	/**
+	 * Converts this value to `kha.Color`.
+	 *
+	 * @return The same color as a `kha.Color`.
+	 */
 	@:to
 	public inline function toColor():kha.Color {
 		return this;
 	}
 
+	/**
+	 * Converts this color to an 8-digit hexadecimal string.
+	 *
+	 * The returned format is `#AARRGGBB`.
+	 *
+	 * @return The hexadecimal color string.
+	 */
 	@:to
 	public inline function toString():String {
 		return '#${StringTools.hex(this, 8)}';
 	}
 
+	/**
+	 * Creates a color from a normalized RGB vector.
+	 *
+	 * @param value RGB channels in `(r, g, b)` order.
+	 * @return The resulting color.
+	 */
 	@:from
 	public static inline function fromVec3(value:Vec3):Color {
 		return rgb(value.r, value.g, value.b);
 	}
 
+	/**
+	 * Creates a color from a normalized RGBA vector.
+	 *
+	 * @param value RGBA channels in `(r, g, b, a)` order.
+	 * @return The resulting color.
+	 */
 	@:from
 	public static inline function fromVec4(value:Vec4):Color {
 		return rgba(value.r, value.g, value.b, value.a);
 	}
 
+	/**
+	 * Converts this color to a normalized RGB vector.
+	 *
+	 * @return A `Vec3` in `(r, g, b)` order.
+	 */
 	@:to
 	public inline function toVec3():Vec3 {
 		return vec3(r, g, b);
 	}
 
+	/**
+	 * Converts this color to a normalized RGBA vector.
+	 *
+	 * @return A `Vec4` in `(r, g, b, a)` order.
+	 */
 	@:to
 	public inline function toVec4():Vec4 {
 		return vec4(r, g, b, a);
