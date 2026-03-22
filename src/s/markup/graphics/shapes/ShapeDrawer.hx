@@ -7,7 +7,7 @@ import s.math.Mat3;
 import s.graphics.shaders.Shader;
 
 @:allow(s.markup.elements.shapes.Shape)
-abstract class ShapeDrawer<T:s.markup.elements.shapes.Shape> extends DrawableElementDrawer<T> {
+abstract class ShapeDrawer<T:s.markup.elements.shapes.Shape> extends ElementDrawer<T> {
 	var radiusCL:ConstantLocation;
 	var borderWidthCL:ConstantLocation;
 	var borderColorCL:ConstantLocation;

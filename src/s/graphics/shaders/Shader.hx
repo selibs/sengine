@@ -38,8 +38,9 @@ abstract class Shader {
 		vertices2D = new VertexBuffer(4, ["vertPos" => Float32_2X], StaticUsage);
 		var vert = vertices2D.lock();
 		for (i in 0...4) {
-			vert[i * 2 + 0] = i == 0 || i == 1 ? -1.0 : 1.0;
-			vert[i * 2 + 1] = i == 0 || i == 3 ? -1.0 : 1.0;
+			final offset = i * 2;
+			vert[offset + 0] = i == 0 || i == 1 ? 0.0 : 1.0;
+			vert[offset + 1] = i == 0 || i == 3 ? 0.0 : 1.0;
 		}
 		vertices2D.unlock();
 

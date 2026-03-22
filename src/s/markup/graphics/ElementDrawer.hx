@@ -2,21 +2,19 @@ package s.markup.graphics;
 
 import kha.graphics4.VertexData;
 import kha.graphics4.ConstantLocation;
-import s.math.Mat3;
 import s.graphics.shaders.Shader;
 import s.markup.elements.DrawableElement;
 
 @:allow(s.markup.elements.DrawableElement)
-abstract class DrawableElementDrawer<T:DrawableElement> extends Shader {
-	var projectionCL:ConstantLocation;
-	var modelCL:ConstantLocation;
+abstract class ElementDrawer<T:DrawableElement> extends Shader {
+	var mvpCL:ConstantLocation;
 	var rectCL:ConstantLocation;
 	var colorCL:ConstantLocation;
 
-	function new(frag:String) {
+	function new(frag:String, vert:String = "element") {
 		super({
 			inputLayout: [["vertPos" => Float32_2X]],
-			vertexShader: "drawable_element",
+			vertexShader: vert,
 			fragmentShader: frag,
 			alphaBlendSource: SourceAlpha,
 			alphaBlendDestination: InverseSourceAlpha,
@@ -26,8 +24,7 @@ abstract class DrawableElementDrawer<T:DrawableElement> extends Shader {
 	}
 
 	override function setup() {
-		projectionCL = pipeline.getConstantLocation("projection");
-		modelCL = pipeline.getConstantLocation("model");
+		mvpCL = pipeline.getConstantLocation("mvp");
 		rectCL = pipeline.getConstantLocation("rect");
 		colorCL = pipeline.getConstantLocation("color");
 	}
@@ -42,8 +39,7 @@ abstract class DrawableElementDrawer<T:DrawableElement> extends Shader {
 
 	function setUniforms(target:Texture, element:T) {
 		final ctx = target.context3D;
-		ctx.setMat3(projectionCL, Mat3.orthogonalProjection(0.0, target.width, target.height, 0.0));
-		ctx.setMat3(modelCL, target.context2D.transform);
+		ctx.setMat3(mvpCL, target.context2D.transform);
 		ctx.setFloat4(rectCL, element.left.position, element.top.position, element.width, element.height);
 		ctx.setFloat4(colorCL, element.color.RGBA);
 	}

@@ -1,21 +1,18 @@
 package s.markup;
 
-import s.Color;
-import s.App;
 import s.Time;
+import s.Color;
 import s.Texture;
-import s.math.Mat3;
 import s.Window;
-import s.input.Mouse;
+import s.math.Mat3;
 import s.graphics.Context2D;
-import s.markup.Anchors;
-import s.markup.FocusPolicy;
-import s.markup.elements.InteractiveElement;
 
 using s.extensions.StringExt;
 
 @:allow(s.markup.Element)
 class WindowScene implements s.shortcut.Shortcut {
+	var projection:Mat3;
+
 	// var pending:Array<Element> = [];
 	// var entered:Array<InteractiveElement> = [];
 	// var focusedElement(default, set):Element;
@@ -25,13 +22,15 @@ class WindowScene implements s.shortcut.Shortcut {
 
 	public function new(w:Window) {
 		window = w;
-		window.onResized((w, h) -> {
-			root.width = w;
-			root.height = h;
+		window.onResized((width:Int, height:Int) -> {
+			root.width = width;
+			root.height = height;
+			projection = Mat3.orthogonalProjection(0.0, width, height, 0.0);
 		});
 		window.onRender(render);
 
-		setRoot(new Element());
+		root = new Element();
+		projection = Mat3.orthogonalProjection(0.0, window.width, window.height, 0.0);
 
 		// // mouse events
 		// var m = App.input.mouse;
@@ -76,11 +75,13 @@ class WindowScene implements s.shortcut.Shortcut {
 	@:access(s.Window)
 	function render(target:Texture) {
 		root.syncTree();
-		
+
 		final ctx = target.context2D;
 		ctx.begin();
 		ctx.clear(color);
+		ctx.pushTransformation(projection);
 		Element.renderElement(root, target);
+        ctx.popTransformation();
 		#if (S2D_UI_DEBUG_ELEMENT_BOUNDS == 1)
 		var e = elementAt(App.input.mouse.x, App.input.mouse.y);
 		if (e != null)

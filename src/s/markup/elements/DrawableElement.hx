@@ -2,9 +2,8 @@ package s.markup.elements;
 
 import s.Color;
 import s.Texture;
-import s.math.Vec2;
 
-@:allow(s.markup.graphics.DrawableElementDrawer)
+@:allow(s.markup.graphics.ElementDrawer)
 abstract class DrawableElement extends Element {
 	@:attr public var color:Color = White;
 

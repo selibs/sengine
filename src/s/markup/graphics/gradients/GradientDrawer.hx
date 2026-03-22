@@ -5,7 +5,7 @@ import kha.graphics4.ConstantLocation;
 import s.markup.elements.gradients.Gradient;
 
 @:allow(s.markup.elements.gradients.Gradient)
-abstract class GradientDrawer<T:Gradient> extends DrawableElementDrawer<T> {
+abstract class GradientDrawer<T:Gradient> extends ElementDrawer<T> {
 	var startCL:ConstantLocation;
 	var endCL:ConstantLocation;
 	var gradientTU:TextureUnit;

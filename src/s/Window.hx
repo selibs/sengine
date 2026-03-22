@@ -21,8 +21,10 @@ class Window implements s.shortcut.Shortcut {
 
 	/** Window X position in screen coordinates. */
 	@:alias public var x:Int = window.x;
+
 	/** Window Y position in screen coordinates. */
 	@:alias public var y:Int = window.y;
+
 	/**
 	 * Current window width in pixels.
 	 *
@@ -30,6 +32,7 @@ class Window implements s.shortcut.Shortcut {
 	 * informational state, not as a writable requested size.
 	 */
 	public var width(default, null):Int = 0;
+
 	/**
 	 * Current window height in pixels.
 	 *
@@ -40,8 +43,10 @@ class Window implements s.shortcut.Shortcut {
 
 	/** Window title. */
 	@:alias public var title:String = window.title;
+
 	/** Current window mode. */
 	@:alias public var mode:WindowMode = window.mode;
+
 	/**
 	 * Whether the active framebuffer is synchronized to vertical refresh.
 	 *
@@ -52,12 +57,16 @@ class Window implements s.shortcut.Shortcut {
 
 	/** Whether the window should stay on top. */
 	@:inject(syncFeatures) public var onTop:Bool = false;
+
 	/** Whether the user can resize the window. */
 	@:inject(syncFeatures) public var resizable:Bool = true;
+
 	/** Whether the window should be borderless. */
 	@:inject(syncFeatures) public var borderless:Bool = false;
+
 	/** Whether the window can be minimized. */
 	@:inject(syncFeatures) public var minimizable:Bool = true;
+
 	/** Whether the window can be maximized. */
 	@:inject(syncFeatures) public var maximizable:Bool = true;
 
@@ -68,14 +77,19 @@ class Window implements s.shortcut.Shortcut {
 	 * the OS window to another display mode by itself.
 	 */
 	@:inject(syncFramebuffer) public var frequency:Int = 60;
+
 	/** Whether framebuffer presentation should use vertical sync. */
 	@:inject(syncFramebuffer) public var verticalSync:Bool = true;
+
 	/** Color buffer bit depth. */
 	@:inject(syncFramebuffer) public var colorBufferBits:Int = 32;
+
 	/** Depth buffer bit depth. */
 	@:inject(syncFramebuffer) public var depthBufferBits:Int = 16;
+
 	/** Stencil buffer bit depth. */
 	@:inject(syncFramebuffer) public var stencilBufferBits:Int = 8;
+
 	/** Multisample count. */
 	@:inject(syncFramebuffer) public var samplesPerPixel:Int = 1;
 

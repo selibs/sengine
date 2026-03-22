@@ -33,14 +33,15 @@ class MarkupMacro {
 		"drawable" => "s.markup.elements.DrawableElement",
 		"interactive" => "s.markup.elements.InteractiveElement",
 		// controls
-		"button" => "s.markup.controls.Button",
-		"input" => "s.markup.controls.TextInput",
+		// "button" => "s.markup.controls.Button",
+		// "input" => "s.markup.controls.TextInput",
 		// elements
-		"canvas" => "s.markup.elements.Canvas",
 		"label" => "s.markup.elements.Label",
-		"positioner" => "s.markup.elements.Positioner",
+		// "positioner" => "s.markup.elements.Positioner",
 		"text" => "s.markup.elements.Text",
-		"edit" => "s.markup.elements.TextEdit",
+		// "edit" => "s.markup.elements.TextEdit",
+		"canvas" => "s.markup.elements.Canvas",
+		"image" => "s.markup.elements.ImageElement",
 		// shapes
 		"circle" => "s.markup.elements.shapes.Circle",
 		"ellipse" => "s.markup.elements.shapes.Ellipse",
@@ -52,14 +53,13 @@ class MarkupMacro {
 		"gradient.conic" => "s.markup.elements.gradients.ConicGradient",
 		// layouts
 		"box" => "s.markup.layouts.BoxLayout",
-		"vbox" => "s.markup.layouts.VBoxLayout",
-		"hbox" => "s.markup.layouts.HBoxLayout",
+		// "vbox" => "s.markup.layouts.VBoxLayout",
+		// "hbox" => "s.markup.layouts.HBoxLayout",
 		// widgets
-		"image" => "s.markup.widgets.ImageWidget",
-		"progress" => "s.markup.widgets.ProgressBar",
-		"scroll" => "s.markup.widgets.ScrollView",
+		// "progress" => "s.markup.widgets.ProgressBar",
+		// "scroll" => "s.markup.widgets.ScrollView",
 		// stage
-		"stage" => "s.markup.Stage"
+		// "stage" => "s.markup.Stage"
 	];
 
 	public static function init() {
