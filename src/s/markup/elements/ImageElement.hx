@@ -9,6 +9,25 @@ import s.resource.Image;
 import s.markup.geometry.Rect;
 
 /**
+ * Texture sampling presets for [`ImageElement`](s.markup.elements.ImageElement).
+ *
+ * These presets combine nearest/linear sampling with optional mipmapping.
+ */
+enum ImageSampling {
+	/** Nearest-neighbor sampling without mipmaps. */
+	Nearest;
+
+	/** Linear sampling without mipmaps. */
+	Bilinear;
+
+	/** Nearest-neighbor sampling with mipmaps enabled. */
+	Prefiltered;
+
+	/** Linear sampling with linear mip blending. */
+	Trilinear;
+}
+
+/**
  * Image-based drawable markup element.
  *
  * `ImageElement` renders a [`s.resource.Image`](s.resource.Image) inside the
@@ -18,27 +37,10 @@ import s.markup.geometry.Rect;
  * [`sourceClipRect`](s.markup.elements.ImageElement.sourceClipRect), fitted by
  * [`fillMode`](s.markup.elements.ImageElement.fillMode), aligned by
  * [`alignment`](s.markup.elements.ImageElement.alignment), and sampled with
- * optional smooth filtering and mipmapping.
- *
- * The element operates on two derived rectangles:
- *
- * - a destination rectangle inside the element's own bounds
- * - a source rectangle inside the texture
- *
- * Internally these are stored as normalized `Vec4` values:
- *
- * - [`rect`](s.markup.elements.ImageElement.rect)
- *   Destination transform in local element space. It is interpreted as a
- *   multiply-add for vertex positions in the image vertex shader.
- * - [`clipRect`](s.markup.elements.ImageElement.clipRect)
- *   Source transform in texture UV space. It is interpreted as a multiply-add
- *   for sampled UV coordinates.
- *
- * The element recomputes these internal rectangles during
- * [`sync`](s.markup.elements.ImageElement.sync) from the current loaded image,
- * the optional [`sourceClipRect`](s.markup.elements.ImageElement.sourceClipRect),
- * the chosen [`fillMode`](s.markup.elements.ImageElement.fillMode), and the
- * current [`alignment`](s.markup.elements.ImageElement.alignment).
+ * configurable texture sampling through
+ * [`smooth`](s.markup.elements.ImageElement.smooth),
+ * [`mipmap`](s.markup.elements.ImageElement.mipmap), or the higher-level
+ * [`sampling`](s.markup.elements.ImageElement.sampling) preset.
  *
  * Fill-mode behavior overview:
  *
@@ -82,8 +84,7 @@ import s.markup.geometry.Rect;
  * image.height = 180;
  * image.fillMode = Contain;
  * image.alignment = AlignCenter;
- * image.smooth = true;
- * image.mipmap = true;
+ * image.sampling = Trilinear;
  * ```
  *
  * Example using a texture atlas region:
@@ -97,9 +98,7 @@ import s.markup.geometry.Rect;
  *
  * Loading is asynchronous from the point of view of the element API. Until the
  * asset is available, [`isLoaded`](s.markup.elements.ImageElement.isLoaded) is
- * `false`, [`sync`](s.markup.elements.ImageElement.sync) does not derive
- * rendering rectangles, and [`draw`](s.markup.elements.ImageElement.draw)
- * skips rendering.
+ * `false` and the element skips rendering.
  *
  * `ImageElement` otherwise behaves like any other
  * [`DrawableElement`](s.markup.elements.DrawableElement): it participates in
@@ -166,18 +165,38 @@ class ImageElement extends DrawableElement {
 	@:attr public var sourceClipRect:Rect = null;
 
 	/**
-	 * Whether mipmaps should be generated and used for this image.
+	 * Whether the image should use mipmaps when sampled smaller than its native
+	 * size.
 	 *
-	 * If enabled, mipmaps are generated after the asset becomes available and are
-	 * then used with linear mipmap sampling. This improves quality when the image
-	 * is reduced in size or otherwise minified, at the cost of extra generation
-	 * work and additional texture memory.
-	 *
-	 * When disabled, the image uses no mipmap filtering.
+	 * When enabled, the element generates a mip chain for the current image and
+	 * uses linear mip selection. When disabled, mip levels are removed and only
+	 * the base image is sampled.
 	 *
 	 * @default `false`
 	 */
-	@:attr public var quality(default, set):ImageQuality = Low;
+	@:attr public var mipmap(get, set):Bool;
+
+	/**
+	 * Whether the image should use linear filtering inside each sampled mip
+	 * level.
+	 *
+	 * When `false`, sampling remains pixel-sharp. When `true`, the image is
+	 * filtered smoothly.
+	 *
+	 * @default `true`
+	 */
+	public var smooth(get, set):Bool;
+
+	/**
+	 * Convenience preset that configures [`smooth`](s.markup.elements.ImageElement.smooth)
+	 * and [`mipmap`](s.markup.elements.ImageElement.mipmap) together.
+	 *
+	 * Use this when you want a named sampling mode instead of managing the two
+	 * low-level flags separately.
+	 *
+	 * @default `Bilinear`
+	 */
+	public var sampling(get, set):ImageSampling;
 
 	/**
 	 * Defines how the image is fitted, cropped, or tiled inside the element.
@@ -227,14 +246,13 @@ class ImageElement extends DrawableElement {
 		if (!isLoaded)
 			return;
 
-		final assetDirty = assetIsDirty;
-		final clipDirty = assetDirty || sourceClipRectIsDirty;
-		final fillDirty = clipDirty || fillModeIsDirty || alignmentIsDirty || widthIsDirty || heightIsDirty;
+		if (assetIsDirty || mipmapIsDirty)
+			if (mipmap)
+				(image : kha.Image).generateMipmaps(1);
+			else
+				(image : kha.Image).setMipmaps([]);
 
-		if (quality != Low && (assetDirty || qualityIsDirty))
-			(image : kha.Image).generateMipmaps(1);
-
-		if (!fillDirty)
+		if (!(assetIsDirty || sourceClipRectIsDirty || fillModeIsDirty || alignmentIsDirty || widthIsDirty || heightIsDirty))
 			return;
 
 		final imageWidth = image.width;
@@ -334,21 +352,40 @@ class ImageElement extends DrawableElement {
 		s.markup.graphics.ImageElementDrawer.shader.render(target, this);
 	}
 
-	inline function set_quality(value:ImageQuality):ImageQuality {
+	inline function get_mipmap():Bool
+		return mipmapFilter == LinearMipFilter;
+
+	inline function set_mipmap(value:Bool):Bool {
+		mipmapFilter = value ? LinearMipFilter : NoMipFilter;
+		return value;
+	}
+
+	inline function get_smooth():Bool
+		return textureFilter == LinearFilter;
+
+	inline function set_smooth(value:Bool):Bool {
+		textureFilter = value ? LinearFilter : PointFilter;
+		return value;
+	}
+
+	inline function get_sampling():ImageSampling
+		return mipmap ? (smooth ? Trilinear : Prefiltered) : (smooth ? Bilinear : Nearest);
+
+	inline function set_sampling(value:ImageSampling):ImageSampling {
 		switch value {
-			case Low:
-				mipmapFilter = NoMipFilter;
-				textureFilter = PointFilter;
-			case Middle:
-				mipmapFilter = PointMipFilter;
-				textureFilter = LinearFilter;
-			case Good:
-				mipmapFilter = LinearMipFilter;
-				textureFilter = LinearFilter;
-			case Best:
-				mipmapFilter = LinearMipFilter;
-				textureFilter = AnisotropicFilter;
+			case Nearest:
+				mipmap = false;
+				smooth = false;
+			case Bilinear:
+				mipmap = false;
+				smooth = true;
+			case Prefiltered:
+				mipmap = true;
+				smooth = false;
+			case Trilinear:
+				mipmap = true;
+				smooth = true;
 		}
-		return quality = value;
+		return value;
 	}
 }

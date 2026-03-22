@@ -3,6 +3,7 @@ package s;
 import kha.System;
 import kha.Framebuffer;
 import aura.Aura;
+import s.Log;
 import s.Window;
 import s.input.Mouse;
 import s.input.Keyboard;
@@ -19,12 +20,16 @@ import s.graphics.shaders.Shader;
 enum AppState {
 	/** The application was paused, but has not necessarily lost foreground focus. */
 	Pause;
+
 	/** The application resumed after a pause. */
 	Resume;
+
 	/** The application moved to the background. */
 	Background;
+
 	/** The application became the foreground application. */
 	Foreground;
+
 	/** The application is shutting down. */
 	Shutdown;
 }
@@ -206,6 +211,7 @@ enum AppState {
  */
 @:autoBuild(s.macro.AppMacro.build())
 class App implements s.shortcut.Shortcut {
+	static final logger:Logger = new Logger("APP");
 	static var windows(default, null):Array<Window> = [];
 
 	/**
@@ -262,6 +268,7 @@ class App implements s.shortcut.Shortcut {
 	}
 
 	// aliases
+
 	/**
 	 * Registers a file drop handler.
 	 *
@@ -318,6 +325,8 @@ class App implements s.shortcut.Shortcut {
 		System.notifyOnCutCopyPaste(cut, copy, paste);
 
 	static function init(window, setup, start, loadProgress, loadFailed) {
+		logger.info("Starting");
+
 		input = {mouse: new Mouse(), keyboard: new Keyboard()}
 		System.notifyOnApplicationState(() -> state = Foreground, () -> state = Resume, () -> state = Pause, () -> state = Background, () -> state = Shutdown);
 		s.resource.Resource.loadShelf({
@@ -334,6 +343,8 @@ class App implements s.shortcut.Shortcut {
 
 			if (start != null)
 				start();
+			
+			logger.debug("Started");
 		}, loadProgress, loadFailed);
 	}
 

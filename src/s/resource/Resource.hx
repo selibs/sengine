@@ -1,5 +1,7 @@
 package s.resource;
 
+import s.Log;
+
 typedef ResourceError = {
 	var source:String;
 	var message:String;
@@ -9,6 +11,8 @@ private typedef KhaFResource<T:kha.Resource> = (source:String, done:T->Void, ?fa
 private typedef FResource<T:kha.Resource> = (source:String, done:T->Void, ?failed:ResourceError->Void) -> Void;
 
 class Resource {
+	static final logger:Logger = new Logger("RESOURCE");
+
 	public static var blobs(default, never) = new ResourceList<Blob>();
 	public static var fonts(default, never) = new ResourceList<Font>();
 	public static var images(default, never) = new ResourceList<Image>();
@@ -158,8 +162,10 @@ class Resource {
 
 	static function wrapLoad<T:kha.Resource>(p:KhaFResource<T>, n:KhaFResource<T>, source:String, list:ResourceList<T>, ?done:T->Void,
 			?failed:ResourceError->Void) {
+		logger.info('Loading "$source"');
 		final isPath = source.indexOf("/") + source.indexOf("\\") + source.indexOf(".") > -3;
 		(isPath ? p : n)(source, asset -> {
+			logger.debug('Loaded "$source"');
 			list.add(source, asset);
 			if (done != null)
 				done(asset);
@@ -170,7 +176,7 @@ class Resource {
 					message: Std.string(err.error)
 				});
 			else
-				Log.error('Failed to load asset $source');
+				logger.error('Failed to load "$source": ${err.error}');
 		});
 	}
 
@@ -205,7 +211,7 @@ class Resource {
 					if (failed != null)
 						failed(err);
 					else
-						Log.error('Failed to load asset "$source": $err');
+						logger.error('Failed to load asset "$source": $err');
 					adjust();
 				});
 		}
