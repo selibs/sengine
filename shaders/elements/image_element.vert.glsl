@@ -6,7 +6,7 @@ uniform vec4 sourceRect;
 uniform vec4 sourceClipRect;
 
 layout(location = 0) in vec2 vertPos;
-layout(location = 0) out vec2 fragUV;
+layout(location = 1) out vec2 fragUV;
 
 void main() {
     fragUV = vec2(vertPos.x, 1.0 - vertPos.y);

@@ -8,27 +8,213 @@ import s.assets.ImageAsset;
 import s.resource.Image;
 import s.markup.geometry.Rect;
 
+/**
+ * Image-based drawable markup element.
+ *
+ * `ImageElement` renders a [`s.resource.Image`](s.resource.Image) inside the
+ * rectangular bounds inherited from [`Element`](s.markup.Element). The image is
+ * loaded through an internal [`ImageAsset`](s.assets.ImageAsset), can be
+ * restricted to a source sub-rectangle with
+ * [`sourceClipRect`](s.markup.elements.ImageElement.sourceClipRect), fitted by
+ * [`fillMode`](s.markup.elements.ImageElement.fillMode), aligned by
+ * [`alignment`](s.markup.elements.ImageElement.alignment), and sampled with
+ * optional smooth filtering and mipmapping.
+ *
+ * The element operates on two derived rectangles:
+ *
+ * - a destination rectangle inside the element's own bounds
+ * - a source rectangle inside the texture
+ *
+ * Internally these are stored as normalized `Vec4` values:
+ *
+ * - [`rect`](s.markup.elements.ImageElement.rect)
+ *   Destination transform in local element space. It is interpreted as a
+ *   multiply-add for vertex positions in the image vertex shader.
+ * - [`clipRect`](s.markup.elements.ImageElement.clipRect)
+ *   Source transform in texture UV space. It is interpreted as a multiply-add
+ *   for sampled UV coordinates.
+ *
+ * The element recomputes these internal rectangles during
+ * [`sync`](s.markup.elements.ImageElement.sync) from the current loaded image,
+ * the optional [`sourceClipRect`](s.markup.elements.ImageElement.sourceClipRect),
+ * the chosen [`fillMode`](s.markup.elements.ImageElement.fillMode), and the
+ * current [`alignment`](s.markup.elements.ImageElement.alignment).
+ *
+ * Fill-mode behavior overview:
+ *
+ * - [`Pad`](s.markup.FillMode.Pad)
+ *   Keeps the source at its natural size relative to the element. This may
+ *   leave empty space around the image or cause the image to extend beyond the
+ *   element if the source is larger than the destination.
+ * - [`Stretch`](s.markup.FillMode.Stretch)
+ *   Scales the sampled source rectangle to exactly match the element bounds.
+ * - [`Cover`](s.markup.FillMode.Cover)
+ *   Scales uniformly to fill the element bounds, cropping the source rectangle
+ *   when aspect ratios differ.
+ * - [`Contain`](s.markup.FillMode.Contain)
+ *   Scales uniformly to fit inside the element bounds without cropping,
+ *   potentially leaving empty space.
+ * - [`Tile`](s.markup.FillMode.Tile)
+ *   Repeats the source horizontally and vertically.
+ * - [`TileVertically`](s.markup.FillMode.TileVertically)
+ *   Stretches horizontally and repeats vertically.
+ * - [`TileHorizontally`](s.markup.FillMode.TileHorizontally)
+ *   Repeats horizontally and stretches vertically.
+ *
+ * Alignment behavior overview:
+ *
+ * - in `Pad` and `Contain`, alignment places the image inside the remaining
+ *   free space
+ * - in `Cover`, alignment selects which part of the cropped source remains
+ *   visible
+ * - in tiled modes, alignment offsets the tile phase when the element size is
+ *   not an integer multiple of the tile size
+ * - in `Stretch`, alignment has no visible effect because the image always
+ *   fills the full destination area
+ *
+ * The final sampled color is multiplied by the color property and by the
+ * element opacity during rendering.
+ *
+ * Typical usage:
+ * ```haxe
+ * var image = new ImageElement("ui/logo");
+ * image.width = 320;
+ * image.height = 180;
+ * image.fillMode = Contain;
+ * image.alignment = AlignCenter;
+ * image.smooth = true;
+ * image.mipmap = true;
+ * ```
+ *
+ * Example using a texture atlas region:
+ * ```haxe
+ * var icon = new ImageElement("atlas/ui");
+ * icon.width = 32;
+ * icon.height = 32;
+ * icon.sourceClipRect = new Rect(64, 0, 32, 32);
+ * icon.fillMode = Stretch;
+ * ```
+ *
+ * Loading is asynchronous from the point of view of the element API. Until the
+ * asset is available, [`isLoaded`](s.markup.elements.ImageElement.isLoaded) is
+ * `false`, [`sync`](s.markup.elements.ImageElement.sync) does not derive
+ * rendering rectangles, and [`draw`](s.markup.elements.ImageElement.draw)
+ * skips rendering.
+ *
+ * `ImageElement` otherwise behaves like any other
+ * [`DrawableElement`](s.markup.elements.DrawableElement): it participates in
+ * layout, anchoring, z-ordering, color modulation, visibility, opacity, and
+ * child rendering.
+ *
+ * @see s.resource.Image
+ * @see s.assets.ImageAsset
+ * @see s.markup.FillMode
+ * @see s.markup.Alignment
+ * @see s.markup.geometry.Rect
+ */
 @:allow(s.markup.graphics.ImageElementDrawer)
 class ImageElement extends DrawableElement {
 	var asset:ImageAsset = new ImageAsset();
 	@:marker var assetIsDirty:Bool = false;
 
-	var uAddressing:TextureAddressing = Clamp;
-	var vAddressing:TextureAddressing = Clamp;
-	var rect:Vec4 = new Vec4(0.0, 0.0, 1.0, 1.0);
-	var clipRect:Vec4 = new Vec4(0.0, 0.0, 1.0, 1.0);
 	@:readonly @:alias var image:Image = asset.asset;
 
+	var uAddressing:TextureAddressing = Clamp;
+	var vAddressing:TextureAddressing = Clamp;
+	var mipmapFilter:MipMapFilter = NoMipFilter;
+	var textureFilter:TextureFilter = LinearFilter;
+
+	var rect:Vec4 = new Vec4(0.0, 0.0, 1.0, 1.0);
+	var clipRect:Vec4 = new Vec4(0.0, 0.0, 1.0, 1.0);
+
+	/**
+	 * Whether the image referenced by
+	 * [`source`](s.markup.elements.ImageElement.source) has been loaded.
+	 *
+	 * When this is `false`, the element has no texture to draw and therefore
+	 * contributes no pixels.
+	 */
 	@:readonly @:alias public var isLoaded:Bool = asset.isLoaded;
+
+	/**
+	 * Resource key or path of the image to display.
+	 *
+	 * Assigning this field forwards the value to the internal
+	 * [`ImageAsset`](s.assets.ImageAsset). The exact naming scheme depends on the
+	 * project's resource pipeline, but it typically matches the engine's image
+	 * identifiers such as `"ui/logo"` or `"atlas/icons"`.
+	 */
 	@:alias public var source:String = asset.source;
+
+	/**
+	 * Optional source-space clipping rectangle in image pixels.
+	 *
+	 * When `null`, the full source image is used. When non-null, the element
+	 * first restricts sampling to this rectangle and only then applies the
+	 * current fill-mode logic.
+	 *
+	 * Coordinates are expressed in source image pixels:
+	 *
+	 * - `x`, `y`: top-left corner within the image
+	 * - `width`, `height`: size of the source region
+	 *
+	 * This is primarily useful for atlas-backed UI icons, spritesheet frames, or
+	 * reusable image slices.
+	 *
+	 * @default `null`
+	 */
 	@:attr public var sourceClipRect:Rect = null;
-	@:attr public var mipmap:Bool = false;
+
+	/**
+	 * Whether mipmaps should be generated and used for this image.
+	 *
+	 * If enabled, mipmaps are generated after the asset becomes available and are
+	 * then used with linear mipmap sampling. This improves quality when the image
+	 * is reduced in size or otherwise minified, at the cost of extra generation
+	 * work and additional texture memory.
+	 *
+	 * When disabled, the image uses no mipmap filtering.
+	 *
+	 * @default `false`
+	 */
+	@:attr public var quality(default, set):ImageQuality = Low;
+
+	/**
+	 * Defines how the image is fitted, cropped, or tiled inside the element.
+	 *
+	 * The chosen mode affects the derived destination rectangle
+	 * ([`rect`](s.markup.elements.ImageElement.rect)), the derived source
+	 * rectangle ([`clipRect`](s.markup.elements.ImageElement.clipRect)), and the
+	 * sampler addressing mode used at draw time.
+	 *
+	 * @default `Stretch`
+	 */
 	@:attr public var fillMode:FillMode = Stretch;
+
+	/**
+	 * Alignment policy used together with
+	 * [`fillMode`](s.markup.elements.ImageElement.fillMode).
+	 *
+	 * Horizontal flags (`AlignLeft`, `AlignHCenter`, `AlignRight`) and vertical
+	 * flags (`AlignTop`, `AlignVCenter`, `AlignBottom`) are interpreted according
+	 * to the active fill mode:
+	 *
+	 * - `Pad` and `Contain`: place the rendered image inside the leftover space
+	 * - `Cover`: choose the visible side of the cropped source
+	 * - `Tile*`: offset the repeated texture pattern phase
+	 *
+	 * `Stretch` ignores alignment because the image always covers the whole
+	 * destination area.
+	 *
+	 * @default `AlignCenter`
+	 */
 	@:attr public var alignment:Alignment = AlignCenter;
 
-	public var mipmapFilter:MipMapFilter = PointMipFilter;
-	public var textureFilter:TextureFilter = AnisotropicFilter;
-
+	/**
+	 * Creates a new image element bound to the given source asset.
+	 *
+	 * @param source Resource key or path used to resolve the image asset.
+	 */
 	public function new(source:String) {
 		super();
 		this.source = source;
@@ -45,13 +231,11 @@ class ImageElement extends DrawableElement {
 		final clipDirty = assetDirty || sourceClipRectIsDirty;
 		final fillDirty = clipDirty || fillModeIsDirty || alignmentIsDirty || widthIsDirty || heightIsDirty;
 
-		if (mipmap && (assetDirty || mipmapIsDirty))
+		if (quality != Low && (assetDirty || qualityIsDirty))
 			(image : kha.Image).generateMipmaps(1);
 
-		if (!fillDirty) {
-			assetIsDirty = false;
+		if (!fillDirty)
 			return;
-		}
 
 		final imageWidth = image.width;
 		final imageHeight = image.height;
@@ -95,10 +279,8 @@ class ImageElement extends DrawableElement {
 				vAddressing = Clamp;
 		}
 
-		if (width == 0.0 || height == 0.0 || sourceWidth == 0.0 || sourceHeight == 0.0) {
-			assetIsDirty = false;
+		if (width == 0.0 || height == 0.0 || sourceWidth == 0.0 || sourceHeight == 0.0)
 			return;
-		}
 
 		final alignX = (alignment & Alignment.AlignRight) != 0 ? 1.0 : (alignment & Alignment.AlignHCenter) != 0 ? 0.5 : 0.0;
 		final alignY = (alignment & Alignment.AlignBottom) != 0 ? 1.0 : (alignment & Alignment.AlignVCenter) != 0 ? 0.5 : 0.0;
@@ -150,5 +332,23 @@ class ImageElement extends DrawableElement {
 		if (!isLoaded)
 			return;
 		s.markup.graphics.ImageElementDrawer.shader.render(target, this);
+	}
+
+	inline function set_quality(value:ImageQuality):ImageQuality {
+		switch value {
+			case Low:
+				mipmapFilter = NoMipFilter;
+				textureFilter = PointFilter;
+			case Middle:
+				mipmapFilter = PointMipFilter;
+				textureFilter = LinearFilter;
+			case Good:
+				mipmapFilter = LinearMipFilter;
+				textureFilter = LinearFilter;
+			case Best:
+				mipmapFilter = LinearMipFilter;
+				textureFilter = AnisotropicFilter;
+		}
+		return quality = value;
 	}
 }

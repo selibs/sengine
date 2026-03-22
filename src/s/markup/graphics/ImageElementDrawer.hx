@@ -27,6 +27,6 @@ class ImageElementDrawer extends ElementDrawer<ImageElement> {
 		ctx.setVec4(sourceRectCL, e.rect);
 		ctx.setVec4(sourceClipRectCL, e.clipRect);
 		ctx.setTexture(sourceTU, e.image);
-		ctx.setTextureParameters(sourceTU, e.uAddressing, e.vAddressing, e.textureFilter, e.textureFilter, e.mipmap ? e.mipmapFilter : NoMipFilter);
+		ctx.setTextureParameters(sourceTU, e.uAddressing, e.vAddressing, e.textureFilter, e.textureFilter, e.mipmapFilter);
 	}
 }
