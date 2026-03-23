@@ -256,7 +256,11 @@ class ImageElement extends DrawableElement {
 			else
 				(image : kha.Image).setMipmaps([]);
 
-		if (!(assetIsDirty || sourceClipRectIsDirty || fillModeIsDirty || alignmentIsDirty || widthIsDirty || heightIsDirty))
+		final hBoundsIsDirty = left.positionIsDirty || right.positionIsDirty;
+		final vBoundsIsDirty = top.positionIsDirty || bottom.positionIsDirty;
+
+		if (!(assetIsDirty || sourceClipRectIsDirty || fillModeIsDirty || alignmentIsDirty || widthIsDirty || heightIsDirty || hBoundsIsDirty
+			|| vBoundsIsDirty))
 			return;
 
 		final imageWidth = image.width;
@@ -277,10 +281,10 @@ class ImageElement extends DrawableElement {
 			baseClipH = sourceClipRect.height / imageHeight;
 		}
 
-		rect.x = 0.0;
-		rect.y = 0.0;
-		rect.z = 1.0;
-		rect.w = 1.0;
+		rect.x = left.position;
+		rect.y = top.position;
+		rect.z = width;
+		rect.w = height;
 		clipRect.x = baseClipX;
 		clipRect.y = baseClipY;
 		clipRect.z = baseClipW;
@@ -311,10 +315,10 @@ class ImageElement extends DrawableElement {
 
 		switch fillMode {
 			case Pad:
-				rect.z = sourceWidth / width;
-				rect.w = sourceHeight / height;
-				rect.x = (1.0 - rect.z) * alignX;
-				rect.y = (1.0 - rect.w) * alignY;
+				rect.z = sourceWidth;
+				rect.w = sourceHeight;
+				rect.x = left.position + (width - rect.z) * alignX;
+				rect.y = top.position + (height - rect.w) * alignY;
 			case Cover:
 				if (targetAspect > sourceAspect) {
 					clipRect.w = baseClipH * sourceAspect / targetAspect;
@@ -325,11 +329,11 @@ class ImageElement extends DrawableElement {
 				}
 			case Contain:
 				if (targetAspect > sourceAspect) {
-					rect.z = sourceAspect / targetAspect;
-					rect.x = (1.0 - rect.z) * alignX;
+					rect.z = height * sourceAspect;
+					rect.x = left.position + (width - rect.z) * alignX;
 				} else if (targetAspect < sourceAspect) {
-					rect.w = targetAspect / sourceAspect;
-					rect.y = (1.0 - rect.w) * alignY;
+					rect.w = width / sourceAspect;
+					rect.y = top.position + (height - rect.w) * alignY;
 				}
 			case Tile:
 				final repeatX = width / sourceWidth;

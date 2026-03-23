@@ -12,7 +12,6 @@ uniform vec2 point3;
 #define softness 0.5
 
 layout(location = 0) in vec2 fragPos;
-layout(location = 1) in vec2 fragUV;
 layout(location = 0) out vec4 fragColor;
 
 float cross2(vec2 a, vec2 b) {

@@ -1,5 +1,6 @@
 package s.markup.graphics;
 
+import s.math.Mat3;
 import kha.graphics4.VertexData;
 import kha.graphics4.ConstantLocation;
 import s.graphics.shaders.Shader;
@@ -13,7 +14,7 @@ abstract class ElementDrawer<T:DrawableElement> extends Shader {
 
 	function new(frag:String, vert:String = "element") {
 		super({
-			inputLayout: [["vertPos" => Float32_2X]],
+			inputLayout: [Shader.structure2D],
 			vertexShader: vert,
 			fragmentShader: frag,
 			alphaBlendSource: SourceAlpha,
@@ -30,6 +31,8 @@ abstract class ElementDrawer<T:DrawableElement> extends Shader {
 	}
 
 	public function render(target:Texture, element:T) {
+		if (!compiled)
+			return;
 		final ctx = target.context3D;
 		ctx.setPipeline(pipeline);
 		setBuffers(target);

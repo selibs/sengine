@@ -9,7 +9,6 @@ uniform vec4 borderColor;
 #define softness 0.5
 
 layout(location = 0) in vec2 fragPos;
-layout(location = 1) in vec2 fragUV;
 layout(location = 0) out vec4 fragColor;
 
 float sdf(vec2 center, vec2 size) {

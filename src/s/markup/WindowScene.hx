@@ -13,6 +13,12 @@ using s.extensions.StringExt;
 class WindowScene implements s.shortcut.Shortcut {
 	var projection:Mat3;
 
+	static inline function createProjection(width:Int, height:Int):Mat3 {
+		return kha.Image.renderTargetsInvertedY()
+			? Mat3.orthogonalProjection(0.0, width, 0.0, height)
+			: Mat3.orthogonalProjection(0.0, width, height, 0.0);
+	}
+
 	// var pending:Array<Element> = [];
 	// var entered:Array<InteractiveElement> = [];
 	// var focusedElement(default, set):Element;
@@ -25,12 +31,12 @@ class WindowScene implements s.shortcut.Shortcut {
 		window.onResized((width:Int, height:Int) -> {
 			root.width = width;
 			root.height = height;
-			projection = Mat3.orthogonalProjection(0.0, width, height, 0.0);
+			projection = createProjection(width, height);
 		});
 		window.onRender(render);
 
 		root = new Element();
-		projection = Mat3.orthogonalProjection(0.0, window.width, window.height, 0.0);
+		projection = createProjection(window.width, window.height);
 
 		// // mouse events
 		// var m = App.input.mouse;

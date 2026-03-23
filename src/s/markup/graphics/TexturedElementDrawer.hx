@@ -7,8 +7,7 @@ import s.markup.elements.DrawableElement;
 @:allow(s.markup.elements.DrawableElement)
 abstract class TexturedElementDrawer<T:DrawableElement> extends ElementDrawer<T> {
 	var sourceTU:TextureUnit;
-	var sourceRectCL:ConstantLocation;
-	var sourceClipRectCL:ConstantLocation;
+	var clipRectCL:ConstantLocation;
 
 	function new(?frag:String, ?vert:String) {
 		super(frag ?? "texture", vert ?? "texture");
@@ -17,7 +16,12 @@ abstract class TexturedElementDrawer<T:DrawableElement> extends ElementDrawer<T>
 	override function setup() {
 		super.setup();
 		sourceTU = pipeline.getTextureUnit("source");
-		sourceRectCL = pipeline.getConstantLocation("sourceRect");
-		sourceClipRectCL = pipeline.getConstantLocation("sourceClipRect");
+		clipRectCL = pipeline.getConstantLocation("clipRect");
+	}
+
+	override function setUniforms(target:Texture, element:T) {
+		final ctx = target.context3D;
+		ctx.setMat3(mvpCL, target.context2D.transform);
+		ctx.setFloat4(colorCL, element.color.RGBA);
 	}
 }

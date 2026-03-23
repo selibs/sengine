@@ -495,27 +495,21 @@ extern abstract Context2DStyle(Graphics) from Graphics {
 	public var color(get, set):Color;
 	public var font(get, set):Font;
 
-	public inline function pushOpacity(value:Float):Void {
+	public inline function pushOpacity(value:Float):Void
 		this.pushOpacity(this.opacity * value);
-	}
 
-	public inline function popOpacity():Float {
+	public inline function popOpacity():Float
 		return this.popOpacity();
-	}
 
-	private inline function get_color():Color {
+	private inline function get_color():Color
 		return this.color;
-	}
 
-	private inline function set_color(value:Color):Color {
+	private inline function set_color(value:Color):Color
 		return this.color = value;
-	}
 
-	private inline function get_font():Font {
+	private inline function get_font():Font
 		return this.font;
-	}
 
-	private inline function set_font(value:Font):Font {
+	private inline function set_font(value:Font):Font
 		return this.font = value;
-	}
 }

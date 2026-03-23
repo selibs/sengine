@@ -21,9 +21,11 @@ abstract class Shader {
 
 	var state:ShaderPipelineState;
 	var pipeline:PipelineState;
+	var compiled:Bool = false;
 
 	public static var indices2D(default, null):IndexBuffer;
 	public static var vertices2D(default, null):VertexBuffer;
+	public static final structure2D:VertexStructure = ["vertPos" => Float32_2X, "vertUV" => Float32_2X];
 
 	public static function compileShaders() {
 		// indices
@@ -37,12 +39,14 @@ abstract class Shader {
 		ind[5] = 0;
 		indices2D.unlock();
 		// vertices
-		vertices2D = new VertexBuffer(4, ["vertPos" => Float32_2X], StaticUsage);
+		vertices2D = new VertexBuffer(4, structure2D, StaticUsage);
 		var vert = vertices2D.lock();
 		for (i in 0...4) {
-			final offset = i * 2;
+			final offset = i * 4;
 			vert[offset + 0] = i == 0 || i == 1 ? 0.0 : 1.0;
 			vert[offset + 1] = i == 0 || i == 3 ? 0.0 : 1.0;
+			vert[offset + 2] = i == 0 || i == 1 ? 0.0 : 1.0;
+			vert[offset + 3] = i == 0 || i == 3 ? 1.0 : 0.0;
 		}
 		vertices2D.unlock();
 
@@ -113,9 +117,11 @@ abstract class Shader {
 			pipeline.conservativeRasterization = state.conservativeRasterization ?? pipeline.conservativeRasterization;
 
 			pipeline.compile();
+            
+			compiled = true;
+			logger.debug('Compiled $name');
 
 			setup();
-			logger.debug('Compiled $name');
 		} catch (e)
 			logger.error('Failed to compile $name: $e');
 	}
