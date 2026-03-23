@@ -7,5 +7,8 @@ layout(location = 1) in vec2 fragUV;
 layout(location = 0) out vec4 fragColor;
 
 void main() {
-    fragColor = vec4(color.rgb , color.a * texture(source, fragUV).r);
+    float distance = texture(source, fragUV).r;
+    float smoothing = max(fwidth(distance) * 1.0, 1.0 / 128.0);
+    float alpha = smoothstep(0.5 - smoothing, 0.5 + smoothing, distance);
+    fragColor = vec4(color.rgb, color.a * alpha);
 }

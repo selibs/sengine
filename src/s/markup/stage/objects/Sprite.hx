@@ -1,8 +1,8 @@
 package s.markup.stage.objects;
 
 import s.math.Vec2;
-import s.markup.geometry.Mesh;
-import s.markup.geometry.Rect;
+import s.geometry.Mesh;
+import s.geometry.Rect;
 
 using s.extensions.VectorExt;
 

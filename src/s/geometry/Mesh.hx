@@ -1,4 +1,4 @@
-package s.markup.geometry;
+package s.geometry;
 
 import haxe.ds.Vector;
 import s.math.Vec2;

@@ -7,7 +7,7 @@ import kha.graphics4.TextureFilter;
 import s.math.Vec4;
 import s.assets.ImageAsset;
 import s.resource.Image;
-import s.markup.geometry.Rect;
+import s.geometry.Rect;
 
 /**
  * Texture sampling presets for [`ImageElement`](s.markup.elements.ImageElement).
@@ -110,7 +110,7 @@ enum ImageSampling {
  * @see s.assets.ImageAsset
  * @see s.markup.FillMode
  * @see s.markup.Alignment
- * @see s.markup.geometry.Rect
+ * @see s.geometry.Rect
  */
 @:allow(s.markup.graphics.ImageElementDrawer)
 class ImageElement extends DrawableElement {
@@ -259,8 +259,7 @@ class ImageElement extends DrawableElement {
 		final hBoundsIsDirty = left.positionIsDirty || right.positionIsDirty;
 		final vBoundsIsDirty = top.positionIsDirty || bottom.positionIsDirty;
 
-		if (!(assetIsDirty || sourceClipRectIsDirty || fillModeIsDirty || alignmentIsDirty || widthIsDirty || heightIsDirty || hBoundsIsDirty
-			|| vBoundsIsDirty))
+		if (!(assetIsDirty || sourceClipRectIsDirty || fillModeIsDirty || alignmentIsDirty || widthIsDirty || heightIsDirty || hBoundsIsDirty || vBoundsIsDirty))
 			return;
 
 		final imageWidth = image.width;

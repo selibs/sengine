@@ -1,11 +1,13 @@
 package s.markup;
 
+import s.math.Vec2;
+import s.math.Mat3;
 import s.Texture;
 import s.math.SMath;
 import s.markup.Style;
 import s.markup.Anchors;
-import s.markup.geometry.Size;
-import s.markup.geometry.Position;
+import s.geometry.Size;
+import s.geometry.Position;
 
 enum ElementPosition {
 	Relative;
@@ -47,6 +49,13 @@ class Element extends Object2D<Element> {
 		ctx.popTransformation();
 	}
 
+	@:attr var globalTransform:Mat3 = Mat3.identity();
+
+	public var clip:Bool = false; // TODO: stencil test
+	@:attr public var opacity:Float = 1.0;
+	@:attr public var visible:Bool = true;
+	@:attr.group public var layout(default, never):Layout = new Layout();
+
 	public var padding(never, set):Float;
 	public var margins(never, set):Float;
 	@:attr.group public var anchors(default, never) = new Anchors();
@@ -64,10 +73,8 @@ class Element extends Object2D<Element> {
 	@:attr public var width(default, set):Float = 0.0;
 	@:attr public var height(default, set):Float = 0.0;
 
-	public var clip:Bool = false; // TODO: stencil test
-	@:attr public var opacity:Float = 1.0;
-	@:attr public var visible:Bool = true;
-	@:attr.group public var layout(default, never):Layout = new Layout();
+	@:attr public var originX:Float = Math.NaN;
+	@:attr public var originY:Float = Math.NaN;
 
 	overload extern public inline function setPadding(value:Float):Void {
 		setPadding(value, value, value, value);
@@ -107,6 +114,15 @@ class Element extends Object2D<Element> {
 	overload extern public inline function setPosition(x:Float, y:Float):Void {
 		this.x = x;
 		this.y = y;
+	}
+
+	overload extern public inline function setOrigin(origin:Position):Void {
+		setOrigin(origin.x, origin.y);
+	}
+
+	overload extern public inline function setOrigin(x:Float, y:Float):Void {
+		originX = x;
+		originY = y;
 	}
 
 	overload extern public inline function mapFromGlobal(x:Float, y:Float):Position
@@ -210,6 +226,17 @@ class Element extends Object2D<Element> {
 	function sync() {
 		s.markup.macro.ElementMacro.syncAxis("left", "hCenter", "right", "x", "width");
 		s.markup.macro.ElementMacro.syncAxis("top", "vCenter", "bottom", "y", "height");
+		syncTransform();
+	}
+
+	function syncTransform() {
+		if (parent != null && parent.globalTransformIsDirty || originXIsDirty || originYIsDirty || transformIsDirty) {
+			var ox = left.position + (Math.isNaN(originX) ? width * 0.5 : originX);
+			var oy = top.position + (Math.isNaN(originY) ? height * 0.5 : originY);
+			globalTransform = Mat3.translation(-ox, -oy) * transform * Mat3.translation(ox, oy);
+			if (parent != null)
+				globalTransform.copyFrom(parent.globalTransform * globalTransform);
+		}
 	}
 
 	function syncChild(c:Element) {

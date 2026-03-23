@@ -7,7 +7,7 @@ import s.math.SMath;
 import s.resource.Font;
 import s.resource.Image;
 import s.markup.Alignment;
-import s.markup.geometry.Rect;
+import s.geometry.Rect;
 
 @:forward(pipeline, end, scissor, disableScissor, drawLine, fillTriangle, drawRect, fillRect, drawString, drawCharacters)
 extern abstract Context2D(Graphics) from Graphics {
@@ -35,7 +35,7 @@ extern abstract Context2D(Graphics) from Graphics {
 	}
 
 	public inline function pushTransformation(value:Mat3):Void {
-		this.pushTransformation(transform * value);
+		this.pushTransformation(value * transform);
 	}
 
 	public inline function popTransformation():Mat3 {

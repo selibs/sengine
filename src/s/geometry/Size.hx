@@ -1,4 +1,4 @@
-package s.markup.geometry;
+package s.geometry;
 
 import s.math.Vec2;
 import s.math.SMath;

@@ -27,6 +27,10 @@ extern abstract Mat3(KhaMat3) from KhaMat3 to KhaMat3 {
 		return KhaMat3.scale(x, y);
 	}
 
+	public static inline function shear(x:Float, y:Float):Mat3 {
+		return new Mat3(1, x, 0, y, 1, 0, 0, 0, 1);
+	}
+
 	public static inline function rotation(angle:Float):Mat3 {
 		return KhaMat3.rotation(angle);
 	}
