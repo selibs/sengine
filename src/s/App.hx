@@ -4,6 +4,7 @@ import kha.System;
 import kha.Framebuffer;
 import aura.Aura;
 import s.Log;
+import s.Log.Logger;
 import s.Window;
 import s.input.Mouse;
 import s.input.Keyboard;

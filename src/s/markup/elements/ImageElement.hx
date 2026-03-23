@@ -1,5 +1,6 @@
 package s.markup.elements;
 
+import s.Texture.TextureParameters;
 import kha.graphics4.TextureAddressing;
 import kha.graphics4.MipMapFilter;
 import kha.graphics4.TextureFilter;
@@ -118,10 +119,13 @@ class ImageElement extends DrawableElement {
 
 	@:readonly @:alias var image:Image = asset.asset;
 
-	var uAddressing:TextureAddressing = Clamp;
-	var vAddressing:TextureAddressing = Clamp;
-	var mipmapFilter:MipMapFilter = NoMipFilter;
-	var textureFilter:TextureFilter = LinearFilter;
+	var parameters:TextureParameters = {
+		uAddressing: Clamp,
+		vAddressing: Clamp,
+		minificationFilter: LinearFilter,
+		magnificationFilter: LinearFilter,
+		mipmapFilter: NoMipFilter
+	}
 
 	var rect:Vec4 = new Vec4(0.0, 0.0, 1.0, 1.0);
 	var clipRect:Vec4 = new Vec4(0.0, 0.0, 1.0, 1.0);
@@ -284,17 +288,17 @@ class ImageElement extends DrawableElement {
 
 		switch fillMode {
 			case Tile:
-				uAddressing = Repeat;
-				vAddressing = Repeat;
+				parameters.uAddressing = Repeat;
+				parameters.vAddressing = Repeat;
 			case TileVertically:
-				uAddressing = Clamp;
-				vAddressing = Repeat;
+				parameters.uAddressing = Clamp;
+				parameters.vAddressing = Repeat;
 			case TileHorizontally:
-				uAddressing = Repeat;
-				vAddressing = Clamp;
+				parameters.uAddressing = Repeat;
+				parameters.vAddressing = Clamp;
 			case _:
-				uAddressing = Clamp;
-				vAddressing = Clamp;
+				parameters.uAddressing = Clamp;
+				parameters.vAddressing = Clamp;
 		}
 
 		if (width == 0.0 || height == 0.0 || sourceWidth == 0.0 || sourceHeight == 0.0)
@@ -353,18 +357,24 @@ class ImageElement extends DrawableElement {
 	}
 
 	inline function get_mipmap():Bool
-		return mipmapFilter == LinearMipFilter;
+		return parameters.mipmapFilter == LinearMipFilter;
 
 	inline function set_mipmap(value:Bool):Bool {
-		mipmapFilter = value ? LinearMipFilter : NoMipFilter;
+		parameters.mipmapFilter = value ? LinearMipFilter : NoMipFilter;
 		return value;
 	}
 
 	inline function get_smooth():Bool
-		return textureFilter == LinearFilter;
+		return parameters.minificationFilter == LinearFilter && parameters.magnificationFilter == LinearFilter;
 
 	inline function set_smooth(value:Bool):Bool {
-		textureFilter = value ? LinearFilter : PointFilter;
+		if (value) {
+			parameters.minificationFilter = LinearFilter;
+			parameters.magnificationFilter = LinearFilter;
+		} else {
+			parameters.minificationFilter = PointFilter;
+			parameters.magnificationFilter = PointFilter;
+		}
 		return value;
 	}
 

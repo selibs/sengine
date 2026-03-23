@@ -1,6 +1,7 @@
 package s.resource;
 
 import s.Log;
+import s.Log.Logger;
 
 typedef ResourceError = {
 	var source:String;

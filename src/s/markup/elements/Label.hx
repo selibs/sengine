@@ -4,6 +4,7 @@ import s.Texture;
 import s.assets.FontAsset;
 import s.markup.Alignment;
 
+@:allow(s.markup.graphics.TextDrawer)
 class Label extends DrawableElement {
 	var fontAsset:FontAsset = new FontAsset();
 	@:attr var textX:Float = 0.0;
@@ -34,11 +35,7 @@ class Label extends DrawableElement {
 	function draw(target:Texture) {
 		if (displayText.length == 0 || !fontAsset.isLoaded || fontSize == 0)
 			return;
-		final ctx = target.context2D;
-		ctx.style.font = fontAsset;
-		ctx.style.fontSize = fontSize;
-		ctx.style.color = color;
-		ctx.drawString(displayText, textX, textY);
+		s.markup.graphics.TextDrawer.shader.render(target, this);
 	}
 
 	override function sync() {

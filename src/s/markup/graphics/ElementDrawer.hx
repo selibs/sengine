@@ -32,8 +32,8 @@ abstract class ElementDrawer<T:DrawableElement> extends Shader {
 	public function render(target:Texture, element:T) {
 		final ctx = target.context3D;
 		ctx.setPipeline(pipeline);
+		setBuffers(target);
 		setUniforms(target, element);
-		setBuffers(target, element);
 		draw(target, element);
 	}
 
@@ -44,7 +44,7 @@ abstract class ElementDrawer<T:DrawableElement> extends Shader {
 		ctx.setFloat4(colorCL, element.color.RGBA);
 	}
 
-	function setBuffers(target:Texture, element:T) {
+	function setBuffers(target:Texture) {
 		final ctx = target.context3D;
 		ctx.setIndexBuffer(Shader.indices2D);
 		ctx.setVertexBuffer(Shader.vertices2D);
