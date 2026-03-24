@@ -4,11 +4,10 @@ import kha.System;
 import kha.Framebuffer;
 import aura.Aura;
 import s.Log;
-import s.Log.Logger;
 import s.Window;
 import s.input.Mouse;
 import s.input.Keyboard;
-import s.resource.Resource;
+import s.assets.Assets;
 import s.graphics.shaders.Shader;
 
 /**
@@ -39,7 +38,7 @@ enum AppState {
  * Application entry point and process-level runtime services.
  *
  * `App` owns the runtime bootstrap sequence for the engine. It initializes Kha,
- * input devices, audio, default resources, shader compilation, and the main
+ * input devices, audio, default assets, shader compilation, and the main
  * frame loop.
  *
  * In normal projects `App` is configured declaratively through compile-time
@@ -238,7 +237,7 @@ class App implements s.shortcut.Shortcut {
 	 *
 	 * This is the low-level bootstrap entry point used by the generated
 	 * `@:app.*` startup code. It creates the Kha system, initializes the first
-	 * window, loads default engine resources, compiles shaders, and only then
+	 * window, loads default engine assets, compiles shaders, and only then
 	 * starts the frame loop.
 	 *
 	 * Most applications should prefer configuring startup declaratively through
@@ -251,10 +250,10 @@ class App implements s.shortcut.Shortcut {
 	 * @param options Kha system options used to create the application.
 	 * @param setup Called once for the primary window before rendering starts.
 	 * @param started Called after initialization finishes and frame delivery has been registered.
-	 * @param progress Called with loading progress in the `0.0..1.0` range while boot resources are loading.
-	 * @param failed Called when resource loading fails.
+	 * @param progress Called with loading progress in the `0.0..1.0` range while boot assets are loading.
+	 * @param failed Called when asset loading fails.
 	 */
-	public static function start(options:SystemOptions, ?setup:Window->Void, ?started:Void->Void, ?progress:Float->Void, ?failed:ResourceError->Void) {
+	public static function start(options:SystemOptions, ?setup:Window->Void, ?started:Void->Void, ?progress:Float->Void, ?failed:AssetError->Void) {
 		System.start(options, w -> init(w, setup, started, progress, failed));
 	}
 
@@ -330,7 +329,7 @@ class App implements s.shortcut.Shortcut {
 
 		input = {mouse: new Mouse(), keyboard: new Keyboard()}
 		System.notifyOnApplicationState(() -> state = Foreground, () -> state = Resume, () -> state = Pause, () -> state = Background, () -> state = Shutdown);
-		s.resource.Resource.loadShelf({
+		s.assets.Asset.loadShelf({
 			fonts: ["font_default"],
 			images: ["image_default"]
 		}, _ -> {
@@ -344,7 +343,7 @@ class App implements s.shortcut.Shortcut {
 
 			if (start != null)
 				start();
-			
+
 			logger.debug("Started");
 		}, loadProgress, loadFailed);
 	}

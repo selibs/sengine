@@ -8,7 +8,7 @@ import kha.graphics4.DepthStencilFormat;
 import s.graphics.Context1D;
 import s.graphics.Context2D;
 import s.graphics.Context3D;
-import s.resource.Image;
+import s.assets.Image;
 
 /**
  * Render-target texture wrapper with cached access to 1D, 2D, and 3D graphics contexts.

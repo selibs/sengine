@@ -15,7 +15,7 @@ import s.math.Vec2I;
 import s.math.Mat3;
 import s.math.Mat4;
 import s.math.SMath;
-import s.resource.Image;
+import s.assets.Image;
 
 @:forward(begin, clear, flush, end, scissor, disableScissor, setPipeline, setIndexBuffer, setVertexBuffer, setVertexBuffers, setTextureParameters)
 extern abstract Context3D(Graphics) from Graphics {

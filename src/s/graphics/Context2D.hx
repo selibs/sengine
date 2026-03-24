@@ -4,8 +4,8 @@ import kha.graphics2.Graphics;
 import s.math.Vec2;
 import s.math.Mat3;
 import s.math.SMath;
-import s.resource.Font;
-import s.resource.Image;
+import s.assets.Font;
+import s.assets.Image;
 import s.markup.Alignment;
 import s.geometry.Rect;
 

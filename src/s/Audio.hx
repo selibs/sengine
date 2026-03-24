@@ -5,7 +5,7 @@ import aura.Aura;
 import aura.dsp.panner.Panner;
 import aura.dsp.panner.StereoPanner;
 import s.math.Vec3;
-import s.resource.Sound;
+import s.assets.Sound;
 import s.assets.SoundAsset;
 
 /**
@@ -39,12 +39,14 @@ class Audio implements s.shortcut.Shortcut {
 	 * Changing this switches the sound asset used by the player.
 	 */
 	@:alias public var source:String = asset.source;
+
 	/**
 	 * Duration of the loaded sound in seconds.
 	 *
 	 * This value is only meaningful once [`isLoaded`](s.Audio.isLoaded) is `true`.
 	 */
 	@:readonly @:alias public var duration:Float = sound.length;
+
 	/** Whether the sound asset has finished loading. */
 	@:readonly @:alias public var isLoaded:Bool = asset.isLoaded;
 
@@ -65,36 +67,42 @@ class Audio implements s.shortcut.Shortcut {
 	 * @default 1.0
 	 */
 	@:alias public var volume:Float = panner.volume;
+
 	/**
 	 * Stereo balance, usually in the `-1.0..1.0` range.
 	 *
 	 * Negative values bias the signal left, positive values bias it right.
 	 */
 	@:alias public var balance:Float = panner.balance;
+
 	/**
 	 * World-space sound position used by the panner.
 	 *
 	 * This is most useful when the active backend is configured for positional audio.
 	 */
 	@:alias public var location:Vec3 = panner.location;
+
 	/**
 	 * Maximum distance used for attenuation.
 	 *
 	 * Past this distance the panner stops reducing volume further.
 	 */
 	@:alias public var maxDistance:Float = panner.maxDistance;
+
 	/**
 	 * Strength of the Doppler effect.
 	 *
 	 * Set this to `0` to disable Doppler pitch shift for this player.
 	 */
 	@:alias public var dopplerStrength:Float = panner.dopplerStrength;
+
 	/**
 	 * Distance attenuation mode used by the panner.
 	 *
 	 * This controls how volume falls off with distance.
 	 */
 	@:alias public var attenuationMode:AttenuationMode = panner.attenuationMode;
+
 	/**
 	 * Distance attenuation factor used by the panner.
 	 *

@@ -120,6 +120,19 @@ project.addAssets("assets/**", {
     name: "{name}",
 });
 
+// resource types
+process.resourceTypes = process.resourceTypes ?? {}
+process.resourceTypes["font"] = "s.assets.font.Font";
+process.resourceTypes["image"] = "s.assets.image.Image";
+
+for (const [k, v] of Object.entries(process.resourceTypes)) {
+  if (typeof k !== "string" || typeof v !== "string" || !v) continue;
+  project.addParameter(
+    `--macro s.macro.AssetsMacro.addAssetType(${JSON.stringify(k)}, ${JSON.stringify(v)})`
+  );
+}
+
+// markup shortcuts
 for (const [k, v] of Object.entries(process.shortcuts ?? {})) {
   if (typeof k !== "string" || typeof v !== "string" || !v) continue;
   project.addParameter(
@@ -127,30 +140,7 @@ for (const [k, v] of Object.entries(process.shortcuts ?? {})) {
   );
 }
 
-// Available Engine Compiler Flags:
-
-// Debug:
-// S2D_DEBUG_FPS -> enables FPS debugging
-
-// UI:
-// S2D_UI_DEBUG_ELEMENT_BOUNDS -> enables ui element bounds debugging
-
-// Stage Renderer:
-// S2D_SPRITE_INSTANCING -> enables sprite instancing
-// S2D_LIGHTING -> enables lighting
-// S2D_LIGHTING_PBR -> enables PBR lighting
-// S2D_LIGHTING_SHADOWS -> enables shadows
-// S2D_LIGHTING_DEFERRED -> enables deferred lighting
-// S2D_LIGHTING_ENVIRONMENT -> enables environment lighting
-// S2D_PP_BLOOM -> enables Bloom PP effect
-// S2D_PP_FISHEYE -> enables Fisheye PP effect
-// S2D_PP_FILTERS -> enables 3x3 image convolution multi-pass PP effects
-// S2D_PP_COMPOSITOR -> enables compositor / single-pass combination of various (AA, CC etc.) PP effects
-
-// Not yet implemented:
-// S2D_LIGHTING_VOLUMETRIC -> enables volumetric lighting
-// S2D_LIGHTING_SHADOWS_SOFT -> enables soft shadows
-
+// defines
 let defs = [];
 for (const def of (process.defines ?? [])) {
     let kv = def.split(" ");
@@ -162,11 +152,16 @@ for (const def of (process.defines ?? [])) {
         defs.push(`${kv[0]} 1`);
     }
 }
-project.addShaders(`${shaderOutputDir}/**/*{frag,vert}.glsl`, { defines: defs, });
 
+// shaders
+project.addShaders(`${shaderOutputDir}/**/*{frag,vert}.glsl`, { defines: defs });
+
+// libraries
 project.localLibraryPath = "libs";
 project.addLibrary("slog");
 project.addLibrary("sshortcut");
+
+// subprojects
 await project.addProject("libs/aura");
 
 resolve(project);

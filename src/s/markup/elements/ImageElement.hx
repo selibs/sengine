@@ -6,7 +6,7 @@ import kha.graphics4.MipMapFilter;
 import kha.graphics4.TextureFilter;
 import s.math.Vec4;
 import s.assets.ImageAsset;
-import s.resource.Image;
+import s.assets.Image;
 import s.geometry.Rect;
 
 /**
@@ -31,7 +31,7 @@ enum ImageSampling {
 /**
  * Image-based drawable markup element.
  *
- * `ImageElement` renders a [`s.resource.Image`](s.resource.Image) inside the
+ * `ImageElement` renders a [`s.assets.Image`](s.assets.Image) inside the
  * rectangular bounds inherited from [`Element`](s.markup.Element). The image is
  * loaded through an internal [`ImageAsset`](s.assets.ImageAsset), can be
  * restricted to a source sub-rectangle with
@@ -106,7 +106,7 @@ enum ImageSampling {
  * layout, anchoring, z-ordering, color modulation, visibility, opacity, and
  * child rendering.
  *
- * @see s.resource.Image
+ * @see s.assets.Image
  * @see s.assets.ImageAsset
  * @see s.markup.FillMode
  * @see s.markup.Alignment
@@ -140,11 +140,11 @@ class ImageElement extends DrawableElement {
 	@:readonly @:alias public var isLoaded:Bool = asset.isLoaded;
 
 	/**
-	 * Resource key or path of the image to display.
+	 * Asset key or path of the image to display.
 	 *
 	 * Assigning this field forwards the value to the internal
 	 * [`ImageAsset`](s.assets.ImageAsset). The exact naming scheme depends on the
-	 * project's resource pipeline, but it typically matches the engine's image
+	 * project's asset pipeline, but it typically matches the engine's image
 	 * identifiers such as `"ui/logo"` or `"atlas/icons"`.
 	 */
 	@:alias public var source:String = asset.source;
@@ -236,7 +236,7 @@ class ImageElement extends DrawableElement {
 	/**
 	 * Creates a new image element bound to the given source asset.
 	 *
-	 * @param source Resource key or path used to resolve the image asset.
+	 * @param source Asset key or path used to resolve the image asset.
 	 */
 	public function new(source:String) {
 		super();
