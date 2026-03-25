@@ -134,7 +134,7 @@ class AssetsMacro {
 					}
 
 					inline function get_isLoaded():Bool {
-						return @:privateAccess this.blob != null;
+						return @:privateAccess this.bytes != null;
 					}
 				}).fields
 			});
@@ -174,8 +174,8 @@ class AssetsMacro {
 							done(a);
 						return a;
 					}
-					loadBlob(source, blob -> {
-						var a = new $abstractTypePath(blob, source);
+					loadBytes(source, bytes -> {
+						var a = new $abstractTypePath(bytes, source);
 						$i{listName}.add(source, a);
 						if (done != null)
 							done(a);
@@ -205,12 +205,12 @@ class AssetsMacro {
 			kind: FFun({
 				args: [sourceArg, doneArg, failedArg, posArg],
 				ret: macro :Void,
-				expr: macro loadBlob(source, blob -> {
+				expr: macro loadBytes(source, bytes -> {
 					var a = $i{listName}.get(source);
 					if (a != null)
-						a.load(blob);
+						a.load(bytes);
 					else {
-						a = new $abstractTypePath(blob, source);
+						a = new $abstractTypePath(bytes, source);
 						$i{listName}.add(source, a);
 					}
 					if (done != null)
