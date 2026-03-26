@@ -14,8 +14,6 @@ class ShaderMacro {
 			return fields;
 
 		final cls = clsRef.get();
-		// Generic shader bases cannot own a usable static singleton because
-		// the field would depend on class type parameters.
 		if (cls.isAbstract || cls.params.length > 0 || Lambda.exists(fields, f -> f.name == "shader"))
 			return fields;
 

@@ -1,7 +1,7 @@
 package s.markup.graphics.shapes;
 
 import kha.graphics4.ConstantLocation;
-import s.Texture;
+import s.graphics.Texture;
 import s.markup.elements.shapes.Triangle;
 
 @:allow(s.markup.elements.shapes.Triangle)

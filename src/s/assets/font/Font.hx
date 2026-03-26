@@ -5,13 +5,12 @@ import haxe.ds.Vector;
 import kha.Blob;
 import kha.Kravur;
 import kha.graphics2.truetype.StbTruetype;
-import s.assets.Assets;
 
 class Font extends Asset {
-	static inline final sdfOversample:Int = 4;
-	static inline final sdfSpread:Int = 8;
-	static inline final sdfPadding:Int = sdfSpread + 1;
-	static inline final sdfInf:Float = 1e20;
+	public static inline final sdfOversample:Int = 4;
+	public static inline final sdfSpread:Int = 8;
+	public static inline final sdfPadding:Int = sdfSpread + 1;
+	public static inline final sdfInf:Float = 1e20;
 
 	static function bakeFontBitmap(data:Blob, offset:Int, pixel_height:Float, pixels:Blob, pw:Int, ph:Int, chars:Array<Int>,
 			chardata:Vector<Stbtt_bakedchar>):Int @:privateAccess {
@@ -271,6 +270,7 @@ class Font extends Asset {
 		}
 	}
 
+	var blob:Blob;
 	var oldGlyphs:Array<Int>;
 	var fontIndex:Int;
 	var atlases:IntMap<FontAtlas> = new IntMap<FontAtlas>();
@@ -337,5 +337,13 @@ class Font extends Asset {
 		return atlas;
 	}
 
-	function process() {}
+	public function widthOfCharacters(size:Int, characters:Array<Int>, start: Int, length: Int) {
+		return getAtlas(size).charactersWidth(characters, start, length);
+	}
+
+	function unload()
+		blob = null;
+
+	function get_isLoaded():Bool
+		return blob != null;
 }

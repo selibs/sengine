@@ -1,19 +1,22 @@
 package s.assets.image;
 
-import s.assets.Assets;
+class Image extends Asset implements s.shortcut.Shortcut {
+	var image(default, set):kha.Image;
 
-class Image extends Asset {
-	/**
-	 * The width of the image in pixels.
-	 */
-	var width(default, null): Int;
+	@:readonly @:alias public var width:Int = image.width;
+	@:readonly @:alias public var height:Int = image.height;
 
-	/**
-	 * The height of the image in pixels.
-	 */
-	var height(default, null): Int;
+	function unload() {
+		image?.unload();
+		image = null;
+	}
 
-	function process() {
-		// TODO
+	inline function set_image(value:kha.Image) {
+		unload();
+		return image = value;
+	}
+
+	function get_isLoaded():Bool {
+		return image != null;
 	}
 }

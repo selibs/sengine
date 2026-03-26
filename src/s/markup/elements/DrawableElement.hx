@@ -1,6 +1,7 @@
 package s.markup.elements;
 
 import s.math.Mat3;
+import s.graphics.Texture;
 
 @:dox(hide)
 @:allow(s.markup.graphics.ElementDrawer)

@@ -1,5 +1,6 @@
 package s.markup.graphics;
 
+import s.graphics.Texture;
 import s.graphics.shaders.Shader;
 import s.markup.elements.Label;
 
@@ -16,7 +17,7 @@ class TextDrawer extends TexturedElementDrawer<Label> {
 
 	override function draw(target:Texture, element:Label) {
 		final ctx = target.context3D;
-		ctx.setTexture(sourceTU, Label.getAtlas(element.fontAsset.asset, element.fontSize).getTexture());
+		ctx.setTexture(sourceTU, element.font.getAtlas().getTexture());
 
 		for (c in element.chars) {
 			ctx.setFloat4(rectCL, c.pos.x, c.pos.y, c.pos.width, c.pos.height);

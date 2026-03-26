@@ -1,6 +1,6 @@
 package s.markup.stage;
 
-import s.Texture;
+import s.graphics.Texture;
 import s.math.Vec2;
 import s.math.Mat3;
 import s.math.SMath;

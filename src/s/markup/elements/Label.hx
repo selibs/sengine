@@ -1,6 +1,6 @@
 package s.markup.elements;
 
-import s.Texture;
+import s.graphics.Texture;
 import s.geometry.Rect;
 import s.markup.Alignment;
 import s.markup.ElementFont.ElementFontChar;
@@ -32,14 +32,14 @@ class Label extends DrawableElement {
 	}
 
 	function draw(target:Texture) {
-		if (text.length == 0 || !font.asset.isLoaded || font.pixelSize == 0)
+		if (text.length == 0 || !font.font.isLoaded || font.pixelSize == 0)
 			return;
 		s.markup.graphics.TextDrawer.shader.render(target, this);
 	}
 
 	override function sync() {
 		super.sync();
-		if (text.length == 0 || !font.asset.isLoaded || font.pixelSize == 0)
+		if (text.length == 0 || !font.font.isLoaded || font.pixelSize == 0)
 			return;
 		syncText();
 	}
@@ -54,7 +54,7 @@ class Label extends DrawableElement {
 			textWidth = elideLine(text);
 		}
 
-		if (textWidthIsDirty || font.sizeIsDirty || hIsDirty || vIsDirty || alignmentIsDirty) {
+		if (textWidthIsDirty || font.pixelSizeIsDirty || hIsDirty || vIsDirty || alignmentIsDirty) {
 			textX = alignLineX(textWidth);
 			textY = alignLineY(font.pixelSize);
 		}
@@ -96,9 +96,9 @@ class Label extends DrawableElement {
 	}
 
 	function elideLine(line:String):Float {
-		final atlas = getAtlas(font.asset.asset, font.pixelSize);
+		final atlas = font.font.getAtlas(font.pixelSize);
 
-		inline function copyChar(char:FontGlyph):FontGlyph
+		inline function copyChar(char:ElementFontChar):ElementFontChar
 			return {
 				xoff: char.xoff,
 				yoff: char.yoff,
@@ -107,7 +107,7 @@ class Label extends DrawableElement {
 				uv: new Rect(char.uv.x, char.uv.y, char.uv.width, char.uv.height)
 			}
 
-		final ec = getChar(".".code);
+		final ec = font.getElementChar(".".code);
 		final ew = ec.advance * 3;
 
 		var maxWidth = Math.max(0.0, Math.abs(width) - left.padding - right.padding);
@@ -116,7 +116,7 @@ class Label extends DrawableElement {
 		var w = 0.0;
 		if (elideMode == ElideLeft) {
 			for (i in 0...text.length) {
-				var c = getChar(text.fastCodeAt(text.length - i - 1));
+				var c = font.getElementChar(text.fastCodeAt(text.length - i - 1));
 				if (w + c.advance > maxWidth)
 					break;
 				chars.unshift(c);
@@ -130,12 +130,12 @@ class Label extends DrawableElement {
 		} else if (elideMode == ElideMiddle) {
 			var r = [];
 			for (i in 0...text.length) {
-				var c = getChar(text.fastCodeAt(i));
+				var c = font.getElementChar(text.fastCodeAt(i));
 				if (w + c.advance > maxWidth)
 					break;
 				chars.push(c);
 				w += c.advance;
-				var c = getChar(text.fastCodeAt(text.length - i - 1));
+				var c = font.getElementChar(text.fastCodeAt(text.length - i - 1));
 				if (w + c.advance > maxWidth)
 					break;
 				r.unshift(c);
@@ -149,7 +149,7 @@ class Label extends DrawableElement {
 			chars = chars.concat(r);
 		} else if (elideMode == ElideRight) {
 			for (i in 0...text.length) {
-				var c = getChar(text.fastCodeAt(i));
+				var c = font.getElementChar(text.fastCodeAt(i));
 				if (w + c.advance > maxWidth)
 					break;
 				chars.push(c);
@@ -162,7 +162,7 @@ class Label extends DrawableElement {
 			w += ew;
 		} else {
 			for (i in 0...text.length) {
-				var c = getChar(text.fastCodeAt(i));
+				var c = font.getElementChar(text.fastCodeAt(i));
 				chars.push(c);
 				w += c.advance;
 			}

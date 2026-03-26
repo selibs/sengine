@@ -1,6 +1,6 @@
 package s.markup.elements;
 
-import s.Texture;
+import s.graphics.Texture;
 import s.graphics.Context2D;
 
 class Canvas2D extends DrawableElement {

@@ -19,7 +19,7 @@ abstract class TexturedElementDrawer<T:DrawableElement> extends ElementDrawer<T>
 		clipRectCL = pipeline.getConstantLocation("clipRect");
 	}
 
-	override function setUniforms(target:Texture, element:T) {
+	override function setUniforms(target:s.graphics.Texture, element:T) {
 		final ctx = target.context3D;
 		ctx.setMat3(mvpCL, target.context2D.transform);
 		ctx.setFloat4(colorCL, element.color.RGBA);

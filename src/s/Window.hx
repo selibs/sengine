@@ -3,6 +3,7 @@ package s;
 import kha.WindowMode;
 import kha.WindowOptions;
 import kha.Window as KhaWindow;
+import s.graphics.Texture;
 
 /**
  * Runtime window wrapper with framebuffer configuration and render signals.

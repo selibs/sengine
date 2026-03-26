@@ -324,28 +324,32 @@ class App implements s.shortcut.Shortcut {
 	public static inline function onCutCopyPaste(cut:Void->String, copy:Void->String, paste:String->Void)
 		System.notifyOnCutCopyPaste(cut, copy, paste);
 
-	static function init(window, setup, start, loadProgress, loadFailed) {
+	static function init(window:kha.Window, ?setup:Window->Void, ?start:Void->Void, loadProgress:Float->Void, loadFailed:AssetError->Void) {
 		logger.info("Starting");
 
 		input = {mouse: new Mouse(), keyboard: new Keyboard()}
 		System.notifyOnApplicationState(() -> state = Foreground, () -> state = Resume, () -> state = Pause, () -> state = Background, () -> state = Shutdown);
-		s.assets.Asset.loadShelf({
+		s.assets.Assets.loadShelf({
 			fonts: ["font_default"],
 			images: ["image_default"]
-		}, _ -> {
-			Aura.init();
-			Shader.compileShaders();
+		}, progress -> {
+			if (progress == 1.0) {
+				Aura.init();
+				Shader.compileShaders();
 
-			if (setup != null)
-				setup(new Window(window));
+				if (setup != null)
+					setup(new Window(window));
 
-			System.notifyOnFrames(render);
+				System.notifyOnFrames(render);
 
-			if (start != null)
-				start();
+				if (start != null)
+					start();
 
-			logger.debug("Started");
-		}, loadProgress, loadFailed);
+				logger.debug("Started");
+			}
+			if (loadProgress != null)
+				loadProgress(progress);
+		}, loadFailed);
 	}
 
 	static function render(frames:Array<Framebuffer>) {

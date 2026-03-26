@@ -20,6 +20,12 @@ extern abstract AssetList<T:Asset>(StringMap<T>) {
 		else
 			unload(key);
 
+	public inline function extract(key:String) {
+		var asset = get(key);
+		this.remove(key);
+		return asset;
+	}
+
 	public inline function unload(key:String):Bool {
 		get(key)?.unload();
 		return this.remove(key);

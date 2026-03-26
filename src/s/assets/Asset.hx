@@ -1,30 +1,18 @@
 package s.assets;
 
-import haxe.io.Bytes;
-
 @:allow(s.assets.Assets)
 @:allow(s.assets.AssetList)
 abstract class Asset implements s.shortcut.Shortcut {
-	var bytes:Bytes;
-
 	public var source:String;
+	public var isLoaded(get, never):Bool;
 
 	@:signal public function loaded():Void;
 
-	public function new(blob:Bytes, ?source:String) {
+	public function new(?source:String) {
 		this.source = source;
-		load(blob);
 	}
 
-	function load(bytes:Bytes) {
-		this.bytes = bytes;
-		process();
-		loaded();
-	}
+	abstract function unload():Void;
 
-	abstract function process():Void;
-
-	function unload():Void {
-		bytes = null;
-	}
+	abstract function get_isLoaded():Bool;
 }

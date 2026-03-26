@@ -8,7 +8,7 @@ import s.markup.graphics.stage.lighting.GeometryPass;
 import s.markup.graphics.stage.lighting.LightingPass;
 #end
 import kha.graphics4.VertexStructure;
-import s.Texture;
+import s.graphics.Texture;
 import s.markup.stage.Stage;
 
 @:allow(s.markup.stage.Stage)

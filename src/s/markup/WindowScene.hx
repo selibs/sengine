@@ -2,7 +2,7 @@ package s.markup;
 
 import s.Time;
 import s.Color;
-import s.Texture;
+import s.graphics.Texture;
 import s.Window;
 import s.math.Mat3;
 import s.graphics.Context2D;
@@ -14,9 +14,7 @@ class WindowScene implements s.shortcut.Shortcut {
 	var projection:Mat3;
 
 	static inline function createProjection(width:Int, height:Int):Mat3 {
-		return kha.Image.renderTargetsInvertedY()
-			? Mat3.orthogonalProjection(0.0, width, 0.0, height)
-			: Mat3.orthogonalProjection(0.0, width, height, 0.0);
+		return kha.Image.renderTargetsInvertedY() ? Mat3.orthogonalProjection(0.0, width, 0.0, height) : Mat3.orthogonalProjection(0.0, width, height, 0.0);
 	}
 
 	// var pending:Array<Element> = [];
@@ -87,7 +85,7 @@ class WindowScene implements s.shortcut.Shortcut {
 		ctx.clear(color);
 		ctx.pushTransformation(projection);
 		Element.renderElement(root, target);
-        ctx.popTransformation();
+		ctx.popTransformation();
 		#if (S2D_UI_DEBUG_ELEMENT_BOUNDS == 1)
 		var e = elementAt(App.input.mouse.x, App.input.mouse.y);
 		if (e != null)
@@ -164,7 +162,7 @@ class WindowScene implements s.shortcut.Shortcut {
 		for (m in [lm, tm, rm, bm]) {
 			final str = '${Std.int(m)}px';
 			final strWidth = style.font.widthOfCharacters(style.fontSize, str.toCharArray(), 0, str.length);
-			final strheight = style.font.height(style.fontSize);
+			final strheight = style.fontSize;
 			if (m >= strWidth) {
 				if (i == 0)
 					ctx.drawString(str, e.left.position - (m + strWidth) / 2, e.top.position + e.height / 2);
@@ -185,7 +183,7 @@ class WindowScene implements s.shortcut.Shortcut {
 		for (p in [lp, tp, rp, bp]) {
 			final str = '${Std.int(p)}px';
 			final strWidth = style.font.widthOfCharacters(style.fontSize, str.toCharArray(), 0, str.length);
-			final strheight = style.font.height(style.fontSize);
+			final strheight = style.fontSize;
 			if (p >= strWidth) {
 				if (i == 0)
 					ctx.drawString(str, e.left.position + (p - strWidth) / 2, e.top.position + e.height / 2);
@@ -204,15 +202,11 @@ class WindowScene implements s.shortcut.Shortcut {
 		style.fontSize = 22;
 		final name = e.toString();
 		ctx.drawString(name, App.input.mouse.x - style.font.widthOfCharacters(style.fontSize, name.toCharArray(), 0, name.length),
-			App.input.mouse.y - style.font.height(style.fontSize));
+			App.input.mouse.y - style.fontSize);
 
 		style.fontSize = 16;
 		final rect = '${Std.int(e.width)} × ${Std.int(e.height)} at (${Std.int(e.left.position)}, ${Std.int(e.top.position)})';
-		ctx.drawString(rect, App.input.mouse.x
-			- style.font.widthOfCharacters(style.fontSize, rect.toCharArray(), 0, rect.length),
-			App.input.mouse.y
-			- style.font.height(style.fontSize)
-			+ style.fontSize);
+		ctx.drawString(rect, App.input.mouse.x - style.font.widthOfCharacters(style.fontSize, rect.toCharArray(), 0, rect.length), App.input.mouse.y);
 	}
 	#end
 

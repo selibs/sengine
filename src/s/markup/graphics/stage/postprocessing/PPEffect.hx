@@ -2,7 +2,7 @@ package s.markup.graphics.stage.postprocessing;
 
 import kha.graphics4.PipelineState;
 import kha.graphics4.VertexStructure;
-import s.Texture;
+import s.graphics.Texture;
 
 // @:access(s.markup.graphics.stage.Renderer)
 abstract class PPEffect {

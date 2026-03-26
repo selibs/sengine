@@ -10,8 +10,9 @@ typedef ElementFontChar = {
 	uv:s.geometry.Rect
 }
 
+@:allow(s.markup.Element)
 class ElementFont implements s.shortcut.Shortcut {
-	var asset:Font = new Font();
+	var font:Font = new Font();
 
 	@:attr public var bold:Bool = false;
 	// @:attr public var capitalization:enumeration;
@@ -35,15 +36,19 @@ class ElementFont implements s.shortcut.Shortcut {
 	// @:attr public var wordSpacing:Float;
 
 	public function new() {
-		asset.onAssetLoaded(a -> isDirty = true);
+		font.onLoaded(() -> isDirty = true);
 	}
 
-	public function getElementChar(index:Int) {
-		var g = asset.asset.getAtlas().getGlyph(index);
+	public function getAtlas()
+		return font.getAtlas(pixelSize);
+
+	public function getElementChar(index:Int):ElementFontChar {
+		var atlas = getAtlas();
+		var g = atlas.getGlyph(index);
 		var atlasW:Float = g.x1 - g.x0;
 		var atlasH:Float = g.y1 - g.y0;
-		var w:Float = atlasW / sdfOversample;
-		var h:Float = atlasH / sdfOversample;
+		var w:Float = atlasW / s.assets.font.Font.sdfOversample;
+		var h:Float = atlasH / s.assets.font.Font.sdfOversample;
 		return {
 			xoff: g.xoff,
 			yoff: g.yoff,

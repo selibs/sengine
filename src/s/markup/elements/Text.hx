@@ -1,28 +1,24 @@
 package s.markup.elements;
 
-import s.Texture;
+import s.graphics.Texture;
 import s.markup.Alignment;
 
 class Text extends Label {
 	// @:attr var lines:Array<TextLine> = [];
-
 	// @:attr public var wrapMode:WrapMode = NoWrap;
-
 	// @:attr public var lineHeight:Float = 1.0;
 	// @:attr public var lineHeightMode:LineHeightMode = Proportional;
 	// @:attr public var maxLineCount:Int = -1;
-
 	// @:readonly @:alias var lineCount:Int = lines.length;
-
 	public function new(text:String = "") {
 		super(text);
 	}
 
 	override function draw(target:Texture) {
-		// if (text.length == 0 || !fontAsset.isLoaded || fontSize == 0)
+		// if (text.length == 0 || !font.isLoaded || fontSize == 0)
 		// 	return;
 		// final ctx = target.context2D;
-		// ctx.style.font = fontAsset;
+		// ctx.style.font = font;
 		// ctx.style.fontSize = fontSize;
 		// ctx.style.color = color;
 		// for (line in lines)
@@ -30,9 +26,8 @@ class Text extends Label {
 	}
 
 	// override function syncText() {
-	// 	if (!fontAsset.isLoaded)
+	// 	if (!font.isLoaded)
 	// 		return;
-		
 	// 	final contentLeft = left.position + left.padding;
 	// 	final contentRight = right.position - right.padding;
 	// 	final contentTop = top.position + top.padding;
@@ -43,7 +38,6 @@ class Text extends Label {
 	// 	final vBoundsIsDirty = top.positionIsDirty || top.paddingIsDirty || bottom.positionIsDirty || bottom.paddingIsDirty;
 	// 	final elideRelayoutIsDirty = elideMode != ElideNone
 	// 		&& (elideModeIsDirty || heightIsDirty || widthIsDirty || vBoundsIsDirty || fontSizeIsDirty || lineHeightIsDirty || lineHeightModeIsDirty);
-
 	// 	if (textIsDirty
 	// 		|| fontSizeIsDirty
 	// 		|| maxLineCountIsDirty
@@ -51,10 +45,8 @@ class Text extends Label {
 	// 		|| ((widthIsDirty || hBoundsIsDirty) && wrapMode != NoWrap)
 	// 		|| elideRelayoutIsDirty)
 	// 		wrapText();
-
 	// 	if (elideMode != ElideNone && (linesIsDirty || elideRelayoutIsDirty))
 	// 		elideText();
-
 	// 	if (linesIsDirty || fontSizeIsDirty) {
 	// 		textWidth = Math.NEGATIVE_INFINITY;
 	// 		textX = Math.POSITIVE_INFINITY;
@@ -87,7 +79,6 @@ class Text extends Label {
 	// 			for (l in lines)
 	// 				l.x = contentLeft;
 	// 	}
-
 	// 	if (linesIsDirty || fontSizeIsDirty || lineHeightIsDirty || lineHeightModeIsDirty) {
 	// 		var realLineHeight = switch lineHeightMode {
 	// 			case Proportional: fontSize * lineHeight;
@@ -97,16 +88,13 @@ class Text extends Label {
 	// 			l.height = realLineHeight;
 	// 		textHeight = lineCount * realLineHeight;
 	// 	}
-
 	// 	var vDirty = alignmentIsDirty || textHeightIsDirty || vBoundsIsDirty;
-
 	// 	if (vDirty && (alignment & AlignVCenter) != 0)
 	// 		textY = contentVCenter - textHeight * 0.5;
 	// 	else if (vDirty && (alignment & AlignBottom) != 0)
 	// 		textY = contentBottom - textHeight;
 	// 	else if (vDirty)
 	// 		textY = contentTop;
-
 	// 	if (linesIsDirty || textYIsDirty) {
 	// 		for (i in 0...lineCount)
 	// 			lines[i].y = textY + lines[i].height * i;
@@ -121,43 +109,34 @@ class Text extends Label {
 	// 		}
 	// 	}
 	// }
-
 	// function wrapText() {
-	// 	var k = fontAsset.asset._get(fontSize);
+	// 	var k = font.asset._get(fontSize);
 	// 	var maxWidth = Math.max(0.0, Math.abs(width) - left.padding - right.padding);
 	// 	lines = [];
-
 	// 	inline function isNewline(c:Int):Bool
 	// 		return c == "\n".code || c == "\r".code || c == 0x85 || c == 0x2028 || c == 0x2029;
-
 	// 	inline function isSpace(c:Int):Bool
 	// 		return switch c {
 	// 			case "\t".code, 0x0B, 0x0C, " ".code, 0xA0, 0x1680, 0x202F, 0x205F, 0x3000: true;
 	// 			case _ if (0x2000 <= c && c <= 0x200A): true;
 	// 			case _: false;
 	// 		}
-
 	// 	inline function charWidth(c:Int):Float
 	// 		return @:privateAccess k.getCharWidth(c);
-
 	// 	inline function maxReached():Bool
 	// 		return maxLineCount >= 0 && lineCount >= maxLineCount;
-
 	// 	inline function nextCharIndex(i:Int, c:Int):Int {
 	// 		if (c == "\r".code && i + 1 < text.length && text.charCodeAt(i + 1) == "\n".code)
 	// 			return i + 2;
 	// 		return i + 1;
 	// 	}
-
 	// 	function pushLine(line:String, lineWidth:Float):Bool {
 	// 		lines.push({text: line, width: lineWidth});
 	// 		return maxReached();
 	// 	}
-
 	// 	function wrapWord(word:String, line:StringBuf, lineWidth:Float):{line:StringBuf, lineWidth:Float, stop:Bool} {
 	// 		if (word.length == 0)
 	// 			return {line: line, lineWidth: lineWidth, stop: false};
-
 	// 		if (maxWidth <= 0) {
 	// 			if (lineWidth > 0 && pushLine(line.toString(), lineWidth))
 	// 				return {line: new StringBuf(), lineWidth: 0.0, stop: true};
@@ -165,7 +144,6 @@ class Text extends Label {
 	// 				return {line: new StringBuf(), lineWidth: 0.0, stop: true};
 	// 			return {line: new StringBuf(), lineWidth: 0.0, stop: false};
 	// 		}
-
 	// 		var current = line;
 	// 		var currentWidth = lineWidth;
 	// 		var i = 0;
@@ -185,7 +163,6 @@ class Text extends Label {
 	// 				i++;
 	// 				continue;
 	// 			}
-
 	// 			var part = new StringBuf();
 	// 			var partWidth = 0.0;
 	// 			while (i < word.length) {
@@ -197,14 +174,12 @@ class Text extends Label {
 	// 				partWidth += cw;
 	// 				i++;
 	// 			}
-
 	// 			if (partWidth == 0.0) {
 	// 				var c = word.charCodeAt(i);
 	// 				part.addChar(c);
 	// 				partWidth = charWidth(c);
 	// 				i++;
 	// 			}
-
 	// 			current.add(part.toString());
 	// 			currentWidth = partWidth;
 	// 			if (i < word.length) {
@@ -214,10 +189,8 @@ class Text extends Label {
 	// 				currentWidth = 0.0;
 	// 			}
 	// 		}
-
 	// 		return {line: current, lineWidth: currentWidth, stop: false};
 	// 	}
-
 	// 	switch wrapMode {
 	// 		case NoWrap:
 	// 			var line = new StringBuf();
@@ -253,7 +226,6 @@ class Text extends Label {
 	// 					i = nextCharIndex(i, c);
 	// 					continue;
 	// 				}
-
 	// 				var cw = charWidth(c);
 	// 				if (lineWidth > 0 && maxWidth > 0 && lineWidth + cw > maxWidth) {
 	// 					if (pushLine(line.toString(), lineWidth))
@@ -261,7 +233,6 @@ class Text extends Label {
 	// 					line = new StringBuf();
 	// 					lineWidth = 0.0;
 	// 				}
-
 	// 				line.addChar(c);
 	// 				lineWidth += cw;
 	// 				i++;
@@ -273,11 +244,9 @@ class Text extends Label {
 	// 			var lineWidth = 0.0;
 	// 			var word = new StringBuf();
 	// 			var wordWidth = 0.0;
-
 	// 			function flushWord():Bool {
 	// 				if (word.length == 0)
 	// 					return false;
-
 	// 				var value = word.toString();
 	// 				if (wrapMode == WordWrap || wordWidth <= maxWidth || maxWidth <= 0) {
 	// 					if (lineWidth > 0 && maxWidth > 0 && lineWidth + wordWidth > maxWidth) {
@@ -295,16 +264,13 @@ class Text extends Label {
 	// 					if (wrapped.stop)
 	// 						return true;
 	// 				}
-
 	// 				word = new StringBuf();
 	// 				wordWidth = 0.0;
 	// 				return false;
 	// 			}
-
 	// 			var i = 0;
 	// 			while (i < text.length) {
 	// 				var c = text.charCodeAt(i);
-
 	// 				if (isNewline(c)) {
 	// 					if (flushWord())
 	// 						return;
@@ -315,7 +281,6 @@ class Text extends Label {
 	// 					i = nextCharIndex(i, c);
 	// 					continue;
 	// 				}
-
 	// 				if (isSpace(c)) {
 	// 					if (flushWord())
 	// 						return;
@@ -334,23 +299,19 @@ class Text extends Label {
 	// 					i++;
 	// 					continue;
 	// 				}
-
 	// 				word.addChar(c);
 	// 				wordWidth += charWidth(c);
 	// 				i++;
 	// 			}
-
 	// 			if (flushWord())
 	// 				return;
 	// 			if (!maxReached())
 	// 				pushLine(line.toString(), lineWidth);
 	// 	}
 	// }
-
 	// function elideText() {
 	// 	if (lineCount == 0)
 	// 		return;
-
 	// 	final maxHeight = Math.max(0.0, Math.abs(height) - top.padding - bottom.padding);
 	// 	final realLineHeight = switch lineHeightMode {
 	// 		case Proportional: fontSize * lineHeight;
@@ -359,7 +320,6 @@ class Text extends Label {
 	// 	var visibleHeight = lineCount * realLineHeight;
 	// 	var removedLines = false;
 	// 	var changed = false;
-
 	// 	if (elideMode == ElideLeft) {
 	// 		while (lineCount > 1 && visibleHeight > maxHeight) {
 	// 			lines.shift();
@@ -390,7 +350,6 @@ class Text extends Label {
 	// 		}
 	// 		changed = elideLine(lines[lineCount - 1], removedLines) || changed;
 	// 	}
-
 	// 	if (changed) {
 	// 		linesIsDirty = true;
 	// 		textHeight = visibleHeight;

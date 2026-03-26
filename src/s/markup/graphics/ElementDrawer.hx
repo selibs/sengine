@@ -3,6 +3,7 @@ package s.markup.graphics;
 import s.math.Mat3;
 import kha.graphics4.VertexData;
 import kha.graphics4.ConstantLocation;
+import s.graphics.Texture;
 import s.graphics.shaders.Shader;
 import s.markup.elements.DrawableElement;
 

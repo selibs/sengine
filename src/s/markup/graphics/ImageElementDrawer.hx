@@ -4,7 +4,7 @@ import s.markup.elements.ImageElement;
 
 @:allow(s.markup.elements.ImageElement)
 class ImageElementDrawer extends TexturedElementDrawer<ImageElement> {
-	override function setUniforms(target:Texture, e:ImageElement) {
+	override function setUniforms(target:s.graphics.Texture, e:ImageElement) {
 		super.setUniforms(target, e);
 		final ctx = target.context3D;
 		ctx.setVec4(rectCL, e.rect);

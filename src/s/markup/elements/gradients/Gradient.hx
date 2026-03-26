@@ -1,6 +1,7 @@
 package s.markup.elements.gradients;
 
 import s.math.Vec2;
+import s.graphics.Texture;
 
 @:structInit
 class GradientStop implements s.shortcut.Shortcut {

@@ -2,7 +2,7 @@ package s.markup.graphics.shapes;
 
 import kha.graphics4.VertexData;
 import kha.graphics4.ConstantLocation;
-import s.Texture;
+import s.graphics.Texture;
 import s.math.Mat3;
 import s.graphics.shaders.Shader;
 

@@ -5,7 +5,7 @@ import kha.arrays.Float32Array;
 import kha.graphics4.Graphics;
 import kha.graphics4.TextureUnit;
 import kha.graphics4.ConstantLocation;
-import s.Texture;
+import s.graphics.Texture;
 import s.math.Vec2;
 import s.math.Vec3;
 import s.math.Vec4;
@@ -15,7 +15,6 @@ import s.math.Vec2I;
 import s.math.Mat3;
 import s.math.Mat4;
 import s.math.SMath;
-import s.assets.Image;
 
 @:forward(begin, clear, flush, end, scissor, disableScissor, setPipeline, setIndexBuffer, setVertexBuffer, setVertexBuffers, setTextureParameters)
 extern abstract Context3D(Graphics) from Graphics {
@@ -137,11 +136,11 @@ extern abstract Context3D(Graphics) from Graphics {
 		setMat4(location, mat4(a00, a10, a20, a30, a01, a11, a21, a31, a02, a12, a22, a32, a03, a13, a23, a33));
 	}
 
-	overload public inline function setTexture(unit:TextureUnit, texture:Image) {
+	overload public inline function setTexture(unit:TextureUnit, texture:kha.Image) {
 		this.setTexture(unit, texture);
 	}
 
-	overload public inline function setTexture(unit:TextureUnit, texture:Image, parameters:TextureParameters) {
+	overload public inline function setTexture(unit:TextureUnit, texture:kha.Image, parameters:TextureParameters) {
 		this.setTexture(unit, texture);
 		this.setTextureParameters(unit, parameters.uAddressing, parameters.vAddressing, parameters.minificationFilter, parameters.magnificationFilter,
 			parameters.mipmapFilter);

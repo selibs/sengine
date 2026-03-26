@@ -1,13 +1,9 @@
 package s.markup.elements;
 
-import s.Texture.TextureParameters;
-import kha.graphics4.TextureAddressing;
-import kha.graphics4.MipMapFilter;
-import kha.graphics4.TextureFilter;
 import s.math.Vec4;
-import s.assets.ImageAsset;
 import s.assets.Image;
 import s.geometry.Rect;
+import s.graphics.Texture;
 
 /**
  * Texture sampling presets for [`ImageElement`](s.markup.elements.ImageElement).
@@ -114,11 +110,7 @@ enum ImageSampling {
  */
 @:allow(s.markup.graphics.ImageElementDrawer)
 class ImageElement extends DrawableElement {
-	var asset:ImageAsset = new ImageAsset();
-	@:marker var assetIsDirty:Bool = false;
-
-	@:readonly @:alias var image:Image = asset.asset;
-
+	var image:Image = new Image();
 	var parameters:TextureParameters = {
 		uAddressing: Clamp,
 		vAddressing: Clamp,
@@ -126,9 +118,10 @@ class ImageElement extends DrawableElement {
 		magnificationFilter: LinearFilter,
 		mipmapFilter: NoMipFilter
 	}
-
 	var rect:Vec4 = new Vec4(0.0, 0.0, 1.0, 1.0);
 	var clipRect:Vec4 = new Vec4(0.0, 0.0, 1.0, 1.0);
+
+	@:marker var imageIsDirty:Bool = false;
 
 	/**
 	 * Whether the image referenced by
@@ -137,7 +130,7 @@ class ImageElement extends DrawableElement {
 	 * When this is `false`, the element has no texture to draw and therefore
 	 * contributes no pixels.
 	 */
-	@:readonly @:alias public var isLoaded:Bool = asset.isLoaded;
+	@:readonly @:alias public var isLoaded:Bool = image.isLoaded;
 
 	/**
 	 * Asset key or path of the image to display.
@@ -147,7 +140,7 @@ class ImageElement extends DrawableElement {
 	 * project's asset pipeline, but it typically matches the engine's image
 	 * identifiers such as `"ui/logo"` or `"atlas/icons"`.
 	 */
-	@:alias public var source:String = asset.source;
+	@:alias public var source:String = image.source;
 
 	/**
 	 * Optional source-space clipping rectangle in image pixels.
@@ -241,7 +234,7 @@ class ImageElement extends DrawableElement {
 	public function new(source:String) {
 		super();
 		this.source = source;
-		asset.onAssetLoaded(_ -> assetIsDirty = true);
+		image.onLoaded(() -> imageIsDirty = true);
 	}
 
 	override function sync() {
@@ -250,16 +243,16 @@ class ImageElement extends DrawableElement {
 		if (!isLoaded)
 			return;
 
-		if (assetIsDirty || mipmapIsDirty)
+		if (imageIsDirty || mipmapIsDirty)
 			if (mipmap)
-				(image : kha.Image).generateMipmaps(1);
+				image.generateMipmaps(1);
 			else
-				(image : kha.Image).setMipmaps([]);
+				image.setMipmaps([]);
 
 		final hBoundsIsDirty = left.positionIsDirty || right.positionIsDirty;
 		final vBoundsIsDirty = top.positionIsDirty || bottom.positionIsDirty;
 
-		if (!(assetIsDirty || sourceClipRectIsDirty || fillModeIsDirty || alignmentIsDirty || widthIsDirty || heightIsDirty || hBoundsIsDirty || vBoundsIsDirty))
+		if (!(imageIsDirty || sourceClipRectIsDirty || fillModeIsDirty || alignmentIsDirty || widthIsDirty || heightIsDirty || hBoundsIsDirty || vBoundsIsDirty))
 			return;
 
 		final imageWidth = image.width;

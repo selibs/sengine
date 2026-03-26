@@ -2,7 +2,7 @@ package s.markup;
 
 import s.math.Vec2;
 import s.math.Mat3;
-import s.Texture;
+import s.graphics.Texture;
 import s.math.SMath;
 import s.markup.Style;
 import s.markup.Anchors;

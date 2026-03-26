@@ -5,7 +5,7 @@ import kha.arrays.Float32Array;
 import kha.graphics4.TextureUnit;
 import kha.graphics4.ConstantLocation;
 import s.Color;
-import s.Texture;
+import s.graphics.Texture;
 
 class Compositor extends PPEffect {
 	var textureMapTU:TextureUnit;

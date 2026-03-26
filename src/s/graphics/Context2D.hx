@@ -5,7 +5,6 @@ import s.math.Vec2;
 import s.math.Mat3;
 import s.math.SMath;
 import s.assets.Font;
-import s.assets.Image;
 import s.markup.Alignment;
 import s.geometry.Rect;
 
@@ -42,21 +41,21 @@ extern abstract Context2D(Graphics) from Graphics {
 		return this.popTransformation();
 	}
 
-	public inline function drawImage(img:Image, x:Float, y:Float) {
+	public inline function drawImage(img:kha.Image, x:Float, y:Float) {
 		this.drawImage(img, x, y);
 	}
 
 	/**
 	 * `sx, sy, sw, sh` arguments is the sub-rectangle of the source `img` image
 	 */
-	public inline function drawSubImage(img:Image, x:Float, y:Float, sx:Float, sy:Float, sw:Float, sh:Float) {
+	public inline function drawSubImage(img:kha.Image, x:Float, y:Float, sx:Float, sy:Float, sw:Float, sh:Float) {
 		this.drawSubImage(img, x, y, sx, sy, sw, sh);
 	}
 
 	/**
 	 * `dx, dy, dw, dh` arguments is the rectangle to draw into the destination context
 	 */
-	public inline function drawScaledImage(img:Image, dx:Float, dy:Float, dw:Float, dh:Float) {
+	public inline function drawScaledImage(img:kha.Image, dx:Float, dy:Float, dw:Float, dh:Float) {
 		this.drawScaledImage(img, dx, dy, dw, dh);
 	}
 
@@ -64,7 +63,7 @@ extern abstract Context2D(Graphics) from Graphics {
 	 * `sx, sy, sw, sh` arguments is the sub-rectangle of the source `img` image
 	 * `dx, dy, dw, dh` arguments is the rectangle to draw into the destination context
 	 */
-	public inline function drawScaledSubImage(img:Image, sx:Float, sy:Float, sw:Float, sh:Float, dx:Float, dy:Float, dw:Float, dh:Float) {
+	public inline function drawScaledSubImage(img:kha.Image, sx:Float, sy:Float, sw:Float, sh:Float, dx:Float, dy:Float, dw:Float, dh:Float) {
 		this.drawScaledSubImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
 	}
 

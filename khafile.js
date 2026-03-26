@@ -120,24 +120,41 @@ project.addAssets("assets/**", {
     name: "{name}",
 });
 
-// resource types
-process.resourceTypes = process.resourceTypes ?? {}
-process.resourceTypes["font"] = "s.assets.font.Font";
-process.resourceTypes["image"] = "s.assets.image.Image";
+// asset types
+process.assetTypes = process.assetTypes ?? {}
+process.assetTypes["font"] = {
+    type: "s.assets.font.Font", 
+    formats:{
+        // "ttf": "s.assets.font.format.TTF"
+    }
+};
+process.assetTypes["image"] = {
+    type: "s.assets.image.Image", 
+    formats:{
+        "bmp": "s.assets.image.format.BMP",
+        "exr": "s.assets.image.format.EXR",
+        "hdr": "s.assets.image.format.HDR",
+        "jpg": "s.assets.image.format.JPG",
+        "png": "s.assets.image.format.PNG",
+        "psd": "s.assets.image.format.PSD",
+        "tga": "s.assets.image.format.TGA",
+        "tif": "s.assets.image.format.TIF",
+    }
+};
 
-for (const [k, v] of Object.entries(process.resourceTypes)) {
-  if (typeof k !== "string" || typeof v !== "string" || !v) continue;
-  project.addParameter(
-    `--macro s.macro.AssetsMacro.addAssetType(${JSON.stringify(k)}, ${JSON.stringify(v)})`
-  );
+for (const [k, v] of Object.entries(process.assetTypes)) {
+    var formats = [];
+    for ([e, t] of Object.entries(v.formats))
+        formats.push({extension: e, type: t});
+    project.addParameter(`--macro s.macro.AssetsMacro.addAssetType("${k}", "${v.type}", ${JSON.stringify(formats)})`);
 }
 
 // markup shortcuts
 for (const [k, v] of Object.entries(process.shortcuts ?? {})) {
-  if (typeof k !== "string" || typeof v !== "string" || !v) continue;
-  project.addParameter(
-    `--macro s.markup.macro.MarkupMacro.useShortcut(${JSON.stringify(k)}, ${JSON.stringify(v)})`
-  );
+    if (typeof k !== "string" || typeof v !== "string" || !v) continue;
+    project.addParameter(
+        `--macro s.markup.macro.MarkupMacro.useShortcut(${JSON.stringify(k)}, ${JSON.stringify(v)})`
+    );
 }
 
 // defines
@@ -159,6 +176,7 @@ project.addShaders(`${shaderOutputDir}/**/*{frag,vert}.glsl`, { defines: defs })
 // libraries
 project.localLibraryPath = "libs";
 project.addLibrary("slog");
+project.addLibrary("snet");
 project.addLibrary("sshortcut");
 
 // subprojects

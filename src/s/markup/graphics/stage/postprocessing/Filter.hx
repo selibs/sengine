@@ -3,7 +3,7 @@ package s.markup.graphics.stage.postprocessing;
 import kha.Shaders;
 import kha.graphics4.TextureUnit;
 import kha.graphics4.ConstantLocation;
-import s.Texture;
+import s.graphics.Texture;
 import s.math.Mat3;
 
 class Filter extends PPEffect {
