@@ -330,8 +330,8 @@ class App implements s.shortcut.Shortcut {
 		input = {mouse: new Mouse(), keyboard: new Keyboard()}
 		System.notifyOnApplicationState(() -> state = Foreground, () -> state = Resume, () -> state = Pause, () -> state = Background, () -> state = Shutdown);
 		s.assets.Assets.loadShelf({
-			fonts: ["font_default"],
-			images: ["image_default"]
+			fonts: ["assets/fonts/font_default.ttf"],
+			images: ["assets/images/image_default.png"]
 		}, progress -> {
 			if (progress == 1.0) {
 				Aura.init();

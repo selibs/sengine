@@ -12,7 +12,7 @@ typedef ElementFontChar = {
 
 @:allow(s.markup.Element)
 class ElementFont implements s.shortcut.Shortcut {
-	var font:Font = new Font();
+	var font:Font = "resource://font_default";
 
 	@:attr public var bold:Bool = false;
 	// @:attr public var capitalization:enumeration;

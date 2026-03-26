@@ -35,7 +35,7 @@ class AssetsMacro {
 			for (a in assetTypes.keyValueIterator()) {
 				var listName = a.key;
 				exprs.push(macro if (shelf.$listName != null) {
-					for (source in shelf.$listName) {
+					for (location in shelf.$listName) {
 						$i{f(a.value)}($a{params});
 						if (onProgress != null)
 							onProgress(progress += 1 / total);
@@ -69,11 +69,10 @@ class AssetsMacro {
 
 		var progressArg = {name: "onProgress", type: macro :Float->Void, opt: true};
 		var failedArg = {name: "onFailed", type: macro :s.assets.Assets.AssetError->Void, opt: true};
-		var posArg = {name: "pos", type: macro :haxe.PosInfos, opt: true};
 
-		makeFunction("loadShelf", [shelfArg, progressArg, failedArg, posArg], [macro source, macro onFailed, macro pos], v -> v.load);
-		makeFunction("reloadShelf", [shelfArg, progressArg, failedArg, posArg], [macro source, macro onFailed, macro pos], v -> v.reload);
-		makeFunction("unloadShelf", [shelfArg, progressArg], [macro source], v -> v.unload);
+		makeFunction("loadShelf", [shelfArg, progressArg, failedArg], [macro location, macro onFailed], v -> v.load);
+		makeFunction("reloadShelf", [shelfArg, progressArg, failedArg], [macro location, macro onFailed], v -> v.reload);
+		makeFunction("unloadShelf", [shelfArg, progressArg], [macro location], v -> v.unload);
 
 		for (field in Context.getBuildFields())
 			assetsFields.push(field);
@@ -108,27 +107,24 @@ class AssetsMacro {
 			public static inline function fromString(value:String)
 				return load(value);
 
-			public static inline function load(source:String, ?done:$abstractType->Void, ?failed:s.assets.Assets.AssetError->Void):$abstractType
-				return s.assets.Assets.$loadName(source, failed);
+			public static inline function load(name:String, ?location:s.assets.AssetLocation, ?failed:s.assets.Assets.AssetError->Void):$abstractType
+				return s.assets.Assets.$loadName(name, location, failed);
 
-			public var source(get, set):String;
+			public var location(get, set):s.assets.AssetLocation;
 
-			public inline function new(?source:String)
-				this = new $tPath(source);
-
-			public inline function reload(?newSource):Void
-				s.assets.Assets.$reloadName(source, newSource);
+			public inline function reload(?location):Void
+				s.assets.Assets.$reloadName(this.location, location);
 
 			public inline function unload():Bool {
-				if (this.source != null)
-					return s.assets.Assets.$unloadName(this.source);
+				if (location != null)
+					return s.assets.Assets.$unloadName(location);
 				return false;
 			}
 
-			inline function get_source():String
-				return this.source;
+			private inline function get_location():s.assets.AssetLocation
+				return this.location;
 
-			inline function set_source(value:String):String {
+			private inline function set_location(value:s.assets.AssetLocation):s.assets.AssetLocation {
 				reload(value);
 				return value;
 			}
@@ -170,18 +166,16 @@ class AssetsMacro {
 		assetsFields.push({
 			name: listName,
 			access: [APublic, AStatic],
-			kind: FProp("default", "never", macro :s.assets.AssetList<$abstractType>),
+			kind: FProp("default", "never", macro :s.assets.AssetList<$abstractType>, macro new s.assets.AssetList()),
 			pos: Context.currentPos()
 		});
 
-		var assetArg = {name: "asset", type: abstractType};
-		var sourceArg = {name: "source", type: macro :String};
-		var newSourceArg = {name: "newSource", type: macro :String, opt: true};
+		var nameArg = {name: "name", type: macro :String};
+		var locationArg = {name: "location", type: macro :s.assets.AssetLocation, opt: true};
 		var failedArg = {name: "failed", type: macro :s.assets.Assets.AssetError->Void, opt: true};
-		var posArg = {name: "pos", type: macro :haxe.PosInfos, opt: true};
 
 		var decode = {
-			expr: ESwitch(macro ext, [
+			expr: ESwitch(macro location.extension, [
 				for (f in formats) {
 					var path = f.type.split(".");
 					var typePath = {
@@ -193,7 +187,7 @@ class AssetsMacro {
 						expr: macro new $typePath(asset).decode(bytes)
 					}
 				}
-			], macro throw "Unknown format: " + ext),
+			], macro throw "Unknown format: " + location.extension),
 			pos: pos
 		}
 
@@ -202,17 +196,17 @@ class AssetsMacro {
 			name: loadName,
 			access: [APublic, AStatic],
 			kind: FFun({
-				args: [sourceArg, failedArg, posArg],
+				args: [nameArg, locationArg, failedArg],
 				ret: abstractType,
 				expr: macro {
-					var asset = $i{listName}.get(source);
+					var asset = $i{listName}.get(name);
 					if (asset == null) {
-						asset = new $abstractTypePath(source);
-						loadBytes(source, bytes -> {
-							$i{listName}.add(source, asset);
-							var ext = haxe.io.Path.extension(source ?? "");
+						asset = new $abstractTypePath(name);
+						loadBytes(location, bytes -> {
+							$i{listName}.add(name, asset);
 							$decode;
-						}, failed, pos);
+							(asset : Asset).location = location;
+						}, failed);
 					}
 					return asset;
 				}
@@ -225,9 +219,9 @@ class AssetsMacro {
 			name: unloadName,
 			access: [APublic, AStatic],
 			kind: FFun({
-				args: [sourceArg],
+				args: [nameArg],
 				ret: macro :Bool,
-				expr: macro return $i{listName}.unload(source)
+				expr: macro return $i{listName}.unload(name)
 			}),
 			pos: Context.currentPos()
 		});
@@ -237,19 +231,19 @@ class AssetsMacro {
 			name: reloadName,
 			access: [APublic, AStatic],
 			kind: FFun({
-				args: [sourceArg, newSourceArg, failedArg, posArg],
+				args: [nameArg, locationArg, failedArg],
 				ret: macro :Void,
 				expr: macro {
-					newSource = newSource ?? source;
-					loadBytes(newSource, bytes -> {
-						var asset = $i{listName}.extract(source);
-						if (asset == null)
-							asset = new $abstractTypePath(newSource);
-						$i{listName}.add(newSource, asset);
-						var ext = haxe.io.Path.extension(source ?? "");
+					var asset = $i{listName}.get(name);
+                    location = location ?? asset.location;
+					loadBytes(location, bytes -> {
+						if (asset == null) {
+							asset = new $abstractTypePath(name);
+							$i{listName}.add(name, asset);
+						}
 						$decode;
-						(asset : Asset).source = newSource ?? source;
-					}, failed, pos);
+						(asset : Asset).location = location;
+					}, failed);
 				}
 			}),
 			pos: Context.currentPos()

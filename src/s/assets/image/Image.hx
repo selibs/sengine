@@ -7,12 +7,11 @@ class Image extends Asset implements s.shortcut.Shortcut {
 	@:readonly @:alias public var height:Int = image.height;
 
 	function unload() {
-		image?.unload();
 		image = null;
 	}
 
 	inline function set_image(value:kha.Image) {
-		unload();
+		image?.unload();
 		return image = value;
 	}
 

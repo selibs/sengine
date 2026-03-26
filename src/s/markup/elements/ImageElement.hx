@@ -140,7 +140,7 @@ class ImageElement extends DrawableElement {
 	 * project's asset pipeline, but it typically matches the engine's image
 	 * identifiers such as `"ui/logo"` or `"atlas/icons"`.
 	 */
-	@:alias public var source:String = image.source;
+	@:alias public var source:String = image.location;
 
 	/**
 	 * Optional source-space clipping rectangle in image pixels.
