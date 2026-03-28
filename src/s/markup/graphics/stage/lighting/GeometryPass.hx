@@ -62,9 +62,9 @@ class GeometryPass extends StageRenderPass {
 		]);
 		ctx.clear(Black, 1.0);
 		ctx.setPipeline(pipeline);
-		ctx.setIndexBuffer(Drawers.indices2D);
+		ctx.setIndexBuffer(Drawers.rectIndices2D);
 		#if (S2D_SPRITE_INSTANCING != 1)
-		ctx.setVertexBuffer(Drawers.vertices2D);
+		ctx.setVertexBuffer(Drawers.rectVertices2D);
 		#end
 		ctx.setMat3(viewProjectionCL, stage.viewProjection);
 		for (layer in stage.layers) {

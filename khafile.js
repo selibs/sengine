@@ -125,7 +125,7 @@ process.assetTypes = process.assetTypes ?? {}
 process.assetTypes["font"] = {
     type: "s.assets.font.Font", 
     formats:{
-        // "ttf": "s.assets.font.format.TTF"
+        "ttf": "s.assets.font.format.TTF"
     }
 };
 process.assetTypes["image"] = {

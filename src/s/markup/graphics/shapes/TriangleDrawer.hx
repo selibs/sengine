@@ -1,7 +1,7 @@
 package s.markup.graphics.shapes;
 
 import kha.graphics4.ConstantLocation;
-import s.graphics.Texture;
+import s.graphics.RenderTarget;
 import s.markup.elements.shapes.Triangle;
 
 @:allow(s.markup.elements.shapes.Triangle)
@@ -21,7 +21,7 @@ class TriangleDrawer extends ShapeDrawer<Triangle> {
 		point3CL = pipeline.getConstantLocation("point3");
 	}
 
-	override function setUniforms(target:Texture, element:Triangle) {
+	override function setUniforms(target:RenderTarget, element:Triangle) {
 		super.setUniforms(target, element);
 		final l = element.left.position;
 		final t = element.top.position;

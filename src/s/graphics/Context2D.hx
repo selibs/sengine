@@ -1,87 +1,150 @@
 package s.graphics;
 
-import kha.graphics2.Graphics;
 import s.math.Vec2;
 import s.math.Mat3;
 import s.math.SMath;
-import s.assets.Font;
-import s.markup.Alignment;
+import s.assets.Image;
 import s.geometry.Rect;
+import s.graphics.FontStyle;
+import s.markup.Alignment;
 
-@:forward(pipeline, end, scissor, disableScissor, drawLine, fillTriangle, drawRect, fillRect, drawString, drawCharacters)
-extern abstract Context2D(Graphics) from Graphics {
-	public var style(get, never):Context2DStyle;
-	public var transform(get, set):Mat3;
+class Context2DStyle implements s.shortcut.Shortcut {
+	final opacities:Array<Float> = [];
 
-	public inline function begin() {
-		this.begin(false);
+	public var color:Color = Black;
+	public var font:FontStyle = new FontStyle();
+	@:alias public var opacity:Float = opacities[opacities.length - 1];
+
+	public inline function new()
+		opacities.push(1.0);
+
+	public inline function pushOpacity(value:Float)
+		opacities.push(opacity * value);
+
+	public inline function popOpacity():Float
+		return opacities.pop();
+}
+
+@:allow(s.graphics.RenderTarget)
+@:allow(s.graphics.shaders.Shader2D)
+class Context2D implements s.shortcut.Shortcut {
+	final context:Context3D;
+	final transforms:Array<Mat3> = [];
+
+	public final style:Context2DStyle = new Context2DStyle();
+	@:alias public var transform:Mat3 = transforms[transforms.length - 1];
+
+	function new(context:Context3D) {
+		this.context = context;
+		transforms.push(Mat3.identity());
 	}
 
-	public inline function clear(color:Color) {
-		this.clear(color);
-	}
+	public inline function begin()
+		context.begin();
+
+	public inline function clear(color:Color)
+		context.clear(color);
+
+	public inline function end()
+		context.end();
+
+	public inline function scissor(x:Int, y:Int, width:Int, height:Int)
+		context.scissor(x, y, width, height);
+
+	public inline function disableScissor()
+		context.disableScissor();
 
 	public inline function render(?clear:Bool, ?clearColor:Color = Transparent, commands:Context2D->Void) {
-		this.begin(clear, clearColor);
+		begin();
+		if (clear)
+			this.clear(clearColor);
 		commands(this);
-		this.end();
+		end();
 	}
 
 	public inline function drawScissored(x:Int, y:Int, width:Int, height:Int, commands:Context2D->Void) {
-		this.scissor(x, y, width, height);
+		scissor(x, y, width, height);
 		commands(this);
-		this.disableScissor();
+		disableScissor();
 	}
 
-	public inline function pushTransformation(value:Mat3):Void {
-		this.pushTransformation(value * transform);
+	public inline function pushTransform(value:Mat3):Void
+		transforms.push(value * transform);
+
+	public inline function popTransform():Mat3
+		return transforms.length > 1 ? transforms.pop() : null;
+
+	overload extern public inline function drawLine(p1:Vec2, p2:Vec2, strength:Float = 1.0)
+		drawLine(p1.x, p1.y, p2.x, p2.y, strength);
+
+	overload extern public inline function drawLine(x1:Float, y1:Float, x2:Float, y2:Float, strength:Float = 1.0) {
+		var dx = x2 - x1;
+		var dy = y2 - y1;
+		pushTransform(Mat3.translation(-x1, -y1));
+		pushTransform(Mat3.rotation(x1, y1, x2, y2));
+		pushTransform(Mat3.translation(x1, y1));
+		fillRectangle(x1, y1 - strength * 0.5, sqrt(dx * dx + dy * dy), strength);
+		popTransform();
 	}
 
-	public inline function popTransformation():Mat3 {
-		return this.popTransformation();
+	overload extern public inline function drawRectangle(rect:Rect, strength:Float = 1.0)
+		drawRectangle(rect.x, rect.y, rect.width, rect.height, strength);
+
+	overload extern public inline function drawRectangle(x:Float, y:Float, width:Float, height:Float, strength:Float = 1.0)
+		drawRectangle(x, y, x + width, y, x + width, y + height, x, y + height);
+
+	overload extern public inline function drawRectangle(p1:Vec2, p2:Vec2, p3:Vec2, p4:Vec2, strength:Float = 1.0)
+		drawRectangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p4.x, p4.y);
+
+	overload extern public inline function drawRectangle(x1:Float, y1:Float, x2:Float, y2:Float, x3:Float, y3:Float, x4:Float, y4:Float, strength:Float = 1.0) {
+		drawLine(x1, y1, x2, y2, strength);
+		drawLine(x2, y2, x3, y3, strength);
+		drawLine(x3, y3, x4, y4, strength);
+		drawLine(x4, y4, x1, y1, strength);
 	}
 
-	public inline function drawImage(img:kha.Image, x:Float, y:Float) {
-		this.drawImage(img, x, y);
+	overload extern public inline function fillRectangle(rect:Rect)
+		fillRectangle(rect.x, rect.y, rect.width, rect.height);
+
+	overload extern public inline function fillRectangle(x:Float, y:Float, width:Float, height:Float)
+		s.graphics.shaders.RectangleShader.shader.render(this, x, y, width, height);
+
+	overload extern public inline function drawTriangle(p1:Vec2, p2:Vec2, p3:Vec2, strength:Float = 1.0)
+		drawTriangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
+
+	overload extern public inline function drawTriangle(x1:Float, y1:Float, x2:Float, y2:Float, x3:Float, y3:Float, strength:Float = 1.0) {
+		drawLine(x1, y1, x2, y2, strength);
+		drawLine(x2, y2, x3, y3, strength);
+		drawLine(x3, y3, x1, y1, strength);
 	}
+
+	overload extern public inline function fillTriangle(p1:Vec2, p2:Vec2, p3:Vec2)
+		fillTriangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
+
+	overload extern public inline function fillTriangle(x1:Float, y1:Float, x2:Float, y2:Float, x3:Float, y3:Float)
+		s.graphics.shaders.TriangleShader.shader.render(this, x1, y1, x2, y2, x3, y3);
+
+	public inline function drawImage(img:Image, x:Float, y:Float)
+		drawScaledSubImage(img, 0.0, 0.0, img.width, img.height, x, y, img.width, img.height);
 
 	/**
 	 * `sx, sy, sw, sh` arguments is the sub-rectangle of the source `img` image
 	 */
-	public inline function drawSubImage(img:kha.Image, x:Float, y:Float, sx:Float, sy:Float, sw:Float, sh:Float) {
-		this.drawSubImage(img, x, y, sx, sy, sw, sh);
-	}
+	public inline function drawSubImage(img:Image, x:Float, y:Float, sx:Float, sy:Float, sw:Float, sh:Float)
+		drawScaledSubImage(img, sx, sy, sw, sh, x, y, sw, sh);
 
 	/**
 	 * `dx, dy, dw, dh` arguments is the rectangle to draw into the destination context
 	 */
-	public inline function drawScaledImage(img:kha.Image, dx:Float, dy:Float, dw:Float, dh:Float) {
-		this.drawScaledImage(img, dx, dy, dw, dh);
-	}
+	public inline function drawScaledImage(img:Image, dx:Float, dy:Float, dw:Float, dh:Float)
+		drawScaledSubImage(img, 0.0, 0.0, img.width, img.height, dx, dy, dw, dh);
 
 	/**
 	 * `sx, sy, sw, sh` arguments is the sub-rectangle of the source `img` image
 	 * `dx, dy, dw, dh` arguments is the rectangle to draw into the destination context
 	 */
-	public inline function drawScaledSubImage(img:kha.Image, sx:Float, sy:Float, sw:Float, sh:Float, dx:Float, dy:Float, dw:Float, dh:Float) {
-		this.drawScaledSubImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
-	}
-
-	overload public inline function drawRect(x:Float, y:Float, width:Float, height:Float, strength:Float = 1.0) {
-		this.drawRect(x, y, width, height, strength);
-	}
-
-	overload public inline function drawRect(rect:Rect, strength:Float = 1.0) {
-		drawRect(rect.x, rect.y, rect.width, rect.height, strength);
-	}
-
-	overload public inline function fillRect(x:Float, y:Float, width:Float, height:Float) {
-		this.fillRect(x, y, width, height);
-	}
-
-	overload public inline function fillRect(rect:Rect) {
-		fillRect(rect.x, rect.y, rect.width, rect.height);
-	}
+	public inline function drawScaledSubImage(img:Image, sx:Float, sy:Float, sw:Float, sh:Float, dx:Float, dy:Float, dw:Float, dh:Float)
+		s.graphics.shaders.ImageShader.shader.render(this, img, sx, sy, sw, sh, dx, dy, dw, dh);
 
 	/**
 	 * Draws a arc.
@@ -173,7 +236,7 @@ extern abstract Context2D(Graphics) from Graphics {
 			x = c * x - s * y;
 			y = c * y + s * t;
 
-			this.fillTriangle(px, py, x + cx, y + cy, sx, sy);
+			fillTriangle(px, py, x + cx, y + cy, sx, sy);
 		}
 	}
 
@@ -228,8 +291,8 @@ extern abstract Context2D(Graphics) from Graphics {
 		var p2 = vec2(x2 + side * vec.x, y2 + side * vec.y);
 		var p3 = p1 - vec;
 		var p4 = p2 - vec;
-		this.fillTriangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
-		this.fillTriangle(p3.x, p3.y, p2.x, p2.y, p4.x, p4.y);
+		fillTriangle(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y);
+		fillTriangle(p3.x, p3.y, p2.x, p2.y, p4.x, p4.y);
 	}
 
 	/**
@@ -264,7 +327,7 @@ extern abstract Context2D(Graphics) from Graphics {
 			x = c * x - s * y;
 			y = c * y + s * t;
 
-			this.fillTriangle(px, py, x + cx, y + cy, cx, cy);
+			fillTriangle(px, py, x + cx, y + cy, cx, cy);
 		}
 	}
 
@@ -278,10 +341,10 @@ extern abstract Context2D(Graphics) from Graphics {
 
 		while (iterator.hasNext()) {
 			var v2 = iterator.next();
-			this.drawLine(v1.x + x, v1.y + y, v2.x + x, v2.y + y, strength);
+			drawLine(v1.x + x, v1.y + y, v2.x + x, v2.y + y, strength);
 			v1 = v2;
 		}
-		this.drawLine(v1.x + x, v1.y + y, v0.x + x, v0.y + y, strength);
+		drawLine(v1.x + x, v1.y + y, v0.x + x, v0.y + y, strength);
 	}
 
 	/**
@@ -300,7 +363,7 @@ extern abstract Context2D(Graphics) from Graphics {
 
 		while (iterator.hasNext()) {
 			var v2 = iterator.next();
-			this.fillTriangle(v0.x + x, v0.y + y, v1.x + x, v1.y + y, v2.x + x, v2.y + y);
+			fillTriangle(v0.x + x, v0.y + y, v1.x + x, v1.y + y, v2.x + x, v2.y + y);
 			v1 = v2;
 		}
 	}
@@ -321,7 +384,7 @@ extern abstract Context2D(Graphics) from Graphics {
 		for (i in 1...(segments + 1)) {
 			t = i / segments;
 			q1 = calculateCubicBezierPoint(t, x, y);
-			this.drawLine(q0[0], q0[1], q1[0], q1[1], strength);
+			drawLine(q0[0], q0[1], q1[0], q1[1], strength);
 			q0 = q1;
 		}
 	}
@@ -342,7 +405,7 @@ extern abstract Context2D(Graphics) from Graphics {
 			for (j in 1...(segments + 1)) {
 				t = j / segments;
 				q1 = calculateCubicBezierPoint(t, [x[i], x[i + 1], x[i + 2], x[i + 3]], [y[i], y[i + 1], y[i + 2], y[i + 3]]);
-				this.drawLine(q0[0], q0[1], q1[0], q1[1], strength);
+				drawLine(q0[0], q0[1], q1[0], q1[1], strength);
 				q0 = q1;
 			}
 
@@ -388,7 +451,7 @@ extern abstract Context2D(Graphics) from Graphics {
 		for (i in 1...(segments + 1)) {
 			t = i / segments;
 			q1 = calculateQuadraticBezierPoint(t, x, y);
-			this.drawLine(q0[0], q0[1], q1[0], q1[1], strength);
+			drawLine(q0[0], q0[1], q1[0], q1[1], strength);
 			q0 = q1;
 		}
 	}
@@ -409,7 +472,7 @@ extern abstract Context2D(Graphics) from Graphics {
 			for (j in 1...(segments + 1)) {
 				t = j / segments;
 				q1 = calculateQuadraticBezierPoint(t, [x[i], x[i + 1], x[i + 2]], [y[i], y[i + 1], y[i + 2]]);
-				this.drawLine(q0[0], q0[1], q1[0], q1[1], strength);
+				drawLine(q0[0], q0[1], q1[0], q1[1], strength);
 				q0 = q1;
 			}
 
@@ -436,30 +499,42 @@ extern abstract Context2D(Graphics) from Graphics {
 		return p;
 	}
 
-	public inline function drawAlignedString(text:String, x:Float, y:Float, alignment:Alignment):Void {
-		var xoffset = 0.0;
-		if (alignment & AlignHCenter != 0 || alignment & AlignRight != 0) {
-			var width = this.font.width(this.fontSize, text);
-			if (alignment & AlignHCenter != 0)
-				xoffset = -width * 0.5;
-			else
-				xoffset = -width;
+	public inline function drawFontChars(chars:Array<FontChar>)
+		s.graphics.shaders.TextShader.shader.render(this, chars);
+
+	public inline function drawString(text:String, x:Float, y:Float)
+		drawCharacters([for (i in 0...text.length) text.charCodeAt(i)], 0, text.length, x, y);
+
+	public inline function drawCharacters(text:Array<Int>, start:Int, length:Int, x:Float, y:Float) {
+		if (text == null || length <= 0 || style.font.pixelSize == 0)
+			return;
+
+		final font = style.font;
+		final atlas = font.getAtlas();
+		final scale = font.pixelSize / atlas.size;
+		final end = Std.int(Math.min(start + length, text.length));
+		var chars = [];
+		var originX = x;
+		var originY = y;
+		var offset = originX;
+		var snapGlyphs = font.snapToPixel;
+		for (i in start...end) {
+			var char = font.getFontCharFromAtlas(atlas, scale, text[i]);
+			char.pos.x = offset + char.xoff;
+			char.pos.y = originY + (snapGlyphs ? Math.round(char.yoff) : char.yoff);
+			offset += char.advance;
+			chars.push(char);
 		}
-		var yoffset = 0.0;
-		if (alignment & AlignVCenter != 0 || alignment & AlignBottom != 0) {
-			var height = this.font.height(this.fontSize);
-			if (alignment & AlignVCenter != 0)
-				yoffset = -height * 0.5;
-			else
-				yoffset = -height;
-		}
-		this.drawString(text, x + xoffset, y + yoffset);
+		drawFontChars(chars);
 	}
+
+	public inline function drawAlignedString(text:String, x:Float, y:Float, alignment:Alignment):Void
+		drawAlignedCharacters([for (i in 0...text.length) text.charCodeAt(i)], 0, text.length, x, y, alignment);
 
 	public inline function drawAlignedCharacters(text:Array<Int>, start:Int, length:Int, x:Float, y:Float, alignment:Alignment):Void {
 		var xoffset = 0.0;
 		if (alignment & AlignHCenter != 0 || alignment & AlignRight != 0) {
-			var width = this.font.widthOfCharacters(this.fontSize, text, start, length);
+			var width = style.font.widthOfCharacters(text, start, length);
 			if (alignment & AlignHCenter != 0)
 				xoffset = -width * 0.5;
 			else
@@ -467,48 +542,11 @@ extern abstract Context2D(Graphics) from Graphics {
 		}
 		var yoffset = 0.0;
 		if (alignment & AlignVCenter != 0 || alignment & AlignBottom != 0) {
-			var height = this.font.height(this.fontSize);
 			if (alignment & AlignVCenter != 0)
-				yoffset = -height * 0.5;
+				yoffset = -style.font.pixelSize * 0.5;
 			else
-				yoffset = -height;
+				yoffset = -style.font.pixelSize;
 		}
-		this.drawCharacters(text, start, length, x + xoffset, y + yoffset);
+		drawCharacters(text, start, length, x + xoffset, y + yoffset);
 	}
-
-	private inline function get_style():Context2DStyle {
-		return this;
-	}
-
-	private inline function get_transform():Mat3 {
-		return this.transformation;
-	}
-
-	private inline function set_transform(value:Mat3):Mat3 {
-		return this.transformation = value;
-	}
-}
-
-@:forward(opacity, fontSize)
-extern abstract Context2DStyle(Graphics) from Graphics {
-	public var color(get, set):Color;
-	public var font(get, set):Font;
-
-	public inline function pushOpacity(value:Float):Void
-		this.pushOpacity(this.opacity * value);
-
-	public inline function popOpacity():Float
-		return this.popOpacity();
-
-	private inline function get_color():Color
-		return this.color;
-
-	private inline function set_color(value:Color):Color
-		return this.color = value;
-
-	private inline function get_font():Font
-		return this.font;
-
-	private inline function set_font(value:Font):Font
-		return this.font = value;
 }

@@ -4,23 +4,23 @@ class RenderBuffer {
 	// ping-pong
 	var srcInd:Int = 0;
 	var tgtInd:Int = 1;
-	var buffer:Array<Texture> = [];
+	var buffer:Array<RenderTarget> = [];
 
-	public var src(get, never):Texture;
-	public var tgt(get, never):Texture;
+	public var src(get, never):RenderTarget;
+	public var tgt(get, never):RenderTarget;
 
-	public var depthMap:Texture;
+	public var depthMap:RenderTarget;
 	#if (S2D_LIGHTING == 1)
 	#if (S2D_LIGHTING_DEFERRED == 1)
-	public var albedoMap:Texture;
-	public var normalMap:Texture;
-	public var emissionMap:Texture;
+	public var albedoMap:RenderTarget;
+	public var normalMap:RenderTarget;
+	public var emissionMap:RenderTarget;
 	#if (S2D_LIGHTING_PBR == 1)
-	public var ormMap:Texture;
+	public var ormMap:RenderTarget;
 	#end
 	#end
 	#if (S2D_LIGHTING_SHADOWS == 1)
-	public var shadowMap:Texture;
+	public var shadowMap:RenderTarget;
 	#end
 	#end
 	public function new() {}
@@ -34,27 +34,27 @@ class RenderBuffer {
 		// ping-pong
 		buffer.pop()?.unload();
 		buffer.pop()?.unload();
-		buffer.push(new Texture(width, heigth, RGBA128));
-		buffer.push(new Texture(width, heigth, RGBA128));
+		buffer.push(new RenderTarget(width, heigth, RGBA128));
+		buffer.push(new RenderTarget(width, heigth, RGBA128));
 		#if (S2D_LIGHTING == 1)
 		#if (S2D_LIGHTING_DEFERRED == 1)
 		// gbuffer
 		depthMap?.unload();
-		depthMap = new Texture(width, heigth, A32, DepthOnly);
+		depthMap = new RenderTarget(width, heigth, A32, DepthOnly);
 		albedoMap?.unload();
-		albedoMap = new Texture(width, heigth, RGBA32);
+		albedoMap = new RenderTarget(width, heigth, RGBA32);
 		normalMap?.unload();
-		normalMap = new Texture(width, heigth, RGBA32);
+		normalMap = new RenderTarget(width, heigth, RGBA32);
 		emissionMap?.unload();
-		emissionMap = new Texture(width, heigth, RGBA32);
+		emissionMap = new RenderTarget(width, heigth, RGBA32);
 		#if (S2D_LIGHTING_PBR == 1)
 		ormMap?.unload();
-		ormMap = new Texture(width, heigth, RGBA32);
+		ormMap = new RenderTarget(width, heigth, RGBA32);
 		#end
 		#end
 		#if (S2D_LIGHTING_SHADOWS == 1)
 		shadowMap?.unload();
-		shadowMap = new Texture(width, heigth, L8);
+		shadowMap = new RenderTarget(width, heigth, L8);
 		#end
 		#end
 	}
@@ -64,11 +64,11 @@ class RenderBuffer {
 		tgtInd = 1 - tgtInd;
 	}
 
-	function get_src():Texture {
+	function get_src():RenderTarget {
 		return buffer[srcInd];
 	}
 
-	function get_tgt():Texture {
+	function get_tgt():RenderTarget {
 		return buffer[tgtInd];
 	}
 }

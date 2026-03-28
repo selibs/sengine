@@ -2,7 +2,7 @@ package s.markup.graphics.shapes;
 
 import kha.graphics4.VertexData;
 import kha.graphics4.ConstantLocation;
-import s.graphics.Texture;
+import s.graphics.RenderTarget;
 import s.math.Mat3;
 import s.graphics.shaders.Shader;
 
@@ -23,11 +23,11 @@ abstract class ShapeDrawer<T:s.markup.elements.shapes.Shape> extends ElementDraw
 		borderColorCL = pipeline.getConstantLocation("borderColor");
 	}
 
-	override function setUniforms(target:Texture, element:T) {
+	override function setUniforms(target:RenderTarget, element:T) {
 		super.setUniforms(target, element);
 		final ctx = target.context3D;
 		ctx.setFloat(radiusCL, element.realRadius);
 		ctx.setFloat(borderWidthCL, element.border.width);
-		ctx.setFloat4(borderColorCL, element.border.color.RGBA);
+		ctx.setVec4(borderColorCL, element.border.color.RGBA);
 	}
 }

@@ -1,21 +1,21 @@
 package s.markup.elements;
 
-import s.graphics.Texture;
 import s.geometry.Rect;
 import s.markup.Alignment;
-import s.markup.ElementFont.ElementFontChar;
+import s.graphics.FontStyle;
 
 using StringTools;
 
 @:allow(s.markup.graphics.TextDrawer)
+@:access(s.graphics.FontStyle)
 class Label extends DrawableElement {
-	@:attr var chars:Array<ElementFontChar> = [];
+	var chars:Array<FontChar> = [];
 
 	@:attr var textX:Float = 0.0;
 	@:attr var textY:Float = 0.0;
 	@:attr var textWidth:Float = 0.0;
 
-	@:attr.group public var font(default, never):ElementFont = new ElementFont();
+	@:attr.group public var font(default, never):FontStyle = new FontStyle();
 
 	@:attr public var text:String;
 	@:attr public var alignment:Alignment = AlignLeft | AlignTop;
@@ -31,15 +31,22 @@ class Label extends DrawableElement {
 		this.text = text;
 	}
 
-	function draw(target:Texture) {
-		if (text.length == 0 || !font.font.isLoaded || font.pixelSize == 0)
+	function draw(target:s.graphics.RenderTarget) {
+		if (text.length == 0 || !font.isLoaded || font.pixelSize == 0)
 			return;
-		s.markup.graphics.TextDrawer.shader.render(target, this);
+		var ctx = target.context2D;
+		var prevFont = ctx.style.font;
+		var prevColor = ctx.style.color;
+		ctx.style.font = font;
+		ctx.style.color = color;
+		ctx.drawFontChars(chars);
+		ctx.style.color = prevColor;
+		ctx.style.font = prevFont;
 	}
 
 	override function sync() {
 		super.sync();
-		if (text.length == 0 || !font.font.isLoaded || font.pixelSize == 0)
+		if (text.length == 0 || !font.isLoaded || font.pixelSize == 0)
 			return;
 		syncText();
 	}
@@ -51,7 +58,14 @@ class Label extends DrawableElement {
 
 		if (charsAreDirty) {
 			chars = [];
-			textWidth = elideLine(text);
+            var lineChars = [];
+			var lineWidth = 0.0;
+			for (i in 0...text.length) {
+				var c = font.getFontChar(text.fastCodeAt(i));
+				lineChars.push(c);
+				lineWidth += c.advance;
+			}
+			textWidth = elideLineChars(lineChars, lineWidth);
 		}
 
 		if (textWidthIsDirty || font.pixelSizeIsDirty || hIsDirty || vIsDirty || alignmentIsDirty) {
@@ -73,8 +87,9 @@ class Label extends DrawableElement {
 	}
 
 	function alignCharsY(offset:Float) {
+		final snap = font.snapToPixel;
 		for (c in chars)
-			c.pos.y = offset + c.yoff;
+			c.pos.y = offset + (snap ? Math.round(c.yoff) : c.yoff);
 	}
 
 	function alignLineX(width:Float) {
@@ -95,10 +110,8 @@ class Label extends DrawableElement {
 			return top.position + top.padding;
 	}
 
-	function elideLine(line:String):Float {
-		final atlas = font.font.getAtlas(font.pixelSize);
-
-		inline function copyChar(char:ElementFontChar):ElementFontChar
+	function elideLineChars(lineChars:Array<FontChar>, lineWidth:Float):Float {
+		inline function copyChar(char:FontChar):FontChar
 			return {
 				xoff: char.xoff,
 				yoff: char.yoff,
@@ -107,66 +120,95 @@ class Label extends DrawableElement {
 				uv: new Rect(char.uv.x, char.uv.y, char.uv.width, char.uv.height)
 			}
 
-		final ec = font.getElementChar(".".code);
+		final ec = font.getFontChar(".".code);
 		final ew = ec.advance * 3;
+		final availableWidth = Math.max(0.0, Math.abs(width) - left.padding - right.padding);
 
-		var maxWidth = Math.max(0.0, Math.abs(width) - left.padding - right.padding);
-		maxWidth -= ew;
+		if (elideMode == ElideNone || lineWidth <= availableWidth) {
+			chars = lineChars;
+			return lineWidth;
+		}
+
+		var maxWidth = Math.max(0.0, availableWidth - ew);
 
 		var w = 0.0;
+		var e = false;
 		if (elideMode == ElideLeft) {
-			for (i in 0...text.length) {
-				var c = font.getElementChar(text.fastCodeAt(text.length - i - 1));
-				if (w + c.advance > maxWidth)
+			for (i in 0...lineChars.length) {
+				var c = lineChars[lineChars.length - i - 1];
+				if (w + c.advance > maxWidth) {
+					e = true;
 					break;
+				}
 				chars.unshift(c);
 				w += c.advance;
 			}
 			// ellipsis
-			chars.unshift(copyChar(ec));
-			chars.unshift(copyChar(ec));
-			chars.unshift(copyChar(ec));
-			w += ew;
+			if (e) {
+				chars.unshift(copyChar(ec));
+				chars.unshift(copyChar(ec));
+				chars.unshift(copyChar(ec));
+				w += ew;
+			}
 		} else if (elideMode == ElideMiddle) {
 			var r = [];
-			for (i in 0...text.length) {
-				var c = font.getElementChar(text.fastCodeAt(i));
-				if (w + c.advance > maxWidth)
+			var leftIndex = 0;
+			var rightIndex = lineChars.length - 1;
+			while (leftIndex <= rightIndex) {
+				var leftChar = lineChars[leftIndex];
+				if (w + leftChar.advance > maxWidth) {
+					e = true;
 					break;
-				chars.push(c);
-				w += c.advance;
-				var c = font.getElementChar(text.fastCodeAt(text.length - i - 1));
-				if (w + c.advance > maxWidth)
+				}
+				chars.push(leftChar);
+				w += leftChar.advance;
+				leftIndex++;
+
+				if (leftIndex > rightIndex)
 					break;
-				r.unshift(c);
-				w += c.advance;
+
+				var rightChar = lineChars[rightIndex];
+				if (w + rightChar.advance > maxWidth) {
+					e = true;
+					break;
+				}
+				r.unshift(rightChar);
+				w += rightChar.advance;
+				rightIndex--;
 			}
 			// ellipsis
-			chars.push(copyChar(ec));
-			chars.push(copyChar(ec));
-			chars.push(copyChar(ec));
-			w += ew;
+			if (e) {
+				chars.push(copyChar(ec));
+				chars.push(copyChar(ec));
+				chars.push(copyChar(ec));
+				w += ew;
+			}
 			chars = chars.concat(r);
 		} else if (elideMode == ElideRight) {
-			for (i in 0...text.length) {
-				var c = font.getElementChar(text.fastCodeAt(i));
-				if (w + c.advance > maxWidth)
+			for (i in 0...lineChars.length) {
+				var c = lineChars[i];
+				if (w + c.advance > maxWidth) {
+					e = true;
 					break;
+				}
 				chars.push(c);
 				w += c.advance;
 			}
 			// ellipsis
-			chars.push(copyChar(ec));
-			chars.push(copyChar(ec));
-			chars.push(copyChar(ec));
-			w += ew;
+			if (e) {
+				chars.push(copyChar(ec));
+				chars.push(copyChar(ec));
+				chars.push(copyChar(ec));
+				w += ew;
+			}
 		} else {
 			for (i in 0...text.length) {
-				var c = font.getElementChar(text.fastCodeAt(i));
+				var c = font.getFontChar(text.fastCodeAt(i));
 				chars.push(c);
 				w += c.advance;
 			}
 		}
+
 		return w;
 	}
 }

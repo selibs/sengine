@@ -8,7 +8,7 @@ import s.markup.graphics.stage.lighting.GeometryPass;
 import s.markup.graphics.stage.lighting.LightingPass;
 #end
 import kha.graphics4.VertexStructure;
-import s.graphics.Texture;
+import s.graphics.RenderTarget;
 import s.markup.stage.Stage;
 
 @:allow(s.markup.stage.Stage)
@@ -53,7 +53,7 @@ class StageRenderer {
 		#end
 	}
 
-	function render(target:Texture, stage:Stage) {
+	function render(target:RenderTarget, stage:Stage) {
 		final ctx = target.context2D;
 		ctx.end();
 		// render to buffer

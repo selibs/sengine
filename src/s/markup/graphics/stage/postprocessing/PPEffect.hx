@@ -2,7 +2,7 @@ package s.markup.graphics.stage.postprocessing;
 
 import kha.graphics4.PipelineState;
 import kha.graphics4.VertexStructure;
-import s.graphics.Texture;
+import s.graphics.RenderTarget;
 
 // @:access(s.markup.graphics.stage.Renderer)
 abstract class PPEffect {
@@ -35,7 +35,7 @@ abstract class PPEffect {
 		getUniforms();
 	}
 
-	abstract public function render(target:Texture):Void;
+	abstract public function render(target:RenderTarget):Void;
 
 	public function command():Void {
 		// Renderer.buffer.swap();

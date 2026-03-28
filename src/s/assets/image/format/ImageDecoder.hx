@@ -1,7 +1,7 @@
 package s.assets.image.format;
 
 import haxe.io.Bytes;
-import s.assets.AssetFormat;
+import s.Assets;
 import s.assets.image.Image;
 
 abstract class ImageDecoder extends AssetFormat<Image> {

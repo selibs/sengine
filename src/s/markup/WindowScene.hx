@@ -2,7 +2,7 @@ package s.markup;
 
 import s.Time;
 import s.Color;
-import s.graphics.Texture;
+import s.graphics.RenderTarget;
 import s.Window;
 import s.math.Mat3;
 import s.graphics.Context2D;
@@ -77,15 +77,14 @@ class WindowScene implements s.shortcut.Shortcut {
 	}
 
 	@:access(s.Window)
-	function render(target:Texture) {
+	function render(target:RenderTarget) {
 		root.syncTree();
 
 		final ctx = target.context2D;
 		ctx.begin();
 		ctx.clear(color);
-		ctx.pushTransformation(projection);
+		ctx.pushTransform(projection);
 		Element.renderElement(root, target);
-		ctx.popTransformation();
 		#if (S2D_UI_DEBUG_ELEMENT_BOUNDS == 1)
 		var e = elementAt(App.input.mouse.x, App.input.mouse.y);
 		if (e != null)
@@ -93,13 +92,14 @@ class WindowScene implements s.shortcut.Shortcut {
 		#end
 		#if S2D_DEBUG_FPS
 		final fps = Std.int(1.0 / Time.delta);
-		ctx.style.font = "font_default";
-		ctx.style.fontSize = 14;
+		ctx.style.font.family = "font_default";
+		ctx.style.font.pixelSize = 14;
 		ctx.style.color = Black;
 		ctx.drawString('FPS: ${fps}', 6, 6);
 		ctx.style.color = White;
 		ctx.drawString('FPS: ${fps}', 5, 5);
 		#end
+		ctx.popTransform();
 		ctx.end();
 	}
 
@@ -108,8 +108,8 @@ class WindowScene implements s.shortcut.Shortcut {
 		final style = ctx.style;
 
 		style.opacity = 0.5;
-		style.font = "font_default";
-		style.fontSize = 16;
+		style.font.family = "font_default";
+		style.font.pixelSize = 16;
 
 		final lm = e.left.margin;
 		final tm = e.top.margin;
@@ -121,30 +121,30 @@ class WindowScene implements s.shortcut.Shortcut {
 		final bp = e.bottom.padding;
 
 		style.color = Black;
-		ctx.fillRect(e.left.position - lm, e.top.position - tm, e.width + lm + rm, e.height + tm + bm);
+		ctx.fillRectangle(e.left.position - lm, e.top.position - tm, e.width + lm + rm, e.height + tm + bm);
 
 		// margins
 		style.color = s.Color.rgb(0.75, 0.25, 0.75);
-		ctx.fillRect(e.left.position - lm, e.top.position, lm, e.height);
-		ctx.fillRect(e.left.position - lm, e.top.position - tm, lm + e.width + rm, tm);
-		ctx.fillRect(e.left.position + e.width, e.top.position, rm, e.height);
-		ctx.fillRect(e.left.position - lm, e.top.position + e.height, lm + e.width + rm, bm);
+		ctx.fillRectangle(e.left.position - lm, e.top.position, lm, e.height);
+		ctx.fillRectangle(e.left.position - lm, e.top.position - tm, lm + e.width + rm, tm);
+		ctx.fillRectangle(e.left.position + e.width, e.top.position, rm, e.height);
+		ctx.fillRectangle(e.left.position - lm, e.top.position + e.height, lm + e.width + rm, bm);
 
 		// padding
 		style.color = s.Color.rgb(0.75, 0.75, 0.25);
-		ctx.fillRect(e.left.position, e.top.position, lp, e.height);
-		ctx.fillRect(e.left.position + lp, e.top.position, e.width - lp - rp, tp);
-		ctx.fillRect(e.left.position + e.width - rp, e.top.position, rp, e.height);
-		ctx.fillRect(e.left.position + lp, e.top.position + e.height - bp, e.width - lp - rp, bp);
+		ctx.fillRectangle(e.left.position, e.top.position, lp, e.height);
+		ctx.fillRectangle(e.left.position + lp, e.top.position, e.width - lp - rp, tp);
+		ctx.fillRectangle(e.left.position + e.width - rp, e.top.position, rp, e.height);
+		ctx.fillRectangle(e.left.position + lp, e.top.position + e.height - bp, e.width - lp - rp, bp);
 
 		// content
 		style.color = s.Color.rgb(0.25, 0.75, 0.75);
-		ctx.fillRect(e.left.position + lp, e.top.position + tp, e.width - lp - rp, e.height - tp - bp);
+		ctx.fillRectangle(e.left.position + lp, e.top.position + tp, e.width - lp - rp, e.height - tp - bp);
 
 		// labels
 		style.color = s.Color.rgb(1.0, 1.0, 1.0);
 		style.opacity = 1.0;
-		final fs = style.fontSize + 5;
+		final fs = style.font.pixelSize + 5;
 
 		// labels - titles
 		if (tm >= fs)
@@ -155,14 +155,14 @@ class WindowScene implements s.shortcut.Shortcut {
 			ctx.drawString("content", e.left.position + lp + 5, e.top.position + tp + 5);
 
 		// labels - values
-		style.fontSize = 14;
+		style.font.pixelSize = 14;
 
 		// margins
 		var i = 0;
 		for (m in [lm, tm, rm, bm]) {
 			final str = '${Std.int(m)}px';
-			final strWidth = style.font.widthOfCharacters(style.fontSize, str.toCharArray(), 0, str.length);
-			final strheight = style.fontSize;
+			final strWidth = style.font.widthOfCharacters(str.toCharArray(), 0, str.length);
+			final strheight = style.font.pixelSize;
 			if (m >= strWidth) {
 				if (i == 0)
 					ctx.drawString(str, e.left.position - (m + strWidth) / 2, e.top.position + e.height / 2);
@@ -182,8 +182,8 @@ class WindowScene implements s.shortcut.Shortcut {
 		var i = 0;
 		for (p in [lp, tp, rp, bp]) {
 			final str = '${Std.int(p)}px';
-			final strWidth = style.font.widthOfCharacters(style.fontSize, str.toCharArray(), 0, str.length);
-			final strheight = style.fontSize;
+			final strWidth = style.font.widthOfCharacters(str.toCharArray(), 0, str.length);
+			final strheight = style.font.pixelSize;
 			if (p >= strWidth) {
 				if (i == 0)
 					ctx.drawString(str, e.left.position + (p - strWidth) / 2, e.top.position + e.height / 2);
@@ -199,14 +199,13 @@ class WindowScene implements s.shortcut.Shortcut {
 			++i;
 		}
 
-		style.fontSize = 22;
+		style.font.pixelSize = 22;
 		final name = e.toString();
-		ctx.drawString(name, App.input.mouse.x - style.font.widthOfCharacters(style.fontSize, name.toCharArray(), 0, name.length),
-			App.input.mouse.y - style.fontSize);
+		ctx.drawString(name, App.input.mouse.x - style.font.widthOfCharacters(name.toCharArray(), 0, name.length), App.input.mouse.y - style.font.pixelSize);
 
-		style.fontSize = 16;
+		style.font.pixelSize = 16;
 		final rect = '${Std.int(e.width)} × ${Std.int(e.height)} at (${Std.int(e.left.position)}, ${Std.int(e.top.position)})';
-		ctx.drawString(rect, App.input.mouse.x - style.font.widthOfCharacters(style.fontSize, rect.toCharArray(), 0, rect.length), App.input.mouse.y);
+		ctx.drawString(rect, App.input.mouse.x - style.font.widthOfCharacters(rect.toCharArray(), 0, rect.length), App.input.mouse.y);
 	}
 	#end
 

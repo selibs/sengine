@@ -1,6 +1,6 @@
 package s.markup.elements;
 
-import s.graphics.Texture;
+import s.graphics.RenderTarget;
 import s.markup.Alignment;
 
 class Text extends Label {
@@ -14,12 +14,12 @@ class Text extends Label {
 		super(text);
 	}
 
-	override function draw(target:Texture) {
-		// if (text.length == 0 || !font.isLoaded || fontSize == 0)
+	override function draw(target:RenderTarget) {
+		// if (text.length == 0 || !font.isLoaded || font.pixelSize == 0)
 		// 	return;
 		// final ctx = target.context2D;
-		// ctx.style.font = font;
-		// ctx.style.fontSize = fontSize;
+		// ctx.style.font. = font;
+		// ctx.style.font.pixelSize = font.pixelSize;
 		// ctx.style.color = color;
 		// for (line in lines)
 		// 	ctx.drawString(line.text, line.x, line.y);
@@ -81,7 +81,7 @@ class Text extends Label {
 	// 	}
 	// 	if (linesIsDirty || fontSizeIsDirty || lineHeightIsDirty || lineHeightModeIsDirty) {
 	// 		var realLineHeight = switch lineHeightMode {
-	// 			case Proportional: fontSize * lineHeight;
+	// 			case Proportional: font.pixelSize * lineHeight;
 	// 			case Fixed: lineHeight;
 	// 		}
 	// 		for (l in lines)
@@ -110,7 +110,7 @@ class Text extends Label {
 	// 	}
 	// }
 	// function wrapText() {
-	// 	var k = font.asset._get(fontSize);
+	// 	var k = font.asset._get(font.pixelSize);
 	// 	var maxWidth = Math.max(0.0, Math.abs(width) - left.padding - right.padding);
 	// 	lines = [];
 	// 	inline function isNewline(c:Int):Bool
@@ -314,7 +314,7 @@ class Text extends Label {
 	// 		return;
 	// 	final maxHeight = Math.max(0.0, Math.abs(height) - top.padding - bottom.padding);
 	// 	final realLineHeight = switch lineHeightMode {
-	// 		case Proportional: fontSize * lineHeight;
+	// 		case Proportional: font.pixelSize * lineHeight;
 	// 		case Fixed: lineHeight;
 	// 	}
 	// 	var visibleHeight = lineCount * realLineHeight;

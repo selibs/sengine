@@ -2,7 +2,7 @@ package s.markup;
 
 import s.math.Vec2;
 import s.math.Mat3;
-import s.graphics.Texture;
+import s.graphics.RenderTarget;
 import s.math.SMath;
 import s.markup.Style;
 import s.markup.Anchors;
@@ -40,13 +40,13 @@ class Element extends Object2D<Element> {
 	overload extern public static inline function mapFromElementNormalized(element:Element, p:Position):Position
 		return element.mapToGlobalNormalized(p.x, p.y);
 
-	public static function renderElement(element:Element, target:Texture) {
+	public static function renderElement(element:Element, target:RenderTarget) {
 		if (!element.visible)
 			return;
 		final ctx = target.context2D;
-		ctx.pushTransformation(element.transform);
+		ctx.pushTransform(element.transform);
 		element.render(target);
-		ctx.popTransformation();
+		ctx.popTransform();
 	}
 
 	@:attr var globalTransform:Mat3 = Mat3.identity();
@@ -215,7 +215,7 @@ class Element extends Object2D<Element> {
 			child.top.self.position -= top.position;
 	}
 
-	function render(target:Texture) {
+	function render(target:RenderTarget) {
 		final ctx = target.context2D;
 		ctx.style.pushOpacity(opacity);
 		for (c in children)

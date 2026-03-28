@@ -21,7 +21,7 @@ abstract class GradientDrawer<T:Gradient> extends ElementDrawer<T> {
 		gradientTU = pipeline.getTextureUnit("gradient");
 	}
 
-	override function setUniforms(target:Texture, element:T) {
+	override function setUniforms(target:RenderTarget, element:T) {
 		super.setUniforms(target, element);
 		final l = element.left.position;
 		final t = element.top.position;

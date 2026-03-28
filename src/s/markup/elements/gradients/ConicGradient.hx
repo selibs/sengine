@@ -8,7 +8,7 @@ class ConicGradient extends Gradient {
 		end = {x: 1.0, y: 0.5};
 	}
 
-	function draw(target:s.graphics.Texture) {
+	function draw(target:s.graphics.RenderTarget) {
 		s.markup.graphics.gradients.ConicGradientDrawer.shader.render(target, this);
 	}
 }

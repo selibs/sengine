@@ -1,5 +1,7 @@
 package s.math;
 
+import s.Color;
+
 /**
 	# Vector Mathematics Library
 
@@ -20,7 +22,6 @@ package s.math;
 // @:eager typedef Float = kha.FastFloat;
 // # Built-in Functions
 // trigonometric
-import s.Color;
 
 overload extern inline function radians(degrees:Vec4):Vec4
 	return degrees.radians();
@@ -661,6 +662,135 @@ overload extern inline function vec4(x:Float):Vec4
 
 overload extern inline function vec4(x:Float, y:Float, z:Float, w:Float):Vec4
 	return new Vec4(x, y, z, w);
+
+overload extern inline function ivec2(m:Mat4):Vec2I
+	return new Vec2I(Std.int(m._00), Std.int(m._10));
+
+overload extern inline function ivec2(m:Mat3):Vec2I
+	return new Vec2I(Std.int(m._00), Std.int(m._10));
+
+overload extern inline function ivec2(m:Mat2):Vec2I
+	return new Vec2I(Std.int(m._00), Std.int(m._10));
+
+overload extern inline function ivec2(xyzw:Vec4):Vec2I
+	return new Vec2I(Std.int(xyzw.x), Std.int(xyzw.y));
+
+overload extern inline function ivec2(xyz:Vec3):Vec2I
+	return new Vec2I(Std.int(xyz.x), Std.int(xyz.y));
+
+overload extern inline function ivec2(xy:Vec2):Vec2I
+	return new Vec2I(Std.int(xy.x), Std.int(xy.y));
+
+overload extern inline function ivec2(xyzw:Vec4I):Vec2I
+	return new Vec2I(xyzw.x, xyzw.y);
+
+overload extern inline function ivec2(xyz:Vec3I):Vec2I
+	return new Vec2I(xyz.x, xyz.y);
+
+overload extern inline function ivec2(xy:Vec2I):Vec2I
+	return new Vec2I(xy.x, xy.y);
+
+overload extern inline function ivec2(x:Int):Vec2I
+	return new Vec2I(x, x);
+
+overload extern inline function ivec2(x:Int, y:Int):Vec2I
+	return new Vec2I(x, y);
+
+overload extern inline function ivec3(m:Mat4):Vec3I
+	return new Vec3I(Std.int(m._00), Std.int(m._10), Std.int(m._20));
+
+overload extern inline function ivec3(m:Mat3):Vec3I
+	return new Vec3I(Std.int(m._00), Std.int(m._10), Std.int(m._20));
+
+overload extern inline function ivec3(m:Mat2):Vec3I
+	return new Vec3I(Std.int(m._00), Std.int(m._10), Std.int(m._01));
+
+overload extern inline function ivec3(xyzw:Vec4):Vec3I
+	return new Vec3I(Std.int(xyzw.x), Std.int(xyzw.y), Std.int(xyzw.z));
+
+overload extern inline function ivec3(xyz:Vec3):Vec3I
+	return new Vec3I(Std.int(xyz.x), Std.int(xyz.y), Std.int(xyz.z));
+
+overload extern inline function ivec3(x:Float, yz:Vec2):Vec3I
+	return new Vec3I(Std.int(x), Std.int(yz.x), Std.int(yz.y));
+
+overload extern inline function ivec3(xy:Vec2, z:Float):Vec3I
+	return new Vec3I(Std.int(xy.x), Std.int(xy.y), Std.int(z));
+
+overload extern inline function ivec3(xyzw:Vec4I):Vec3I
+	return new Vec3I(xyzw.x, xyzw.y, xyzw.z);
+
+overload extern inline function ivec3(xyz:Vec3I):Vec3I
+	return new Vec3I(xyz.x, xyz.y, xyz.z);
+
+overload extern inline function ivec3(x:Int, yz:Vec2I):Vec3I
+	return new Vec3I(x, yz.x, yz.y);
+
+overload extern inline function ivec3(xy:Vec2I, z:Int):Vec3I
+	return new Vec3I(xy.x, xy.y, z);
+
+overload extern inline function ivec3(x:Int):Vec3I
+	return new Vec3I(x, x, x);
+
+overload extern inline function ivec3(x:Int, y:Int, z:Int):Vec3I
+	return new Vec3I(x, y, z);
+
+overload extern inline function ivec4(m:Mat4):Vec4I
+	return new Vec4I(Std.int(m._00), Std.int(m._10), Std.int(m._20), Std.int(m._30));
+
+overload extern inline function ivec4(m:Mat3):Vec4I
+	return new Vec4I(Std.int(m._00), Std.int(m._10), Std.int(m._20), Std.int(m._01));
+
+overload extern inline function ivec4(m:Mat2):Vec4I
+	return new Vec4I(Std.int(m._00), Std.int(m._10), Std.int(m._01), Std.int(m._11));
+
+overload extern inline function ivec4(xyzw:Vec4):Vec4I
+	return new Vec4I(Std.int(xyzw.x), Std.int(xyzw.y), Std.int(xyzw.z), Std.int(xyzw.w));
+
+overload extern inline function ivec4(x:Float, yzw:Vec3):Vec4I
+	return new Vec4I(Std.int(x), Std.int(yzw.x), Std.int(yzw.y), Std.int(yzw.z));
+
+overload extern inline function ivec4(xyz:Vec3, w:Float):Vec4I
+	return new Vec4I(Std.int(xyz.x), Std.int(xyz.y), Std.int(xyz.z), Std.int(w));
+
+overload extern inline function ivec4(xy:Vec2, zw:Vec2):Vec4I
+	return new Vec4I(Std.int(xy.x), Std.int(xy.y), Std.int(zw.x), Std.int(zw.y));
+
+overload extern inline function ivec4(x:Float, y:Float, zw:Vec2):Vec4I
+	return new Vec4I(Std.int(x), Std.int(y), Std.int(zw.x), Std.int(zw.y));
+
+overload extern inline function ivec4(x:Float, yz:Vec2, w:Float):Vec4I
+	return new Vec4I(Std.int(x), Std.int(yz.x), Std.int(yz.y), Std.int(w));
+
+overload extern inline function ivec4(xy:Vec2, z:Float, w:Float):Vec4I
+	return new Vec4I(Std.int(xy.x), Std.int(xy.y), Std.int(z), Std.int(w));
+
+overload extern inline function ivec4(xyzw:Vec4I):Vec4I
+	return new Vec4I(xyzw.x, xyzw.y, xyzw.z, xyzw.w);
+
+overload extern inline function ivec4(x:Int, yzw:Vec3I):Vec4I
+	return new Vec4I(x, yzw.x, yzw.y, yzw.z);
+
+overload extern inline function ivec4(xyz:Vec3I, w:Int):Vec4I
+	return new Vec4I(xyz.x, xyz.y, xyz.z, w);
+
+overload extern inline function ivec4(xy:Vec2I, zw:Vec2I):Vec4I
+	return new Vec4I(xy.x, xy.y, zw.x, zw.y);
+
+overload extern inline function ivec4(x:Int, y:Int, zw:Vec2I):Vec4I
+	return new Vec4I(x, y, zw.x, zw.y);
+
+overload extern inline function ivec4(x:Int, yz:Vec2I, w:Int):Vec4I
+	return new Vec4I(x, yz.x, yz.y, w);
+
+overload extern inline function ivec4(xy:Vec2I, z:Int, w:Int):Vec4I
+	return new Vec4I(xy.x, xy.y, z, w);
+
+overload extern inline function ivec4(x:Int):Vec4I
+	return new Vec4I(x, x, x, x);
+
+overload extern inline function ivec4(x:Int, y:Int, z:Int, w:Int):Vec4I
+	return new Vec4I(x, y, z, w);
 
 overload extern inline function mat2(m:Mat4):Mat2
 	return new Mat2(m._00, m._10, m._01, m._11);

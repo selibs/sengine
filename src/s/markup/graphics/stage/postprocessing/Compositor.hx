@@ -5,7 +5,7 @@ import kha.arrays.Float32Array;
 import kha.graphics4.TextureUnit;
 import kha.graphics4.ConstantLocation;
 import s.Color;
-import s.graphics.Texture;
+import s.graphics.RenderTarget;
 
 class Compositor extends PPEffect {
 	var textureMapTU:TextureUnit;
@@ -41,7 +41,7 @@ class Compositor extends PPEffect {
 	}
 
 	// @:access(s.markup.graphics.stage.Renderer)
-	function render(target:Texture) {
+	function render(target:RenderTarget) {
 		// final ctx = target.context2D;
 		// final ctx3d = target.context3D;
 

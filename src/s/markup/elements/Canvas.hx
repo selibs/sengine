@@ -1,14 +1,14 @@
 package s.markup.elements;
 
-import s.graphics.Texture;
+import s.graphics.RenderTarget;
 import s.graphics.Context2D;
 
 class Canvas2D extends DrawableElement {
-	var texture:Texture;
+	var texture:RenderTarget;
 
 	public function new() {
 		super();
-		texture = new Texture(Std.int(width), Std.int(height));
+		texture = new RenderTarget(Std.int(width), Std.int(height));
 	}
 
 	public inline function paint(f:Context2D->Void):Void
@@ -18,10 +18,10 @@ class Canvas2D extends DrawableElement {
 		super.sync();
 		if (widthIsDirty || heightIsDirty) {
 			texture.unload();
-			texture = new Texture(Std.int(width), Std.int(height));
+			texture = new RenderTarget(Std.int(width), Std.int(height));
 		}
 	}
 
-	function draw(target:Texture)
+	function draw(target:RenderTarget)
 		target.context2D.drawImage(texture, left.position, top.position);
 }

@@ -37,35 +37,37 @@ typedef TextureParameters = {
 /**
  * Render-target texture wrapper with access to 1D, 2D, and 3D graphics contexts.
  *
- * `Texture` is a lightweight abstraction over `kha.Image` for render targets.
+ * `RenderTarget` is a lightweight abstraction over `kha.Image` for render targets.
  * It is commonly used as an intermediate buffer, post-processing target, or
  * off-screen drawing surface.
  *
  * Typical usage:
  * ```haxe
- * var target = new Texture(512, 512);
+ * var target = new RenderTarget(512, 512);
  * target.context2D.begin();
  * // draw into the texture
  * target.context2D.end();
  * ```
  */
-@:forward(width, height, unload, generateMipmaps)
-extern abstract Texture(Image) from Image to Image {
-	private var self(get, set):kha.Image;
-
+@:forward()
+@:forward.new
+extern abstract RenderTarget(ImageTexture) {
 	@:to
-	private inline function get_self():kha.Image
+	private inline function toResource():kha.Image
 		return @:privateAccess this.image;
 
-	private inline function set_self(value:kha.Image):kha.Image
-		return @:privateAccess this.image = value;
+	@:to
+	private inline function toCanvas():kha.Canvas
+		return toResource();
+}
 
+private class ImageTexture extends s.assets.image.Image {
 	/**
 	 * 1D graphics context for this texture.
 	 *
 	 * Use this when you need low-level access to the 1D drawing API exposed by Kha.
 	 */
-	public var context1D(get, never):Context1D;
+	public final context1D:Context1D;
 
 	/**
 	 * 2D graphics context for this texture.
@@ -73,14 +75,14 @@ extern abstract Texture(Image) from Image to Image {
 	 * This is the most common entry point when drawing UI, sprites, and text into
 	 * an off-screen target.
 	 */
-	public var context2D(get, never):Context2D;
+	public final context2D:Context2D;
 
 	/**
 	 * 3D graphics context for this texture.
 	 *
 	 * Use this for custom GPU rendering passes targeting the texture.
 	 */
-	public var context3D(get, never):Context3D;
+	public final context3D:Context3D;
 
 	/**
 	 * Creates a render-target texture.
@@ -88,26 +90,20 @@ extern abstract Texture(Image) from Image to Image {
 	 * The created texture is backed by a `Image` render target and can be used
 	 * immediately as a draw destination.
 	 *
-	 * @param width Texture width in pixels.
-	 * @param height Texture height in pixels.
+	 * @param width RenderTarget width in pixels.
+	 * @param height RenderTarget height in pixels.
 	 * @param format Optional texture format.
 	 * @param depthStencil Optional depth/stencil format.
-	 * @param aaSamples Multisample count.
+	 * @param antiAliasingSamples Multisample count.
 	 */
-	public inline function new(width:Int, height:Int, ?format:TextureFormat, ?depthStencil:DepthStencilFormat, aaSamples:Int = 1) {
-		this = new Image();
-		self = kha.Image.createRenderTarget(width, height, format, depthStencil, aaSamples);
+	public inline function new(width:Int, height:Int, ?format:TextureFormat, ?depthStencil:DepthStencilFormat, antiAliasingSamples:Int = 1) {
+		super();
+		image = kha.Image.createRenderTarget(width, height, format, depthStencil, antiAliasingSamples);
+		context3D = new Context3D(image.g4);
+		context2D = new Context2D(context3D);
+		context1D = image.g1;
 	}
 
 	public inline function setDepthStencilFrom(image:Image)
-		self.setDepthStencilFrom(image);
-
-	private inline function get_context1D():Context1D
-		return self.g1;
-
-	private inline function get_context2D():Context2D
-		return self.g2;
-
-	private inline function get_context3D():Context3D
-		return self.g4;
+		this.image.setDepthStencilFrom(image);
 }

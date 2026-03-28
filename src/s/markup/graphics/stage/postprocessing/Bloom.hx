@@ -3,7 +3,7 @@ package s.markup.graphics.stage.postprocessing;
 import kha.Shaders;
 import kha.graphics4.TextureUnit;
 import kha.graphics4.ConstantLocation;
-import s.graphics.Texture;
+import s.graphics.RenderTarget;
 
 class Bloom extends PPEffect {
 	var textureMapTU:TextureUnit;
@@ -24,7 +24,7 @@ class Bloom extends PPEffect {
 	}
 
 	// @:access(s.markup.graphics.stage.Renderer)
-	function render(target:Texture) {
+	function render(target:RenderTarget) {
 		// final ctx = target.context2D;
 		// final ctx3d = target.context3D;
 

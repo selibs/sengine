@@ -1,7 +1,7 @@
 package s.markup.elements.gradients;
 
 import s.math.Vec2;
-import s.graphics.Texture;
+import s.graphics.RenderTarget;
 
 @:structInit
 class GradientStop implements s.shortcut.Shortcut {
@@ -20,7 +20,7 @@ extern abstract GradientStops(Array<GradientStop>) from Array<GradientStop> {
 @:dox(hide)
 @:allow(s.markup.graphics.gradients.GradientDrawer)
 abstract class Gradient extends DrawableElement {
-	var gradient:Texture;
+	var gradient:RenderTarget;
 
 	public var start:Vec2 = new Vec2(0.5, 0.0);
 	public var end:Vec2 = new Vec2(0.5, 1.0);
@@ -30,7 +30,7 @@ abstract class Gradient extends DrawableElement {
 
 	public function new() {
 		super();
-		gradient = new Texture(1, resolution);
+		gradient = new RenderTarget(1, resolution);
 	}
 
 	override function sync() {
@@ -39,7 +39,7 @@ abstract class Gradient extends DrawableElement {
 		if (stopsIsDirty || resolutionIsDirty || interpolationIsDirty) {
 			if (resolutionIsDirty) {
 				gradient.unload();
-				gradient = new Texture(1, resolution);
+				gradient = new RenderTarget(1, resolution);
 			}
 
 			var ctx = gradient.context1D;

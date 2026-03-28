@@ -67,9 +67,9 @@ class LightingPass extends StageRenderPass {
 		ctx.begin();
 		ctx.clear(stage.color);
 		ctx.setPipeline(pipeline);
-		ctx.setIndexBuffer(Drawers.indices2D);
+		ctx.setIndexBuffer(Drawers.rectIndices2D);
 		#if (S2D_SPRITE_INSTANCING != 1)
-		ctx.setVertexBuffer(Drawers.vertices2D);
+		ctx.setVertexBuffer(Drawers.rectVertices2D);
 		#end
 		ctx.setMat3(viewProjectionCL, stage.viewProjection);
 		#if (S2D_LIGHTING_ENVIRONMENT == 1)
@@ -91,8 +91,8 @@ class LightingPass extends StageRenderPass {
 				ShadowPass.render(light);
 				ctx.begin();
 				ctx.setPipeline(pipeline);
-				ctx.setIndexBuffer(Drawers.indices2D);
-				ctx.setVertexBuffer(Drawers.vertices2D);
+				ctx.setIndexBuffer(Drawers.rectIndices2D);
+				ctx.setVertexBuffer(Drawers.rectVertices2D);
 				ctx.setTexture(shadowMapTU, buffer.shadowMap);
 				#end
 				ctx.setFloat3(lightPositionCL, light.x, light.y, light.z);

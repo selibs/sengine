@@ -22,25 +22,42 @@ class AssetsMacro {
 	static var assetTypeFields:StringMap<Array<Field>> = new StringMap();
 
 	public static function build():Array<Field> {
-		function makeFunction(loadName, args, params, f) {
+		function makeFunction(loadName, args, f, iter, call, waitForLoad:Bool) {
 			var exprs = [];
 			exprs.push(macro var total = 0);
 			exprs.push(macro var progress = 0.0);
 
 			for (a in assetTypes.keyValueIterator()) {
 				var listName = a.key;
-				exprs.push(macro total += shelf?.$listName.length);
+				exprs.push(macro var $listName = shelf.$listName);
+				exprs.push(macro if ($i{listName} != null) for (_ in ${iter(listName)})
+					total++);
 			}
 
 			for (a in assetTypes.keyValueIterator()) {
 				var listName = a.key;
-				exprs.push(macro if (shelf.$listName != null) {
-					for (location in shelf.$listName) {
-						$i{f(a.value)}($a{params});
-						if (onProgress != null)
-							onProgress(progress += 1 / total);
-					}
-				});
+				if (waitForLoad)
+					exprs.push(macro if ($i{listName} != null) {
+						for (name in ${iter(listName)}) {
+							var asset = ${call(f(a.value), listName)};
+							if (asset.isLoaded) {
+								if (onProgress != null)
+									onProgress(progress += 1 / total);
+							} else
+								asset.onLoaded(() -> {
+									if (onProgress != null)
+										onProgress(progress += 1 / total);
+								});
+						}
+					});
+				else
+					exprs.push(macro if ($i{listName} != null) {
+						for (name in ${iter(listName)}) {
+							${call(f(a.value), listName)};
+							if (onProgress != null)
+								onProgress(progress += 1 / total);
+						}
+					});
 			}
 			assetsFields.push({
 				name: loadName,
@@ -54,7 +71,31 @@ class AssetsMacro {
 			});
 		}
 
+		function mapIter(listName)
+			return macro $i{listName}.keys();
+
+		function mapCall(f, listName)
+			return macro $i{f}(name, $i{listName}.get(name));
+
+		function arrIter(listName)
+			return macro $i{listName};
+
+		function arrCall(f, listName)
+			return macro $i{f}(name);
+
 		var shelfArg = {
+			name: "shelf",
+			type: TAnonymous([
+				for (a in assetTypes.keyValueIterator())
+					{
+						name: a.key,
+						kind: FVar(macro :StringMap<String>),
+						meta: [{name: ":optional", pos: Context.currentPos()}],
+						pos: Context.currentPos()
+					}
+			])
+		};
+		var shelfArrArg = {
 			name: "shelf",
 			type: TAnonymous([
 				for (a in assetTypes.keyValueIterator())
@@ -66,13 +107,12 @@ class AssetsMacro {
 					}
 			])
 		};
-
 		var progressArg = {name: "onProgress", type: macro :Float->Void, opt: true};
-		var failedArg = {name: "onFailed", type: macro :s.assets.Assets.AssetError->Void, opt: true};
+		var failedArg = {name: "onFailed", type: macro :s.Assets.AssetError->Void, opt: true};
 
-		makeFunction("loadShelf", [shelfArg, progressArg, failedArg], [macro location, macro onFailed], v -> v.load);
-		makeFunction("reloadShelf", [shelfArg, progressArg, failedArg], [macro location, macro onFailed], v -> v.reload);
-		makeFunction("unloadShelf", [shelfArg, progressArg], [macro location], v -> v.unload);
+		makeFunction("loadShelf", [shelfArg, progressArg, failedArg], v -> v.load, mapIter, mapCall, true);
+		makeFunction("reloadShelf", [shelfArg, progressArg, failedArg], v -> v.reload, mapIter, mapCall, false);
+		makeFunction("unloadShelf", [shelfArrArg, progressArg], v -> v.unload, arrIter, arrCall, false);
 
 		for (field in Context.getBuildFields())
 			assetsFields.push(field);
@@ -91,6 +131,17 @@ class AssetsMacro {
 		var reloadName = "reload" + capName;
 		var unloadName = "unload" + capName;
 
+		var resName = switch capName {
+			case "Video", "Image", "Sound", "Font":
+				capName;
+			default:
+				"Blob";
+		}
+		var resType = TPath({
+			pack: ["kha"],
+			name: resName
+		});
+
 		// abstract
 		var abstractTypePath = {pack: ["s", "assets"], name: capName};
 		var abstractType = TPath(abstractTypePath);
@@ -104,27 +155,39 @@ class AssetsMacro {
 		var path = abstractTypePath.pack.concat([abstractTypePath.name]).join(".");
 		assetTypeFields.set(capName, (macro class Fields {
 			@:from
-			public static inline function fromString(value:String)
+			public static inline function get(value:String)
 				return load(value);
 
-			public static inline function load(name:String, ?location:s.assets.AssetLocation, ?failed:s.assets.Assets.AssetError->Void):$abstractType
-				return s.assets.Assets.$loadName(name, location, failed);
+			@:from
+			static inline function fromResource(value:$resType):$abstractType {
+				var asset = new $tPath();
+				@:privateAccess asset.fromResource(value);
+				return asset;
+			}
 
-			public var location(get, set):s.assets.AssetLocation;
+			@:to
+			inline function toResource():$resType {
+				return @:privateAccess this.toResource();
+			}
+
+			public static inline function load(name:String, ?location:s.Assets.AssetLocation, ?failed:s.Assets.AssetError->Void):$abstractType
+				return s.Assets.$loadName(name, location, failed);
+
+			public var location(get, set):s.Assets.AssetLocation;
 
 			public inline function reload(?location):Void
-				s.assets.Assets.$reloadName(this.location, location);
+				s.Assets.$reloadName(this.location, location);
 
 			public inline function unload():Bool {
 				if (location != null)
-					return s.assets.Assets.$unloadName(location);
+					return s.Assets.$unloadName(location);
 				return false;
 			}
 
-			private inline function get_location():s.assets.AssetLocation
+			private inline function get_location():s.Assets.AssetLocation
 				return this.location;
 
-			private inline function set_location(value:s.assets.AssetLocation):s.assets.AssetLocation {
+			private inline function set_location(value:s.Assets.AssetLocation):s.Assets.AssetLocation {
 				reload(value);
 				return value;
 			}
@@ -133,12 +196,12 @@ class AssetsMacro {
 		Compiler.addGlobalMetadata(path, '@:build(s.macro.AssetsMacro.buildAssetType("$capName"))');
 		try {
 			Context.getType(path);
-		} catch (e)
+		} catch (e) {
+			#if (display_details != 1)
 			Context.onAfterInitMacros(() -> Context.defineType({
 				pack: abstractTypePath.pack,
 				name: abstractTypePath.name,
 				doc: "",
-				pos: pos,
 				isExtern: true,
 				meta: [
 					{
@@ -152,8 +215,11 @@ class AssetsMacro {
 				],
 				params: [],
 				kind: TDAbstract(t, [AbFrom(t), AbTo(t)], [t], [t]),
-				fields: []
+				fields: [],
+				pos: pos
 			}));
+			#end
+		}
 
 		assetTypes.set(listName, {
 			type: abstractType,
@@ -166,13 +232,13 @@ class AssetsMacro {
 		assetsFields.push({
 			name: listName,
 			access: [APublic, AStatic],
-			kind: FProp("default", "never", macro :s.assets.AssetList<$abstractType>, macro new s.assets.AssetList()),
+			kind: FProp("default", "never", macro :s.Assets.AssetList<$abstractType>, macro new s.Assets.AssetList()),
 			pos: Context.currentPos()
 		});
 
 		var nameArg = {name: "name", type: macro :String};
-		var locationArg = {name: "location", type: macro :s.assets.AssetLocation, opt: true};
-		var failedArg = {name: "failed", type: macro :s.assets.Assets.AssetError->Void, opt: true};
+		var locationArg = {name: "location", type: macro :s.Assets.AssetLocation, opt: true};
+		var failedArg = {name: "failed", type: macro :s.Assets.AssetError->Void, opt: true};
 
 		var decode = {
 			expr: ESwitch(macro location.extension, [
@@ -184,7 +250,9 @@ class AssetsMacro {
 					}
 					{
 						values: f.extension.split(",").map(ext -> macro $v{ext}),
-						expr: macro new $typePath(asset).decode(bytes)
+						expr: macro {
+							new $typePath(asset).decode(data.bytes);
+						}
 					}
 				}
 			], macro throw "Unknown format: " + location.extension),
@@ -202,11 +270,9 @@ class AssetsMacro {
 					var asset = $i{listName}.get(name);
 					if (asset == null) {
 						asset = new $abstractTypePath(name);
-						loadBytes(location, bytes -> {
-							$i{listName}.add(name, asset);
-							$decode;
-							(asset : Asset).location = location;
-						}, failed);
+						$i{listName}.add(name, asset);
+						location = location ?? (name : s.Assets.AssetLocation);
+						${loadBytes(resName, decode)};
 					}
 					return asset;
 				}
@@ -235,15 +301,9 @@ class AssetsMacro {
 				ret: macro :Void,
 				expr: macro {
 					var asset = $i{listName}.get(name);
-                    location = location ?? asset.location;
-					loadBytes(location, bytes -> {
-						if (asset == null) {
-							asset = new $abstractTypePath(name);
-							$i{listName}.add(name, asset);
-						}
-						$decode;
-						(asset : Asset).location = location;
-					}, failed);
+					if (location == null)
+						location = asset != null ? asset.location : (name : s.Assets.AssetLocation);
+					${loadBytes(resName, decode)};
 				}
 			}),
 			pos: Context.currentPos()
@@ -278,6 +338,36 @@ class AssetsMacro {
 		}
 
 		return fields;
+	}
+
+	static function loadBytes(resName:String, loadBlob:Expr) {
+		function load(l)
+			return macro data -> try {
+				$l;
+				(cast asset).location = location;
+				asset.loaded();
+				logger.debug('Loaded asset "$location"');
+			} catch (e)
+				reporter({error: e.message});
+
+		resName = "load" + resName;
+
+		return macro {
+			var reporter = err -> {
+				if (failed != null)
+					failed({location: location, message: err.error});
+				logger.error('Failed to load asset "$location": ${err.error}');
+			}
+			logger.info('Loading asset "$location"');
+			switch (location : AssetLocationType) {
+				case Resource(name):
+					kha.Assets.$resName(name, ${load(macro asset.fromResource(data))}, reporter);
+				case File(path):
+					kha.Assets.loadBlobFromPath(path, ${load(loadBlob)}, reporter);
+				case Web(url):
+					throw new haxe.exceptions.NotImplementedException("Web assets are not yet implemented");
+			}
+		}
 	}
 	#end
 }

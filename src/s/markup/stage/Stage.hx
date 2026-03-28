@@ -1,6 +1,6 @@
 package s.markup.stage;
 
-import s.graphics.Texture;
+import s.graphics.RenderTarget;
 import s.math.Vec2;
 import s.math.Mat3;
 import s.math.SMath;
@@ -23,11 +23,11 @@ class Stage extends DrawableElement {
 	public var camera:Camera = new Camera();
 
 	#if (S2D_LIGHTING_ENVIRONMENT == 1)
-	public var environmentMap(default, set):s.Assets.ImageAsset;
+	public var environmentMap(default, set):s.assets.Image;
 
 	function set_environmentMap(value) {
 		if (value != null) {
-			value.onAssetLoaded(asset -> (asset : Texture).generateMipmaps(4));
+			value.onAssetLoaded(asset -> (asset : RenderTarget).generateMipmaps(4));
 			environmentMap = value;
 		}
 		return value;
@@ -90,7 +90,7 @@ class Stage extends DrawableElement {
 		viewProjection.copyFrom(projection * camera.view);
 	}
 
-	function draw(target:Texture) {
+	function draw(target:RenderTarget) {
 		// StageRenderer.pipeline.render(target, this);
 	}
 }

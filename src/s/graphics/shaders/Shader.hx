@@ -23,32 +23,55 @@ abstract class Shader {
 	var pipeline:PipelineState;
 	var compiled:Bool = false;
 
-	public static var indices2D(default, null):IndexBuffer;
-	public static var vertices2D(default, null):VertexBuffer;
+	public static var triIndices2D(default, null):IndexBuffer;
+	public static var triVertices2D(default, null):VertexBuffer;
+	public static var rectIndices2D(default, null):IndexBuffer;
+	public static var rectVertices2D(default, null):VertexBuffer;
 	public static final structure2D:VertexStructure = ["vertPos" => Float32_2X, "vertUV" => Float32_2X];
 
 	public static function compileShaders() {
 		// indices
-		indices2D = new IndexBuffer(6, StaticUsage);
-		var ind = indices2D.lock();
+
+		triIndices2D = new IndexBuffer(6, StaticUsage);
+		var ind = triIndices2D.lock();
+		ind[0] = 0;
+		ind[1] = 1;
+		ind[2] = 2;
+		triIndices2D.unlock();
+
+		rectIndices2D = new IndexBuffer(6, StaticUsage);
+		var ind = rectIndices2D.lock();
 		ind[0] = 0;
 		ind[1] = 1;
 		ind[2] = 2;
 		ind[3] = 3;
 		ind[4] = 2;
 		ind[5] = 0;
-		indices2D.unlock();
+		rectIndices2D.unlock();
+
 		// vertices
-		vertices2D = new VertexBuffer(4, structure2D, StaticUsage);
-		var vert = vertices2D.lock();
+
+		triVertices2D = new VertexBuffer(3, structure2D, DynamicUsage);
+		var vert = triVertices2D.lock();
+		for (i in 0...3) {
+			final offset = i * 4;
+			vert[offset + 0] = i == 0 ? 0.0 : (i == 1 ? 0.5 : 1.0);
+			vert[offset + 1] = i == 0 || i == 3 ? 0.0 : 1.0;
+			vert[offset + 2] = vert[offset + 0];
+			vert[offset + 3] = 1.0 - vert[offset + 1];
+		}
+		triVertices2D.unlock();
+
+		rectVertices2D = new VertexBuffer(4, structure2D, DynamicUsage);
+		var vert = rectVertices2D.lock();
 		for (i in 0...4) {
 			final offset = i * 4;
 			vert[offset + 0] = i == 0 || i == 1 ? 0.0 : 1.0;
 			vert[offset + 1] = i == 0 || i == 3 ? 0.0 : 1.0;
-			vert[offset + 2] = i == 0 || i == 1 ? 0.0 : 1.0;
-			vert[offset + 3] = i == 0 || i == 3 ? 1.0 : 0.0;
+			vert[offset + 2] = vert[offset + 0];
+			vert[offset + 3] = 1.0 - vert[offset + 1];
 		}
-		vertices2D.unlock();
+		rectVertices2D.unlock();
 
 		for (shader in shaders)
 			shader.compile();
@@ -117,7 +140,7 @@ abstract class Shader {
 			pipeline.conservativeRasterization = state.conservativeRasterization ?? pipeline.conservativeRasterization;
 
 			pipeline.compile();
-            
+
 			compiled = true;
 			logger.debug('Compiled $name');
 

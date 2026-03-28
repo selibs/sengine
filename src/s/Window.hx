@@ -3,7 +3,7 @@ package s;
 import kha.WindowMode;
 import kha.WindowOptions;
 import kha.Window as KhaWindow;
-import s.graphics.Texture;
+import s.graphics.RenderTarget;
 
 /**
  * Runtime window wrapper with framebuffer configuration and render signals.
@@ -17,7 +17,7 @@ import s.graphics.Texture;
  */
 @:allow(s.App)
 class Window implements s.shortcut.Shortcut {
-	var backBuffer:Texture;
+	var backBuffer:RenderTarget;
 	var window:KhaWindow;
 
 	/** Window X position in screen coordinates. */
@@ -107,7 +107,7 @@ class Window implements s.shortcut.Shortcut {
 	 * Rendering code should draw into the provided texture rather than directly to
 	 * the platform framebuffer.
 	 */
-	@:signal public function render(target:Texture);
+	@:signal public function render(target:RenderTarget);
 
 	@:access(s.App)
 	/**
@@ -121,14 +121,14 @@ class Window implements s.shortcut.Shortcut {
 		window = w;
 		width = w.width;
 		height = w.height;
-		backBuffer = new Texture(width, height);
+		backBuffer = new RenderTarget(width, height);
 		App.windows.push(this);
 
 		window.notifyOnResize((w, h) -> {
 			width = w;
 			height = h;
 			backBuffer.unload();
-			backBuffer = new Texture(width, height);
+			backBuffer = new RenderTarget(width, height);
 			resized(w, h);
 		});
 	}

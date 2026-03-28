@@ -3,7 +3,7 @@ package s.markup.graphics;
 import s.math.Mat3;
 import kha.graphics4.VertexData;
 import kha.graphics4.ConstantLocation;
-import s.graphics.Texture;
+import s.graphics.RenderTarget;
 import s.graphics.shaders.Shader;
 import s.markup.elements.DrawableElement;
 
@@ -31,9 +31,7 @@ abstract class ElementDrawer<T:DrawableElement> extends Shader {
 		colorCL = pipeline.getConstantLocation("color");
 	}
 
-	public function render(target:Texture, element:T) {
-		if (!compiled)
-			return;
+	public function render(target:RenderTarget, element:T) {
 		final ctx = target.context3D;
 		ctx.setPipeline(pipeline);
 		setBuffers(target);
@@ -41,20 +39,20 @@ abstract class ElementDrawer<T:DrawableElement> extends Shader {
 		draw(target, element);
 	}
 
-	function setUniforms(target:Texture, element:T) {
+	function setUniforms(target:RenderTarget, element:T) {
 		final ctx = target.context3D;
 		ctx.setMat3(mvpCL, target.context2D.transform);
-		ctx.setFloat4(rectCL, element.left.position, element.top.position, element.width, element.height);
-		ctx.setFloat4(colorCL, element.color.RGBA);
+		ctx.setVec4(rectCL, element.left.position, element.top.position, element.width, element.height);
+		ctx.setVec4(colorCL, element.color.RGBA);
 	}
 
-	function setBuffers(target:Texture) {
+	function setBuffers(target:RenderTarget) {
 		final ctx = target.context3D;
-		ctx.setIndexBuffer(Shader.indices2D);
-		ctx.setVertexBuffer(Shader.vertices2D);
+		ctx.setIndexBuffer(Shader.rectIndices2D);
+		ctx.setVertexBuffer(Shader.rectVertices2D);
 	}
 
-	function draw(target:Texture, element:T):Void {
+	function draw(target:RenderTarget, element:T):Void {
 		final ctx = target.context3D;
 		ctx.draw();
 	}

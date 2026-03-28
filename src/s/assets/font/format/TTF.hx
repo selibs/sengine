@@ -1,5 +1,6 @@
 package s.assets.font.format;
 
+import s.Assets;
 import haxe.io.Bytes;
 
 class TTF extends AssetFormat<Font> {

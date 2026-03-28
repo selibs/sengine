@@ -3,10 +3,10 @@ package s.markup.elements;
 import s.math.Vec4;
 import s.assets.Image;
 import s.geometry.Rect;
-import s.graphics.Texture;
+import s.graphics.RenderTarget;
 
 /**
- * Texture sampling presets for [`ImageElement`](s.markup.elements.ImageElement).
+ * RenderTarget sampling presets for [`ImageElement`](s.markup.elements.ImageElement).
  *
  * These presets combine nearest/linear sampling with optional mipmapping.
  */
@@ -110,7 +110,6 @@ enum ImageSampling {
  */
 @:allow(s.markup.graphics.ImageElementDrawer)
 class ImageElement extends DrawableElement {
-	var image:Image = new Image();
 	var parameters:TextureParameters = {
 		uAddressing: Clamp,
 		vAddressing: Clamp,
@@ -121,8 +120,6 @@ class ImageElement extends DrawableElement {
 	var rect:Vec4 = new Vec4(0.0, 0.0, 1.0, 1.0);
 	var clipRect:Vec4 = new Vec4(0.0, 0.0, 1.0, 1.0);
 
-	@:marker var imageIsDirty:Bool = false;
-
 	/**
 	 * Whether the image referenced by
 	 * [`source`](s.markup.elements.ImageElement.source) has been loaded.
@@ -130,7 +127,7 @@ class ImageElement extends DrawableElement {
 	 * When this is `false`, the element has no texture to draw and therefore
 	 * contributes no pixels.
 	 */
-	@:readonly @:alias public var isLoaded:Bool = image.isLoaded;
+	@:readonly @:alias public var isLoaded:Bool = source?.isLoaded == true;
 
 	/**
 	 * Asset key or path of the image to display.
@@ -140,7 +137,7 @@ class ImageElement extends DrawableElement {
 	 * project's asset pipeline, but it typically matches the engine's image
 	 * identifiers such as `"ui/logo"` or `"atlas/icons"`.
 	 */
-	@:alias public var source:String = image.location;
+	@:attr public var source:Image;
 
 	/**
 	 * Optional source-space clipping rectangle in image pixels.
@@ -234,7 +231,7 @@ class ImageElement extends DrawableElement {
 	public function new(source:String) {
 		super();
 		this.source = source;
-		image.onLoaded(() -> imageIsDirty = true);
+		this.source.onLoaded(() -> sourceIsDirty = true);
 	}
 
 	override function sync() {
@@ -243,20 +240,21 @@ class ImageElement extends DrawableElement {
 		if (!isLoaded)
 			return;
 
-		if (imageIsDirty || mipmapIsDirty)
+		if (sourceIsDirty || mipmapIsDirty)
 			if (mipmap)
-				image.generateMipmaps(1);
+				source.generateMipmaps(1);
 			else
-				image.setMipmaps([]);
+				source.setMipmaps([]);
 
 		final hBoundsIsDirty = left.positionIsDirty || right.positionIsDirty;
 		final vBoundsIsDirty = top.positionIsDirty || bottom.positionIsDirty;
 
-		if (!(imageIsDirty || sourceClipRectIsDirty || fillModeIsDirty || alignmentIsDirty || widthIsDirty || heightIsDirty || hBoundsIsDirty || vBoundsIsDirty))
+		if (!(sourceIsDirty || sourceClipRectIsDirty || fillModeIsDirty || alignmentIsDirty || widthIsDirty || heightIsDirty || hBoundsIsDirty
+			|| vBoundsIsDirty))
 			return;
 
-		final imageWidth = image.width;
-		final imageHeight = image.height;
+		final imageWidth = source.width;
+		final imageHeight = source.height;
 		var sourceWidth:Float = imageWidth;
 		var sourceHeight:Float = imageHeight;
 		var baseClipX = 0.0;
@@ -346,7 +344,7 @@ class ImageElement extends DrawableElement {
 		}
 	}
 
-	function draw(target:Texture) {
+	function draw(target:RenderTarget) {
 		if (!isLoaded)
 			return;
 		s.markup.graphics.ImageElementDrawer.shader.render(target, this);

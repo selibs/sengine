@@ -7,7 +7,7 @@ import s.Log;
 import s.Window;
 import s.input.Mouse;
 import s.input.Keyboard;
-import s.assets.Assets;
+import s.Assets;
 import s.graphics.shaders.Shader;
 
 /**
@@ -329,9 +329,9 @@ class App implements s.shortcut.Shortcut {
 
 		input = {mouse: new Mouse(), keyboard: new Keyboard()}
 		System.notifyOnApplicationState(() -> state = Foreground, () -> state = Resume, () -> state = Pause, () -> state = Background, () -> state = Shutdown);
-		s.assets.Assets.loadShelf({
-			fonts: ["assets/fonts/font_default.ttf"],
-			images: ["assets/images/image_default.png"]
+		Assets.loadShelf({
+			fonts: ["font_default" => "font_default"],
+			images: ["image_default" => "image_default"]
 		}, progress -> {
 			if (progress == 1.0) {
 				Aura.init();

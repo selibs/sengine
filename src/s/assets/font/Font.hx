@@ -1,16 +1,92 @@
 package s.assets.font;
 
-import haxe.ds.IntMap;
 import haxe.ds.Vector;
 import kha.Blob;
 import kha.Kravur;
 import kha.graphics2.truetype.StbTruetype;
+import s.Assets;
 
-class Font extends Asset {
-	public static inline final sdfOversample:Int = 4;
+private typedef GlyphPoint = {
+	var x:Float;
+	var y:Float;
+}
+
+private typedef GlyphSegment = {
+	var ax:Float;
+	var ay:Float;
+	var bx:Float;
+	var by:Float;
+}
+
+class Font extends Asset<kha.Font> {
+	public static inline final sdfOversample:Int = 2;
 	public static inline final sdfSpread:Int = 8;
-	public static inline final sdfPadding:Int = sdfSpread + 1;
+	public static inline final sdfPadding:Int = sdfSpread + 2;
 	public static inline final sdfInf:Float = 1e20;
+	public static inline final sdfQuadraticFlatnessSq:Float = 0.02;
+	public static inline final sdfCubicFlatnessSq:Float = 0.02;
+
+	static final defaultGlyphs:Array<Int> = [for (i in 32...127) i];
+
+	static function sanitizeGlyphs(glyphs:Array<Int>):Array<Int>
+		return glyphs != null && glyphs.length > 0 ? glyphs : defaultGlyphs;
+
+	static function glyphsEqual(a:Array<Int>, b:Array<Int>):Bool {
+		if (a == b)
+			return true;
+		if (a == null || b == null || a.length != b.length)
+			return false;
+		for (i in 0...a.length)
+			if (a[i] != b[i])
+				return false;
+		return true;
+	}
+
+	static function hashGlyphs(glyphs:Array<Int>):Int {
+		var hash = 0x811C9DC5;
+		for (glyph in glyphs) {
+			hash = (hash ^ glyph) * 16777619;
+			hash |= 0;
+		}
+		return hash;
+	}
+
+	static function rebuildCharBlocks(glyphs:Array<Int>) {
+		KravurImage.charBlocks = [];
+		if (glyphs.length == 0)
+			return;
+
+		KravurImage.charBlocks.push(glyphs[0]);
+		var nextChar = glyphs[0] + 1;
+		for (i in 1...glyphs.length) {
+			if (glyphs[i] != nextChar) {
+				KravurImage.charBlocks.push(glyphs[i - 1]);
+				KravurImage.charBlocks.push(glyphs[i]);
+				nextChar = glyphs[i] + 1;
+			} else
+				nextChar++;
+		}
+		KravurImage.charBlocks.push(glyphs[glyphs.length - 1]);
+	}
+
+	static function quantizeAtlasSize(size:Int):Int {
+		if (size <= 32)
+			return Std.int(Math.max(1, Math.round(size / 2.0))) * 2;
+		if (size <= 64)
+			return Std.int(Math.ceil(size / 2.0)) * 2;
+		if (size <= 128)
+			return Std.int(Math.ceil(size / 4.0)) * 4;
+		if (size <= 256)
+			return Std.int(Math.ceil(size / 8.0)) * 8;
+		return Std.int(Math.ceil(size / 16.0)) * 16;
+	}
+
+	static inline function makeAtlasKey(fontIndex:Int, nominalSize:Int, glyphHash:Int):Int {
+		var key = fontIndex;
+		key = ((key * 397) ^ nominalSize) | 0;
+		key = ((key * 397) ^ glyphHash) | 0;
+		return key;
+	}
 
 	static function bakeFontBitmap(data:Blob, offset:Int, pixel_height:Float, pixels:Blob, pw:Int, ph:Int, chars:Array<Int>,
 			chardata:Vector<Stbtt_bakedchar>):Int @:privateAccess {
@@ -74,20 +150,12 @@ class Font extends Asset {
 			pixels.writeU8(i, 0); // background of 0 around pixels
 		i = 0;
 		var ch:Stbtt_bakedchar;
-		for (index in chars) { // bake bitmap if fits
+		for (index in chars) {
 			var g:Int = StbTruetype.stbtt_FindGlyphIndex(f, index);
 			ch = chardata[i];
-			final gw = ch.x1 - ch.x0 - sdfPadding * 2;
-			final gh = ch.y1 - ch.y0 - sdfPadding * 2;
-			if (gw > 0 && gh > 0)
-				StbTruetype.stbtt_MakeGlyphBitmap(f, pixels, ch.x0 + sdfPadding + (ch.y0 + sdfPadding) * pw, gw, gh, pw, scale, scale, g);
-			++i;
-		}
-
-		for (i in 0...chardata.length) {
-			ch = chardata[i];
 			if (ch.x1 > ch.x0 && ch.y1 > ch.y0)
-				buildGlyphSdf(pixels, pw, ch);
+				buildGlyphSdf(f, g, scale, pixels, pw, ch);
+			++i;
 		}
 		return bottom_y;
 	}
@@ -174,39 +242,167 @@ class Font extends Asset {
 		return result;
 	}
 
-	static function buildGlyphSdf(pixels:Blob, atlasWidth:Int, glyph:Stbtt_bakedchar) {
+	static inline function glyphPoint(x:Float, y:Float):GlyphPoint
+		return {x: x, y: y};
+
+	static inline function addGlyphSegment(segments:Array<GlyphSegment>, a:GlyphPoint, b:GlyphPoint) {
+		if (a.x == b.x && a.y == b.y)
+			return;
+		segments.push({ax: a.x, ay: a.y, bx: b.x, by: b.y});
+	}
+
+	static inline function midpoint(a:GlyphPoint, b:GlyphPoint):GlyphPoint
+		return glyphPoint((a.x + b.x) * 0.5, (a.y + b.y) * 0.5);
+
+	static inline function pointLineDistanceSq(p:GlyphPoint, a:GlyphPoint, b:GlyphPoint):Float {
+		final dx = b.x - a.x;
+		final dy = b.y - a.y;
+		final denom = dx * dx + dy * dy;
+		if (denom <= 1e-8) {
+			final px = p.x - a.x;
+			final py = p.y - a.y;
+			return px * px + py * py;
+		}
+		final t = Math.max(0.0, Math.min(1.0, ((p.x - a.x) * dx + (p.y - a.y) * dy) / denom));
+		final qx = a.x + dx * t;
+		final qy = a.y + dy * t;
+		final ox = p.x - qx;
+		final oy = p.y - qy;
+		return ox * ox + oy * oy;
+	}
+
+	static function flattenQuadratic(p0:GlyphPoint, p1:GlyphPoint, p2:GlyphPoint, segments:Array<GlyphSegment>, depth:Int = 0) {
+		final lineMid = midpoint(p0, p2);
+		final dx = p1.x - lineMid.x;
+		final dy = p1.y - lineMid.y;
+		if (depth >= 8 || dx * dx + dy * dy <= sdfQuadraticFlatnessSq) {
+			addGlyphSegment(segments, p0, p2);
+			return;
+		}
+
+		final p01 = midpoint(p0, p1);
+		final p12 = midpoint(p1, p2);
+		final p012 = midpoint(p01, p12);
+		flattenQuadratic(p0, p01, p012, segments, depth + 1);
+		flattenQuadratic(p012, p12, p2, segments, depth + 1);
+	}
+
+	static function flattenCubic(p0:GlyphPoint, p1:GlyphPoint, p2:GlyphPoint, p3:GlyphPoint, segments:Array<GlyphSegment>, depth:Int = 0) {
+		final flatness = Math.max(pointLineDistanceSq(p1, p0, p3), pointLineDistanceSq(p2, p0, p3));
+		if (depth >= 10 || flatness <= sdfCubicFlatnessSq) {
+			addGlyphSegment(segments, p0, p3);
+			return;
+		}
+
+		final p01 = midpoint(p0, p1);
+		final p12 = midpoint(p1, p2);
+		final p23 = midpoint(p2, p3);
+		final p012 = midpoint(p01, p12);
+		final p123 = midpoint(p12, p23);
+		final p0123 = midpoint(p012, p123);
+		flattenCubic(p0, p01, p012, p0123, segments, depth + 1);
+		flattenCubic(p0123, p123, p23, p3, segments, depth + 1);
+	}
+
+	static inline function pointSegmentDistanceSq(px:Float, py:Float, segment:GlyphSegment):Float {
+		final dx = segment.bx - segment.ax;
+		final dy = segment.by - segment.ay;
+		final denom = dx * dx + dy * dy;
+		if (denom <= 1e-8) {
+			final ox = px - segment.ax;
+			final oy = py - segment.ay;
+			return ox * ox + oy * oy;
+		}
+		final t = Math.max(0.0, Math.min(1.0, ((px - segment.ax) * dx + (py - segment.ay) * dy) / denom));
+		final qx = segment.ax + dx * t;
+		final qy = segment.ay + dy * t;
+		final ox = px - qx;
+		final oy = py - qy;
+		return ox * ox + oy * oy;
+	}
+
+	static inline function pointInsideGlyph(px:Float, py:Float, segments:Array<GlyphSegment>):Bool {
+		var inside = false;
+		for (segment in segments) {
+			final ayAbove = segment.ay > py;
+			final byAbove = segment.by > py;
+			if (ayAbove == byAbove)
+				continue;
+			final x = segment.ax + (py - segment.ay) * (segment.bx - segment.ax) / (segment.by - segment.ay);
+			if (x > px)
+				inside = !inside;
+		}
+		return inside;
+	}
+
+	static function buildGlyphSegments(info:Stbtt_fontinfo, glyphIndex:Int, scale:Float, glyph:Stbtt_bakedchar):Array<GlyphSegment> {
+		final vertices = StbTruetype.stbtt_GetGlyphShape(info, glyphIndex);
+		if (vertices == null || vertices.length == 0)
+			return [];
+
+		final originX = glyph.xoff * sdfOversample + sdfPadding;
+		final originY = glyph.yoff * sdfOversample + sdfPadding;
+
+		inline function mapPoint(x:Int, y:Int):GlyphPoint
+			return glyphPoint(x * scale - originX + sdfPadding, -y * scale - originY + sdfPadding);
+
+		final segments:Array<GlyphSegment> = [];
+		var start:GlyphPoint = null;
+		var current:GlyphPoint = null;
+
+		for (vertex in vertices) {
+			switch vertex.type {
+				case StbTruetype.STBTT_vmove:
+					if (current != null && start != null)
+						addGlyphSegment(segments, current, start);
+					start = mapPoint(vertex.x, vertex.y);
+					current = start;
+				case StbTruetype.STBTT_vline:
+					final next = mapPoint(vertex.x, vertex.y);
+					addGlyphSegment(segments, current, next);
+					current = next;
+				case StbTruetype.STBTT_vcurve:
+					final control = mapPoint(vertex.cx, vertex.cy);
+					final next = mapPoint(vertex.x, vertex.y);
+					flattenQuadratic(current, control, next, segments);
+					current = next;
+				case StbTruetype.STBTT_vcubic:
+					final control1 = mapPoint(vertex.cx, vertex.cy);
+					final control2 = mapPoint(vertex.cx1, vertex.cy1);
+					final next = mapPoint(vertex.x, vertex.y);
+					flattenCubic(current, control1, control2, next, segments);
+					current = next;
+				case _:
+			}
+		}
+
+		if (current != null && start != null)
+			addGlyphSegment(segments, current, start);
+
+		return segments;
+	}
+
+	static function buildGlyphSdf(info:Stbtt_fontinfo, glyphIndex:Int, scale:Float, pixels:Blob, atlasWidth:Int, glyph:Stbtt_bakedchar) {
 		final width = glyph.x1 - glyph.x0;
 		final height = glyph.y1 - glyph.y0;
 		if (width <= 0 || height <= 0)
 			return;
 
-		final size = width * height;
-		final distToInside = new Vector<Float>(size);
-		final distToOutside = new Vector<Float>(size);
-		for (y in 0...height)
-			for (x in 0...width) {
-				final coverage = pixels.readU8(glyph.x0 + x + (glyph.y0 + y) * atlasWidth) / 255.0;
-				final idx = y * width + x;
-				if (coverage <= 0.0) {
-					distToInside[idx] = sdfInf;
-					distToOutside[idx] = 0.0;
-				} else if (coverage >= 1.0) {
-					distToInside[idx] = 0.0;
-					distToOutside[idx] = sdfInf;
-				} else {
-					final edge = 0.5 - coverage;
-					distToInside[idx] = edge < 0.0 ? edge * edge : 0.0;
-					distToOutside[idx] = edge > 0.0 ? edge * edge : 0.0;
-				}
-			}
-
-		final insideField = edt2d(distToInside, width, height);
-		final outsideField = edt2d(distToOutside, width, height);
+		final segments = buildGlyphSegments(info, glyphIndex, scale, glyph);
+		if (segments.length == 0)
+			return;
 
 		for (y in 0...height) {
 			for (x in 0...width) {
-				final idx = y * width + x;
-				final signed = Math.sqrt(outsideField[idx]) - Math.sqrt(insideField[idx]);
+				final px = x + 0.5;
+				final py = y + 0.5;
+				var minDistSq = sdfInf;
+				for (segment in segments) {
+					final distSq = pointSegmentDistanceSq(px, py, segment);
+					if (distSq < minDistSq)
+						minDistSq = distSq;
+				}
+				final signed = (pointInsideGlyph(px, py, segments) ? 1.0 : -1.0) * Math.sqrt(minDistSq);
 				final normalized = Math.max(0.0, Math.min(1.0, 0.5 + signed / (2.0 * sdfSpread)));
 				pixels.writeU8(glyph.x0 + x + (glyph.y0 + y) * atlasWidth, Std.int(Math.round(normalized * 255.0)));
 			}
@@ -272,30 +468,21 @@ class Font extends Asset {
 
 	var blob:Blob;
 	var oldGlyphs:Array<Int>;
+	var oldGlyphHash:Int = 0;
 	var fontIndex:Int;
-	var atlases:IntMap<FontAtlas> = new IntMap<FontAtlas>();
+	var atlases:Map<Int, FontAtlas> = [];
 
 	public function getAtlas(size:Int) @:privateAccess {
-		final bakedFontSize = size * sdfOversample;
-		var glyphs = kha.graphics2.Graphics.fontGlyphs;
-
-		if (glyphs != oldGlyphs) {
-			oldGlyphs = glyphs;
-			// save first/last chars of sequences
-			KravurImage.charBlocks = [glyphs[0]];
-			var nextChar = KravurImage.charBlocks[0] + 1;
-			for (i in 1...glyphs.length) {
-				if (glyphs[i] != nextChar) {
-					KravurImage.charBlocks.push(glyphs[i - 1]);
-					KravurImage.charBlocks.push(glyphs[i]);
-					nextChar = glyphs[i] + 1;
-				} else
-					nextChar++;
-			}
-			KravurImage.charBlocks.push(glyphs[glyphs.length - 1]);
+		final nominalSize = quantizeAtlasSize(size > 0 ? size : 1);
+		final bakedFontSize = nominalSize * sdfOversample;
+		final glyphs = sanitizeGlyphs(kha.graphics2.Graphics.fontGlyphs);
+		if (!glyphsEqual(glyphs, oldGlyphs)) {
+			oldGlyphs = glyphs.copy();
+			oldGlyphHash = hashGlyphs(oldGlyphs);
+			rebuildCharBlocks(oldGlyphs);
 		}
 
-		var index = fontIndex * 10000000 + bakedFontSize * 10000 + glyphs.length;
+		var index = makeAtlasKey(fontIndex, nominalSize, oldGlyphHash);
 		var atlas = atlases.get(index);
 		if (atlas != null)
 			return atlas;
@@ -304,10 +491,10 @@ class Font extends Asset {
 		if (offset == -1)
 			offset = StbTruetype.stbtt_GetFontOffsetForIndex(blob, 0);
 
-		var atlasSize = estimateAtlasSize(blob, offset, bakedFontSize, glyphs);
+		var atlasSize = estimateAtlasSize(blob, offset, bakedFontSize, oldGlyphs);
 		var width:Int = atlasSize.width;
 		var height:Int = atlasSize.height;
-		var baked = new Vector<Stbtt_bakedchar>(glyphs.length);
+		var baked = new Vector<Stbtt_bakedchar>(oldGlyphs.length);
 		for (i in 0...baked.length)
 			baked[i] = new Stbtt_bakedchar();
 
@@ -315,7 +502,7 @@ class Font extends Asset {
 		var status:Int = -1;
 		while (status <= 0) {
 			pixels = Blob.alloc(width * height);
-			status = bakeFontBitmap(blob, offset, bakedFontSize, pixels, width, height, glyphs, baked);
+			status = bakeFontBitmap(blob, offset, bakedFontSize, pixels, width, height, oldGlyphs, baked);
 			if (status <= 0)
 				height < width ? height *= 2 : width *= 2;
 		}
@@ -331,14 +518,43 @@ class Font extends Asset {
 		var descent = Math.round(metrics.descent * scale / sdfOversample);
 		var lineGap = Math.round(metrics.lineGap * scale / sdfOversample);
 
-		atlas = new FontAtlas(Std.int(size), ascent, descent, lineGap, width, height, baked, pixels);
+		atlas = new FontAtlas(nominalSize, ascent, descent, lineGap, width, height, baked, pixels, oldGlyphs, sdfSpread);
 		atlases.set(index, atlas);
 
 		return atlas;
 	}
 
-	public function widthOfCharacters(size:Int, characters:Array<Int>, start: Int, length: Int) {
-		return getAtlas(size).charactersWidth(characters, start, length);
+	public function widthOfCharacters(size:Int, characters:Array<Int>, start:Int, length:Int) {
+		if (size <= 0 || characters == null || length <= 0)
+			return 0.0;
+
+		final atlas = getAtlas(size);
+		final scale = size / atlas.size;
+		final end = Std.int(Math.min(start + length, characters.length));
+		var width = 0.0;
+		for (i in start...end)
+			width += atlas.getGlyph(characters[i]).xadvance * scale;
+		return width;
+	}
+
+	function fromResource(resource:kha.Font):Void @:privateAccess {
+		blob = resource.blob;
+		oldGlyphs = resource.oldGlyphs;
+		oldGlyphHash = oldGlyphs != null ? hashGlyphs(oldGlyphs) : 0;
+		if (oldGlyphs != null && oldGlyphs.length > 0)
+			rebuildCharBlocks(oldGlyphs);
+		fontIndex = resource.fontIndex;
+		atlases = cast resource.images;
+		if (atlases == null)
+			atlases = [];
+	}
+
+	function toResource():kha.Font @:privateAccess {
+		var font = new kha.Font(blob);
+		font.oldGlyphs = oldGlyphs != null ? oldGlyphs.copy() : null;
+		font.fontIndex = fontIndex;
+		font.images = cast atlases;
+		return font;
 	}
 
 	function unload()

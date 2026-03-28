@@ -8,7 +8,7 @@ class Triangle extends Shape {
 	public var point2:Vec2 = {x: 0.5, y: 0.0};
 	public var point3:Vec2 = {x: 1.0, y: 1.0};
 
-	function draw(target:s.graphics.Texture) {
+	function draw(target:s.graphics.RenderTarget) {
 		s.markup.graphics.shapes.TriangleDrawer.shader.render(target, this);
 	}
 }

@@ -1,6 +1,7 @@
 package s.math;
 
 import kha.math.FastMatrix3 as KhaMat3;
+import s.math.SMath;
 
 @:nullSafety
 @:forward.new
@@ -11,29 +12,29 @@ extern abstract Mat3(KhaMat3) from KhaMat3 to KhaMat3 {
 	private inline function get_self()
 		return (this : Mat3);
 
-	public static inline function identity():Mat3 {
+	public static inline function identity():Mat3
 		return KhaMat3.identity();
-	}
 
-	public static inline function empty():Mat3 {
+	public static inline function empty():Mat3
 		return KhaMat3.empty();
-	}
 
-	public static inline function translation(x:Float, y:Float):Mat3 {
+	public static inline function translation(x:Float, y:Float):Mat3
 		return KhaMat3.translation(x, y);
-	}
 
-	public static inline function scale(x:Float, y:Float):Mat3 {
+	public static inline function scale(x:Float, y:Float):Mat3
 		return KhaMat3.scale(x, y);
-	}
 
-	public static inline function shear(x:Float, y:Float):Mat3 {
+	public static inline function shear(x:Float, y:Float):Mat3
 		return new Mat3(1, x, 0, y, 1, 0, 0, 0, 1);
-	}
 
-	public static inline function rotation(angle:Float):Mat3 {
+	overload public static inline function rotation(p1:Vec2, p2:Vec2):Mat3
+		return rotation(p1.x, p1.y, p2.x, p2.y);
+
+	overload public static inline function rotation(x1:Float, y1:Float, x2:Float, y2:Float):Mat3
+		return rotation(atan2(y2 - y1, x2 - x1));
+
+	overload public static inline function rotation(angle:Float):Mat3
 		return KhaMat3.rotation(angle);
-	}
 
 	public static inline function orthogonalProjection(left:Float, right:Float, bottom:Float, top:Float):Mat3 {
 		var tx = -(right + left) / (right - left);

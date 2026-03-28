@@ -47,9 +47,9 @@ class SpritePass extends StageRenderPass {
 		ctx.begin();
 		ctx.clear(stage.color);
 		ctx.setPipeline(pipeline);
-		ctx.setIndexBuffer(Shader.indices2D);
+		ctx.setIndexBuffer(Shader.rectIndices2D);
 		#if (S2D_SPRITE_INSTANCING != 1)
-		ctx.setVertexBuffer(Shader.vertices2D);
+		ctx.setVertexBuffer(Shader.rectVertices2D);
 		#end
 		ctx.setMat3(viewProjectionCL, stage.viewProjection);
 		for (layer in stage.layers) {

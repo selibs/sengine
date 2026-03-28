@@ -41,7 +41,7 @@ class InteractiveElement extends Element {
 
 	@:signal(button) public function mouseButtonDoubleClicked(button:MouseButton, m:MouseEvent);
 
-	override function render(target:s.graphics.Texture) {
+	override function render(target:s.graphics.RenderTarget) {
 		update(target.context2D.transform);
 		super.render(target);
 	}
