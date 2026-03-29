@@ -5,6 +5,7 @@ import s.Color;
 import s.graphics.RenderTarget;
 import s.Window;
 import s.math.Mat3;
+import s.math.SMath;
 import s.graphics.Context2D;
 
 using s.extensions.StringExt;
@@ -91,13 +92,24 @@ class WindowScene implements s.shortcut.Shortcut {
 			drawBounds(e, ctx);
 		#end
 		#if S2D_DEBUG_FPS
-		final fps = Std.int(1.0 / Time.delta);
 		ctx.style.font.family = "font_default";
 		ctx.style.font.pixelSize = 14;
-		ctx.style.color = Black;
-		ctx.drawString('FPS: ${fps}', 6, 6);
-		ctx.style.color = White;
-		ctx.drawString('FPS: ${fps}', 5, 5);
+
+		final time = Time.delta;
+		final fps = Std.int(1.0 / time);
+		var offset = 5;
+		inline function draw(text:String) {
+			ctx.style.color = Black;
+			ctx.drawString(text, 6, offset + 1);
+			ctx.style.color = White;
+			ctx.drawString(text, 5, offset);
+			offset += 16;
+		}
+
+		draw("FPS: " + fps);
+		draw("Frame (ms): " + roundTo(time, 1));
+		draw("CPU (ms): " + roundTo(target.context3D.cpuTime, 1));
+		draw("GPU (ms): " + roundTo(target.context3D.gpuTime, 1));
 		#end
 		ctx.popTransform();
 		ctx.end();

@@ -1,6 +1,6 @@
 package s.graphics;
 
-import haxe.ds.IntMap;
+import haxe.Timer;
 import kha.arrays.Int32Array;
 import kha.arrays.Float32Array;
 import kha.graphics4.Graphics;
@@ -26,14 +26,14 @@ private final logger:Logger = new Logger("RENDER");
 
 @:structInit
 class DrawCommand {
-	public var instanced:Bool = false;
-	public var instanceCount:Int = 0;
-	public var start:Int = 0;
-	public var count:Int = -1;
 	public var pipeline:PipelineState = null;
 	public var indexBuffer:IndexBuffer = null;
 	public var vertexBuffer:VertexBuffer = null;
 	public var vertexBuffers:Array<VertexBuffer> = null;
+	public var instanced:Bool = false;
+	public var start:Int = 0;
+	public var count:Int = -1;
+	public var instanceCount:Int = 0;
 	public var bool:Map<ConstantLocation, Bool> = [];
 	public var float:Map<ConstantLocation, kha.FastFloat> = [];
 	public var floats:Map<ConstantLocation, Float32Array> = [];
@@ -50,13 +50,15 @@ class DrawCommand {
 	public var textures:Map<TextureUnit, Image> = [];
 	public var textureParameters:Map<TextureUnit, TextureParameters> = [];
 
-	public function execute(graphics:Graphics) {
+	public function execute(graphics:Graphics, pipelineAlreadySet:Bool = false, indexBufferAlreadySet:Bool = false) {
 		inline function setCL<T>(f:ConstantLocation->T->Void, a:Map<ConstantLocation, T>)
 			for (l in a.keys())
 				f(l, a.get(l));
 
-		graphics.setPipeline(pipeline);
-		graphics.setIndexBuffer(indexBuffer);
+		if (!pipelineAlreadySet)
+			graphics.setPipeline(pipeline);
+		if (!indexBufferAlreadySet)
+			graphics.setIndexBuffer(indexBuffer);
 		graphics.setVertexBuffer(vertexBuffer);
 
 		setCL(graphics.setBool, bool);
@@ -100,8 +102,18 @@ class DrawCommand {
 class Context3D {
 	final graphics:Graphics;
 
+	var mrt:Array<kha.Canvas>;
+
 	var commands:Array<DrawCommand>;
 	var command:DrawCommand;
+
+	#if S2D_DEBUG_FPS
+	var beginTime:Float;
+	var executeTime:Float;
+
+	public var cpuTime(default, null):Float;
+	public var gpuTime(default, null):Float;
+	#end
 
 	public final vsynced:Bool;
 	public final refreshRate:Int;
@@ -115,6 +127,10 @@ class Context3D {
 	}
 
 	public inline function begin(?mrt:Array<kha.Canvas>) {
+		#if S2D_DEBUG_FPS
+		beginTime = Timer.stamp() * 1000;
+		#end
+
 		graphics.begin(mrt);
 		commands = [];
 		command = {};
@@ -122,28 +138,41 @@ class Context3D {
 
 	public inline function end() {
 		try {
-			for (command in commands)
-				command.execute(graphics);
+			var lastPipeline:PipelineState = null;
+			var lastIndexBuffer:IndexBuffer = null;
+			#if S2D_DEBUG_FPS
+			var executeStart = Timer.stamp() * 1000;
+			#end
+			for (command in commands) {
+				command.execute(graphics, command.pipeline == lastPipeline, command.indexBuffer == lastIndexBuffer);
+				lastPipeline = command.pipeline;
+				lastIndexBuffer = command.indexBuffer;
+			}
+			#if S2D_DEBUG_FPS
+			executeTime = Timer.stamp() * 1000 - executeStart;
+			#end
 		} catch (e)
 			logger.error("Failed: " + e.message);
 		graphics.end();
+
+		#if S2D_DEBUG_FPS
+		cpuTime = Timer.stamp() * 1000 - beginTime;
+		gpuTime = executeTime;
+		#end
 	}
 
-	public inline function clear(?color:Color, ?depth:Float, ?stencil:Int) {
+	public inline function clear(?color:Color, ?depth:Float, ?stencil:Int)
 		graphics.clear(color, depth, stencil);
-	}
 
-	public inline function scissor(x:Int, y:Int, width:Int, height:Int) {
+	public inline function scissor(x:Int, y:Int, width:Int, height:Int)
 		graphics.scissor(x, y, width, height);
-	}
 
-	public inline function disableScissor() {
+	public inline function disableScissor()
 		graphics.disableScissor();
-	}
 
 	public inline function draw(start:Int = 0, count:Int = -1) {
-        command.start = start;
-        command.count = count;
+		command.start = start;
+		command.count = count;
 		commands.push(command);
 		command = command != null ? {
 			pipeline: command.pipeline,

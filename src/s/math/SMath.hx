@@ -851,6 +851,11 @@ overload extern inline function mat4(a00:Float, a01:Float, a02:Float, a03:Float,
 		a23:Float, a30:Float, a31:Float, a32:Float, a33:Float):Mat4
 	return new Mat4(a00, a01, a02, a03, a10, a11, a12, a13, a20, a21, a22, a23, a30, a31, a32, a33);
 
+extern inline function roundTo(value:Float, digits:Int):Float {
+	var p = Math.pow(10, digits);
+	return Math.round(value * p) / p;
+}
+
 // internal methods
 private inline function log2f(v:Float) {
 	var l2 = Math.log(v) * 1.4426950408889634;
