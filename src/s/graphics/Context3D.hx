@@ -7,7 +7,6 @@ import kha.graphics4.TextureUnit;
 import kha.graphics4.IndexBuffer;
 import kha.graphics4.PipelineState;
 import kha.graphics4.ConstantLocation;
-import s.Log;
 import s.math.Vec2;
 import s.math.Vec3;
 import s.math.Vec4;
@@ -21,12 +20,30 @@ import s.assets.Image;
 import s.graphics.RenderTarget;
 import s.graphics.VertexBuffer;
 
-private final logger:Logger = new Logger("RENDER");
+private final logger:Log.Logger = new Log.Logger("RENDER");
 
-typedef DrawCommand = {
-	?pipeline:PipelineState,
-	?states:Array<DrawState>
+enum DrawConstant {
+	Clear(color:Color, depth:Float, stencil:Int);
+	Scissor(x:Int, y:Int, width:Int, height:Int);
+	DisableScissor;
+	ConstantBool(location:ConstantLocation, value:Bool);
+	ConstantInt(location:ConstantLocation, value:Int);
+	ConstantInts(location:ConstantLocation, value:Int32Array);
+	ConstantIVec2(location:ConstantLocation, value:Vec2I);
+	ConstantIVec3(location:ConstantLocation, value:Vec3I);
+	ConstantIVec4(location:ConstantLocation, value:Vec4I);
+	ConstantFloat(location:ConstantLocation, value:Float);
+	ConstantFloats(location:ConstantLocation, value:Float32Array);
+	ConstantVec2(location:ConstantLocation, value:Vec2);
+	ConstantVec3(location:ConstantLocation, value:Vec3);
+	ConstantVec4(location:ConstantLocation, value:Vec4);
+	ConstantMat3(location:ConstantLocation, value:Mat3);
+	ConstantMat4(location:ConstantLocation, value:Mat4);
+	ConstantTexture(unit:TextureUnit, image:Image);
+	ConstantTextureParameters(unit:TextureUnit, parameters:TextureParameters);
 }
+
+typedef DrawConstants = Array<DrawConstant>;
 
 typedef DrawState = {
 	?indexBuffer:IndexBuffer,
@@ -35,21 +52,12 @@ typedef DrawState = {
 	?start:Int,
 	?count:Int,
 	?instanceCount:Int,
-	?bool:Map<ConstantLocation, Bool>,
-	?float:Map<ConstantLocation, kha.FastFloat>,
-	?floats:Map<ConstantLocation, Float32Array>,
-	?vec2:Map<ConstantLocation, Vec2>,
-	?vec3:Map<ConstantLocation, Vec3>,
-	?vec4:Map<ConstantLocation, Vec4>,
-	?int:Map<ConstantLocation, Int>,
-	?ints:Map<ConstantLocation, Int32Array>,
-	?ivec2:Map<ConstantLocation, Vec2I>,
-	?ivec3:Map<ConstantLocation, Vec3I>,
-	?ivec4:Map<ConstantLocation, Vec4I>,
-	?mat3:Map<ConstantLocation, Mat3>,
-	?mat4:Map<ConstantLocation, Mat4>,
-	?textures:Map<TextureUnit, Image>,
-	?textureParameters:Map<TextureUnit, TextureParameters>
+	?constants:Array<DrawConstants>
+}
+
+typedef DrawCommand = {
+	?pipeline:PipelineState,
+	?states:Array<DrawState>
 }
 
 @:allow(s.graphics.RenderTarget)
@@ -58,10 +66,13 @@ class Context3D {
 
 	var state:DrawState;
 	var command:DrawCommand;
+	var constants:Array<DrawConstant>;
 	var pipeline:PipelineState;
 	var commands:Array<DrawCommand>;
 
 	#if S2D_DEBUG_FPS
+	public static var drawCalls(default, null):Int = 0;
+
 	var beginTime:Float;
 
 	public var cpuTime(default, null):Float;
@@ -85,8 +96,10 @@ class Context3D {
 		#end
 		graphics.begin(mrt);
 
+		pipeline = null;
 		state = {};
-		command = {states: [state]}
+		constants = [];
+		command = {states: []}
 		commands = [];
 	}
 
@@ -104,112 +117,151 @@ class Context3D {
 		graphics.end();
 
 		#if S2D_DEBUG_FPS
-		gpuTime = haxe.Timer.stamp() * 1000 - cpuTime;
+		gpuTime = haxe.Timer.stamp() * 1000 - beginTime - cpuTime;
 		#end
 	}
 
 	inline function execute() {
-		inline function setCL<T>(f:ConstantLocation->T->Void, a:Map<ConstantLocation, T>)
-			if (a != null)
-				for (l in a.keys())
-					f(l, a.get(l));
-
 		for (c in commands) {
 			graphics.setPipeline(c.pipeline);
 
-			for (s in c.states) {
-				// constants
-				setCL(graphics.setBool, s.bool);
-				setCL(graphics.setFloat, s.float);
-				setCL(graphics.setFloats, s.floats);
-				setCL(graphics.setVector2, s.vec2);
-				setCL(graphics.setVector3, s.vec3);
-				setCL(graphics.setVector4, s.vec4);
-				setCL(graphics.setInt, s.int);
-				setCL(graphics.setInts, s.ints);
-				if (s.ivec2 != null)
-					for (l in s.ivec2.keys()) {
-						var x = s.ivec2.get(l);
-						graphics.setInt2(l, x.x, x.y);
-					}
-				if (s.ivec3 != null)
-					for (l in s.ivec3.keys()) {
-						var x = s.ivec3.get(l);
-						graphics.setInt3(l, x.x, x.y, x.z);
-					}
-				if (s.ivec4 != null)
-					for (l in s.ivec4.keys()) {
-						var x = s.ivec4.get(l);
-						graphics.setInt4(l, x.x, x.y, x.z, x.w);
-					}
-				setCL(graphics.setMatrix3, s.mat3);
-				setCL(graphics.setMatrix, s.mat4);
-				if (s.textures != null)
-					for (t in s.textures.keys())
-						graphics.setTexture(t, s.textures.get(t));
-				if (s.textureParameters != null)
-					for (t in s.textureParameters.keys()) {
-						var p = s.textureParameters.get(t);
-						graphics.setTextureParameters(t, p.uAddressing, p.vAddressing, p.minificationFilter, p.magnificationFilter, p.mipmapFilter);
-					}
-
+			for (state in c.states) {
 				// geometry
-				graphics.setIndexBuffer(s.indexBuffer);
+				graphics.setIndexBuffer(state.indexBuffer);
+				if (state.vertexBuffers != null)
+					graphics.setVertexBuffers(state.vertexBuffers);
+				else
+					graphics.setVertexBuffer(state.vertexBuffer);
 
-				if (s.vertexBuffers != null) {
-					graphics.setVertexBuffers(s.vertexBuffers);
-					graphics.drawIndexedVerticesInstanced(s.instanceCount, s.start, s.count);
-				} else {
-					graphics.setVertexBuffer(s.vertexBuffer);
-					graphics.drawIndexedVertices(s.start, s.count);
+				// constants
+				for (constants in state.constants) {
+					for (c in constants)
+						switch c {
+							case Clear(color, depth, stencil):
+								graphics.clear(color, depth, stencil);
+							case Scissor(x, y, width, height):
+								graphics.scissor(x, y, width, height);
+							case DisableScissor:
+								graphics.disableScissor();
+							case ConstantBool(location, value):
+								graphics.setBool(location, value);
+							case ConstantInt(location, value):
+								graphics.setInt(location, value);
+							case ConstantInts(location, value):
+								graphics.setInts(location, value);
+							case ConstantIVec2(location, value):
+								graphics.setInt2(location, value.x, value.y);
+							case ConstantIVec3(location, value):
+								graphics.setInt3(location, value.x, value.y, value.z);
+							case ConstantIVec4(location, value):
+								graphics.setInt4(location, value.x, value.y, value.z, value.w);
+							case ConstantFloat(location, value):
+								graphics.setFloat(location, value);
+							case ConstantFloats(location, value):
+								graphics.setFloats(location, value);
+							case ConstantVec2(location, value):
+								graphics.setVector2(location, value);
+							case ConstantVec3(location, value):
+								graphics.setVector3(location, value);
+							case ConstantVec4(location, value):
+								graphics.setVector4(location, value);
+							case ConstantMat3(location, value):
+								graphics.setMatrix3(location, value);
+							case ConstantMat4(location, value):
+								graphics.setMatrix(location, value);
+							case ConstantTexture(unit, image):
+								graphics.setTexture(unit, image);
+							case ConstantTextureParameters(unit, parameters):
+								graphics.setTextureParameters(unit, parameters.uAddressing, parameters.vAddressing, parameters.minificationFilter,
+									parameters.magnificationFilter, parameters.mipmapFilter);
+						}
+
+					if (state.vertexBuffers != null)
+						graphics.drawIndexedVerticesInstanced(state.instanceCount, state.start, state.count);
+					else
+						graphics.drawIndexedVertices(state.start, state.count);
+					++drawCalls;
 				}
 			}
 		}
 	}
 
 	public inline function clear(?color:Color, ?depth:Float, ?stencil:Int)
-		graphics.clear(color, depth, stencil);
+		constants.push(Clear(color, depth, stencil));
 
 	public inline function scissor(x:Int, y:Int, width:Int, height:Int)
-		graphics.scissor(x, y, width, height);
+		constants.push(Scissor(x, y, width, height));
 
 	public inline function disableScissor()
-		graphics.disableScissor();
-
-	public inline function draw(start:Int = 0, count:Int = -1) {
-		state.start = start;
-		state.count = count;
-        
-		if (command.pipeline != null && command.pipeline != pipeline)
-			flush();
-		else {
-			command.states.push(state);
-			state = {
-				indexBuffer: state.indexBuffer,
-				vertexBuffer: state.vertexBuffer,
-				vertexBuffers: state.vertexBuffers
-			};
-		}
-	}
-
-	inline function flush() {
-		pipeline = command.pipeline;
-		commands.push(command);
-		state = {
-			indexBuffer: state.indexBuffer,
-			vertexBuffer: state.vertexBuffer,
-			vertexBuffers: state.vertexBuffers
-		};
-		command = {states: [state]}
-	}
+		constants.push(DisableScissor);
 
 	public inline function drawInstanced(instanceCount:Int, start:Int = 0, count:Int = -1) {
 		state.instanceCount = instanceCount;
 		draw(start, count);
 	}
 
-	public inline function setPipeline(pipeline:PipelineState)
+	public inline function draw(start:Int = 0, count:Int = -1) {
+		state.start = start;
+		if (count < 0) {
+			state.count = if (state.indexBuffer != null) state.indexBuffer.count() else if (state.vertexBuffers != null && state.vertexBuffers.length > 0)
+				state.vertexBuffers[0].count() else if (state.vertexBuffer != null) state.vertexBuffer.count() else 0;
+		} else {
+			state.count = count;
+		}
+
+		if (command.states.length == 0)
+			pipeline = command.pipeline;
+		else if (command.pipeline != null && command.pipeline != pipeline) {
+			var nextPipeline = command.pipeline;
+			flush();
+			command.pipeline = nextPipeline;
+			pipeline = nextPipeline;
+		}
+
+		var lastState = command.states.length > 0 ? command.states[command.states.length - 1] : null;
+		if (lastState != null
+			&& lastState.indexBuffer == state.indexBuffer
+			&& lastState.vertexBuffer == state.vertexBuffer
+			&& lastState.vertexBuffers == state.vertexBuffers
+			&& lastState.start == state.start
+			&& lastState.count == state.count
+			&& lastState.instanceCount == state.instanceCount) {
+			if (lastState.constants == null)
+				lastState.constants = [];
+			lastState.constants.push(constants);
+		} else {
+			state.constants = [constants];
+			command.states.push(state);
+		}
+
+		state = {
+			indexBuffer: state.indexBuffer,
+			vertexBuffer: state.vertexBuffer,
+			vertexBuffers: state.vertexBuffers
+		};
+		constants = [];
+	}
+
+	inline function flush() {
+		if (command.pipeline != null)
+			pipeline = command.pipeline;
+		if (command.states.length > 0)
+			commands.push(command);
+		state = {
+			indexBuffer: state.indexBuffer,
+			vertexBuffer: state.vertexBuffer,
+			vertexBuffers: state.vertexBuffers
+		};
+		constants = [];
+		command = {states: []}
+	}
+
+	public inline function setPipeline(pipeline:PipelineState) {
+		if (command.states.length > 0 && command.pipeline != null && command.pipeline != pipeline) {
+			flush();
+		}
 		command.pipeline = pipeline;
+	}
 
 	public inline function setIndexBuffer(indexBuffer:IndexBuffer)
 		state.indexBuffer = indexBuffer;
@@ -221,58 +273,58 @@ class Context3D {
 		state.vertexBuffers = vertexBuffers;
 
 	public inline function setBool(location:ConstantLocation, value:Bool)
-		(state.bool = state.bool ?? []).set(location, value);
+		constants.push(ConstantBool(location, value));
 
 	public inline function setInt(location:ConstantLocation, value:Int)
-		(state.int = state.int ?? []).set(location, value);
+		constants.push(ConstantInt(location, value));
 
 	public inline function setInts(location:ConstantLocation, value:Int32Array)
-		(state.ints = state.ints ?? []).set(location, value);
+		constants.push(ConstantInts(location, value));
 
 	extern overload public inline function setIVec2(location:ConstantLocation, value:Vec2I)
-		(state.ivec2 = state.ivec2 ?? []).set(location, value);
+		constants.push(ConstantIVec2(location, value));
 
 	extern overload public inline function setIVec2(location:ConstantLocation, value1:Int, value2:Int)
 		setIVec2(location, ivec2(value1, value2));
 
 	extern overload public inline function setIVec3(location:ConstantLocation, value:Vec3I)
-		(state.ivec3 = state.ivec3 ?? []).set(location, value);
+		constants.push(ConstantIVec3(location, value));
 
 	extern overload public inline function setIVec3(location:ConstantLocation, value1:Int, value2:Int, value3:Int)
 		setIVec3(location, ivec3(value1, value2, value3));
 
 	extern overload public inline function setIVec4(location:ConstantLocation, value:Vec4I)
-		(state.ivec4 = state.ivec4 ?? []).set(location, value);
+		constants.push(ConstantIVec4(location, value));
 
 	extern overload public inline function setIVec4(location:ConstantLocation, value1:Int, value2:Int, value3:Int, value4:Int)
 		setIVec4(location, ivec4(value1, value2, value3, value4));
 
 	public inline function setFloat(location:ConstantLocation, value:Float)
-		(state.float = state.float ?? []).set(location, value);
+		constants.push(ConstantFloat(location, value));
 
 	public inline function setFloats(location:ConstantLocation, value:Float32Array)
-		(state.floats = state.floats ?? []).set(location, value);
+		constants.push(ConstantFloats(location, value));
 
 	extern overload public inline function setVec2(location:ConstantLocation, value:Vec2)
-		(state.vec2 = state.vec2 ?? []).set(location, value);
+		constants.push(ConstantVec2(location, value));
 
 	extern overload public inline function setVec2(location:ConstantLocation, value1:Float, value2:Float)
 		setVec2(location, vec2(value1, value2));
 
 	extern overload public inline function setVec3(location:ConstantLocation, value:Vec3)
-		(state.vec3 = state.vec3 ?? []).set(location, value);
+		constants.push(ConstantVec3(location, value));
 
 	extern overload public inline function setVec3(location:ConstantLocation, value1:Float, value2:Float, value3:Float)
 		setVec3(location, vec3(value1, value2, value3));
 
 	extern overload public inline function setVec4(location:ConstantLocation, value:Vec4)
-		(state.vec4 = state.vec4 ?? []).set(location, value);
+		constants.push(ConstantVec4(location, value));
 
 	extern overload public inline function setVec4(location:ConstantLocation, value1:Float, value2:Float, value3:Float, value4:Float)
 		setVec4(location, vec4(value1, value2, value3, value4));
 
 	extern overload public inline function setMat3(location:ConstantLocation, value:Mat3)
-		(state.mat3 = state.mat3 ?? []).set(location, value);
+		constants.push(ConstantMat3(location, value));
 
 	extern overload public inline function setMat3(location:ConstantLocation, value1:Vec3, value2:Vec3, value3:Vec3)
 		setMat3(location, mat3(value1, value2, value3));
@@ -282,7 +334,7 @@ class Context3D {
 		setMat3(location, mat3(a00, a10, a20, a01, a11, a21, a02, a12, a22));
 
 	extern overload public inline function setMat4(location:ConstantLocation, value:Mat4)
-		(state.mat4 = state.mat4 ?? []).set(location, value);
+		constants.push(ConstantMat4(location, value));
 
 	extern overload public inline function setMat4(location:ConstantLocation, value1:Vec4, value2:Vec4, value3:Vec4, value4:Vec4)
 		setMat4(location, mat4(value1, value2, value3, value4));
@@ -292,7 +344,7 @@ class Context3D {
 		setMat4(location, mat4(a00, a10, a20, a30, a01, a11, a21, a31, a02, a12, a22, a32, a03, a13, a23, a33));
 
 	extern overload public inline function setTexture(unit:TextureUnit, texture:Image)
-		(state.textures = state.textures ?? []).set(unit, texture);
+		constants.push(ConstantTexture(unit, texture));
 
 	extern overload public inline function setTexture(unit:TextureUnit, texture:Image, parameters:TextureParameters) {
 		setTexture(unit, texture);
@@ -316,5 +368,5 @@ class Context3D {
 		});
 
 	overload extern public inline function setTextureParameters(unit:TextureUnit, parameters:TextureParameters)
-		(state.textureParameters = state.textureParameters ?? []).set(unit, parameters);
+		constants.push(ConstantTextureParameters(unit, parameters));
 }

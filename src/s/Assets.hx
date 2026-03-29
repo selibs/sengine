@@ -68,7 +68,7 @@ abstract AssetList<T:Resource>(StringMap<T>) {
 
 @:build(s.macro.AssetsMacro.build())
 class Assets {
-	static final logger = new s.Log.Logger("ASSETS");
+	static final logger = new Log.Logger("ASSETS");
 }
 
 abstract class AssetFormat<T> {
@@ -110,10 +110,7 @@ abstract AssetLocation(AssetLocationType) from AssetLocationType to AssetLocatio
 			case "file": File(uri.path ?? "");
 			case "http", "https", "ws", "wss": Web(cloneUri(uri));
 			case _:
-				if (isWindowsDriveScheme(uri, value))
-					File(normalizeFilePath(value));
-				else
-					Web(cloneUri(uri));
+				if (isWindowsDriveScheme(uri, value)) File(normalizeFilePath(value)); else Web(cloneUri(uri));
 		}
 	}
 
@@ -224,8 +221,8 @@ private function isLikelyDomain(value:String):Bool {
 }
 
 private function defaultWebUri(value:String):URI
-	return new URI("https", true, true, HostInfo.fromString(value.split("/")[0]), null, null,
-		value.indexOf("/") >= 0 ? value.substr(value.indexOf("/")) : "", null, null);
+	return new URI("https", true, true, HostInfo.fromString(value.split("/")[0]), null, null, value.indexOf("/") >= 0 ? value.substr(value.indexOf("/")) : "",
+		null, null);
 
 private function normalizeFilePath(value:String):String
 	return value.replace("\\", "/");

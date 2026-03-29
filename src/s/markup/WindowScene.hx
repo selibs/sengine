@@ -7,6 +7,7 @@ import s.Window;
 import s.math.Mat3;
 import s.math.SMath;
 import s.graphics.Context2D;
+import s.graphics.Context3D;
 
 using s.extensions.StringExt;
 
@@ -14,9 +15,8 @@ using s.extensions.StringExt;
 class WindowScene implements s.shortcut.Shortcut {
 	var projection:Mat3;
 
-	static inline function createProjection(width:Int, height:Int):Mat3 {
+	static inline function createProjection(width:Int, height:Int):Mat3
 		return kha.Image.renderTargetsInvertedY() ? Mat3.orthogonalProjection(0.0, width, 0.0, height) : Mat3.orthogonalProjection(0.0, width, height, 0.0);
-	}
 
 	// var pending:Array<Element> = [];
 	// var entered:Array<InteractiveElement> = [];
@@ -81,12 +81,17 @@ class WindowScene implements s.shortcut.Shortcut {
 	function render(target:RenderTarget) {
 		root.syncTree();
 
+		#if S2D_DEBUG_FPS
+		@:privateAccess Context3D.drawCalls = 0;
+		#end
 		final ctx = target.context2D;
 		ctx.begin();
 		ctx.clear(color);
 		ctx.pushTransform(projection);
 		Element.renderElement(root, target);
+		ctx.end();
 		#if (S2D_UI_DEBUG_ELEMENT_BOUNDS == 1)
+		ctx.begin();
 		var e = elementAt(App.input.mouse.x, App.input.mouse.y);
 		if (e != null)
 			drawBounds(e, ctx);
@@ -107,12 +112,13 @@ class WindowScene implements s.shortcut.Shortcut {
 		}
 
 		draw("FPS: " + fps);
-		draw("Frame (ms): " + roundTo(time, 1));
+		draw("Draw calls: " + Context3D.drawCalls);
+		draw("Frame (ms): " + roundTo(time * 1000, 1));
 		draw("CPU (ms): " + roundTo(target.context3D.cpuTime, 1));
 		draw("GPU (ms): " + roundTo(target.context3D.gpuTime, 1));
+		ctx.end();
 		#end
 		ctx.popTransform();
-		ctx.end();
 	}
 
 	#if (S2D_UI_DEBUG_ELEMENT_BOUNDS == 1)

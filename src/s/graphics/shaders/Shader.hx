@@ -12,11 +12,10 @@ import kha.graphics4.BlendingFactor;
 import kha.graphics4.BlendingOperation;
 import kha.graphics4.TextureFormat;
 import kha.graphics4.DepthStencilFormat;
-import s.Log.Logger;
 
 @:autoBuild(s.macro.ShaderMacro.build())
 abstract class Shader {
-	static final logger:Logger = new Logger("SHADERS");
+	static final logger:Log.Logger = new Log.Logger("SHADERS");
 	static var shaders:Array<Shader> = [];
 
 	var state:ShaderPipelineState;

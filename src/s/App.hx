@@ -3,7 +3,6 @@ package s;
 import kha.System;
 import kha.Framebuffer;
 import aura.Aura;
-import s.Log;
 import s.Window;
 import s.input.Mouse;
 import s.input.Keyboard;
@@ -211,7 +210,7 @@ enum AppState {
  */
 @:autoBuild(s.macro.AppMacro.build())
 class App implements s.shortcut.Shortcut {
-	static final logger:Logger = new Logger("APP");
+	static final logger:Log.Logger = new Log.Logger("APP");
 	static var windows(default, null):Array<Window> = [];
 
 	/**
