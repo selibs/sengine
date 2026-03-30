@@ -56,7 +56,7 @@ class SpritePass extends StageRenderPass {
 			for (material in layer.materials) {
 				ctx.setVertexBuffers(material.vertices);
 				ctx.setTexture(textureMapTU, material.textureMap);
-				ctx.commitInstanced(material.sprites.length);
+				ctx.drawInstanced(material.sprites.length);
 			}
 			#else
 			for (sprite in layer.sprites) {
@@ -64,7 +64,7 @@ class SpritePass extends StageRenderPass {
 				ctx.setMat3(modelCL, sprite.transform);
 				ctx.setVec4(cropRectCL, sprite.cropRect);
 				ctx.setTexture(textureMapTU, sprite.material.textureMap);
-				ctx.commit();
+				ctx.draw();
 			}
 			#end
 		}

@@ -37,7 +37,7 @@ class Bloom extends PPEffect {
 		// ctx3d.setTexture(textureMapTU, Renderer.buffer.src);
 		// ctx3d.setTextureParameters(textureMapTU, Clamp, Clamp, LinearFilter, LinearFilter, LinearMipFilter);
 		// ctx3d.setFloat3(paramsCL, radius, threshold, intensity);
-		// ctx3d.commit();
+		// ctx3d.draw();
 		// ctx.end();
 	}
 }

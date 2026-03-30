@@ -52,7 +52,7 @@ class Compositor extends PPEffect {
 		// ctx3d.setVertexBuffer(@:privateAccess s.sengine.vertices);
 		// ctx3d.setTexture(textureMapTU, Renderer.buffer.src);
 		// ctx3d.setFloats(paramsCL, params);
-		// ctx3d.commit();
+		// ctx3d.draw();
 		// ctx3d.disableScissor();
 		// ctx.end();
 	}

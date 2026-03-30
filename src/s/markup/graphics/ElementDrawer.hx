@@ -53,6 +53,6 @@ abstract class ElementDrawer<T:DrawableElement> extends Shader {
 
 	function draw(target:RenderTarget, element:T):Void {
 		final ctx = target.context3D;
-		ctx.commit();
+		ctx.draw();
 	}
 }

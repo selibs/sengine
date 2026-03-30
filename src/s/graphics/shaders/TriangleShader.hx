@@ -32,6 +32,6 @@ class TriangleShader extends Shader {
 		ctx.setMesh([[[x1, y1, 0.0, 1.0], [x2, y2, 0.5, 0.0], [x3, y3, 1.0, 1.0]]]);
 		ctx.setMat3(mvpCL, context.transform);
 		ctx.setVec4(colorCL, color.r, color.g, color.b, color.a * style.opacity);
-		ctx.commit();
+		ctx.draw();
 	}
 }

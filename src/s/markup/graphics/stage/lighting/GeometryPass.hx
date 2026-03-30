@@ -79,7 +79,7 @@ class GeometryPass extends StageRenderPass {
 				#if (S2D_LIGHTING_PBR == 1)
 				ctx.setTexture(ormMapTU, material.ormMap);
 				#end
-				ctx.commitInstanced(material.sprites.length);
+				ctx.drawInstanced(material.sprites.length);
 			}
 			#else
 			for (sprite in layer.sprites) {
@@ -92,7 +92,7 @@ class GeometryPass extends StageRenderPass {
 				#if (S2D_LIGHTING_PBR == 1)
 				ctx.setTexture(ormMapTU, sprite.material.ormMap);
 				#end
-				ctx.commit();
+				ctx.draw();
 			}
 			#end
 		}

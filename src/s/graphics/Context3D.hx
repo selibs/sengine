@@ -19,8 +19,8 @@ import s.math.Vec3I;
 import s.math.Vec4I;
 import s.math.SMath;
 import s.assets.Image;
-import s.graphics.RenderTarget;
 import s.graphics.VertexBuffer;
+import s.graphics.RenderTarget;
 
 private final logger:Log.Logger = new Log.Logger("RENDER");
 
@@ -46,66 +46,80 @@ enum DrawCommand {
 }
 
 typedef DrawStep = {
-	var start:Int;
-	var count:Int;
-	@:optional var instanceCount:Int;
-	var commands:Array<DrawCommand>;
+	start:Int,
+	count:Int,
+	?instanceCount:Int,
+	commands:Array<DrawCommand>
 }
 
 typedef MeshRange = {
-	var start:Int;
-	var count:Int;
+	start:Int,
+	count:Int
 }
 
 typedef DrawState = {
-	@:optional var pipeline:PipelineState;
-	@:optional var indexBuffer:IndexBuffer;
-	@:optional var vertexBuffer:VertexBuffer;
+	?pipeline:PipelineState,
+	?indexBuffer:IndexBuffer,
+	?vertexBuffer:VertexBuffer,
 
-	var meshRefs:Array<Mesh>;
-	var meshVertexCounts:Array<Int>;
-	var meshIndexCounts:Array<Int>;
-	var meshRanges:ObjectMap<Mesh, MeshRange>;
-	var meshRefCount:Int;
-	var prevMeshRefCount:Int;
+	meshRefs:Array<Mesh>,
+	meshVertexCounts:Array<Int>,
+	meshIndexCounts:Array<Int>,
+	meshRanges:ObjectMap<Mesh, MeshRange>,
+	meshRefCount:Int,
+	prevMeshRefCount:Int,
 
-	var steps:Array<DrawStep>;
+	steps:Array<DrawStep>,
 
-	var vertexCount:Int;
-	var indexCount:Int;
-	var prevVertexCount:Int;
-	var prevIndexCount:Int;
+	vertexCount:Int,
+	indexCount:Int,
+	prevVertexCount:Int,
+	prevIndexCount:Int,
 
-	var vbCapacity:Int;
-	var ibCapacity:Int;
+	vbCapacity:Int,
+	ibCapacity:Int,
 
-	var meshDirty:Bool;
+	meshDirty:Bool
 }
 
 @:allow(s.graphics.RenderTarget)
 class Context3D {
 	final graphics:Graphics;
 
-	var states:Array<DrawState>;
-	var frameStateCount:Int = 0;
-	public var frameId(default, null):Int = 0;
+	// pipeline -> list of states for 1st use of pipeline in frame, 2nd use, 3rd use, ...
+	var pipelineStateCache:ObjectMap<PipelineState, Array<DrawState>> = new ObjectMap();
+	var commandStateCache:Array<DrawState> = [];
 
+	// current frame order
+	var frameStates:Array<DrawState> = [];
+	var pipelineUseCounts:ObjectMap<PipelineState, Int> = new ObjectMap();
+	var commandStateUseCount:Int = 0;
+
+	// current recorder bindings
 	var recordingPipeline:PipelineState;
 	var recordingMesh:Mesh;
 	var recordingVertexCount:Int = 0;
 	var recordingIndexCount:Int = 0;
 	var recordingForceDirty:Bool = false;
 	var recordingDirty:Bool = false;
-
 	var step:DrawStep;
 
 	#if S2D_DEBUG_FPS
+	public static var cpuTime(default, null):Float;
+	public static var gpuTime(default, null):Float;
 	public static var drawCalls(default, null):Int = 0;
+	public static var ibAllocations(default, null):Int = 0;
+	public static var vbAllocations(default, null):Int = 0;
+
+	public static function reset() {
+		cpuTime = 0;
+		gpuTime = 0;
+		drawCalls = 0;
+		ibAllocations = 0;
+		vbAllocations = 0;
+	}
 
 	var beginTime:Float;
-
-	public var cpuTime(default, null):Float;
-	public var gpuTime(default, null):Float;
 	#end
 
 	public final vsynced:Bool;
@@ -117,41 +131,18 @@ class Context3D {
 		vsynced = graphics.vsynced();
 		refreshRate = graphics.refreshRate();
 		instancedRenderingAvailable = graphics.instancedRenderingAvailable();
-
-		states = [];
-		resetRecording();
+		resetRecording(true);
 	}
 
-	inline function resetRecording() {
-		recordingPipeline = null;
-		recordingMesh = null;
-		recordingVertexCount = 0;
-		recordingIndexCount = 0;
-		recordingForceDirty = false;
-		recordingDirty = false;
-		step = newStep();
-	}
+	inline function newStep():DrawStep
+		return {start: 0, count: 0, commands: []};
 
-	inline function resetStepOnly() {
-		recordingForceDirty = false;
-		recordingDirty = false;
-		step = newStep();
-	}
-
-	inline function newStep():DrawStep {
-		return {
-			start: 0,
-			count: 0,
-			commands: []
-		};
-	}
-
-	inline function newState():DrawState {
+	inline function newState():DrawState
 		return {
 			meshRefs: [],
 			meshVertexCounts: [],
 			meshIndexCounts: [],
-			meshRanges: new ObjectMap<Mesh, MeshRange>(),
+			meshRanges: new ObjectMap(),
 			meshRefCount: 0,
 			prevMeshRefCount: 0,
 			steps: [],
@@ -163,194 +154,205 @@ class Context3D {
 			ibCapacity: 0,
 			meshDirty: true
 		};
+
+	inline function resetRecording(full:Bool = false) {
+		if (full) {
+			recordingPipeline = null;
+			recordingMesh = null;
+			recordingVertexCount = 0;
+			recordingIndexCount = 0;
+		}
+		recordingForceDirty = false;
+		recordingDirty = false;
+		step = newStep();
 	}
 
-	inline function acquireStateSlot(index:Int):DrawState {
-		if (index < states.length)
-			return states[index];
+	inline function resetStepOnly() {
+		recordingForceDirty = false;
+		recordingDirty = false;
+		step = newStep();
+	}
 
-		var s = newState();
-		states.push(s);
+	inline function markDirty()
+		recordingDirty = true;
+
+	inline function meshVertices(mesh:Mesh):Int {
+		var n = 0;
+		if (mesh != null)
+			for (p in mesh)
+				n += p.length;
+		return n;
+	}
+
+	inline function meshIndices(mesh:Mesh):Int {
+		var n = 0;
+		if (mesh != null)
+			for (p in mesh)
+				if (p.length >= 3)
+					n += (p.length - 2) * 3;
+		return n;
+	}
+
+	inline function clampCount(start:Int, count:Int, total:Int):Int {
+		if (start >= total)
+			return 0;
+
+		var c = count < 0 ? total - start : count;
+		return c > total - start ? total - start : (c < 0 ? 0 : c);
+	}
+
+	inline function nextCapacity(v:Int):Int {
+		var c = 1;
+		while (c < v)
+			c <<= 1;
+		return c;
+	}
+
+	inline function prepareFrameState(s:DrawState) {
+		s.prevMeshRefCount = s.meshRefCount;
+		s.prevVertexCount = s.vertexCount;
+		s.prevIndexCount = s.indexCount;
+
+		for (i in 0...s.meshRefCount)
+			s.meshRanges.remove(s.meshRefs[i]);
+
+		s.meshRefCount = 0;
+		s.vertexCount = 0;
+		s.indexCount = 0;
+		s.steps.resize(0);
+	}
+
+	inline function finalizeFrameState(s:DrawState) {
+		if (s.meshRefCount != s.prevMeshRefCount || s.vertexCount != s.prevVertexCount || s.indexCount != s.prevIndexCount)
+			s.meshDirty = true;
+	}
+
+	inline function acquirePipelineState(pipeline:PipelineState):DrawState {
+		var list = pipelineStateCache.get(pipeline);
+		if (list == null) {
+			list = [];
+			pipelineStateCache.set(pipeline, list);
+		}
+
+		var useIndex = pipelineUseCounts.get(pipeline);
+		if (useIndex == null)
+			useIndex = 0;
+		pipelineUseCounts.set(pipeline, useIndex + 1);
+
+		var s:DrawState;
+		if (useIndex < list.length) {
+			s = list[useIndex];
+		} else {
+			s = newState();
+			s.pipeline = pipeline;
+			list.push(s);
+		}
+
+		prepareFrameState(s);
+		frameStates.push(s);
 		return s;
 	}
 
-	inline function prepareStateSlot(slot:DrawState, pipeline:PipelineState) {
-		slot.prevMeshRefCount = slot.meshRefCount;
-		slot.prevVertexCount = slot.vertexCount;
-		slot.prevIndexCount = slot.indexCount;
-
-		// очищаем map текущего кадра, но сохраняем старые массивы для сравнения
-		for (i in 0...slot.meshRefCount)
-			slot.meshRanges.remove(slot.meshRefs[i]);
-
-		slot.meshRefCount = 0;
-		slot.vertexCount = 0;
-		slot.indexCount = 0;
-		slot.steps.resize(0);
-
-		if (slot.pipeline != pipeline) {
-			slot.pipeline = pipeline;
-			slot.meshDirty = true;
-
-			if (slot.vertexBuffer != null) {
-				slot.vertexBuffer.delete();
-				slot.vertexBuffer = null;
-			}
-
-			if (slot.indexBuffer != null) {
-				slot.indexBuffer.delete();
-				slot.indexBuffer = null;
-			}
-
-			slot.vbCapacity = 0;
-			slot.ibCapacity = 0;
+	inline function acquireCommandState():DrawState {
+		var s:DrawState;
+		if (commandStateUseCount < commandStateCache.length) {
+			s = commandStateCache[commandStateUseCount];
+		} else {
+			s = newState();
+			commandStateCache.push(s);
 		}
+		commandStateUseCount++;
+
+		s.pipeline = null;
+		prepareFrameState(s);
+		frameStates.push(s);
+		return s;
 	}
 
-	inline function finalizeStateSlot(slot:DrawState) {
-		if (slot.meshRefCount != slot.prevMeshRefCount)
-			slot.meshDirty = true;
-
-		if (slot.vertexCount != slot.prevVertexCount)
-			slot.meshDirty = true;
-
-		if (slot.indexCount != slot.prevIndexCount)
-			slot.meshDirty = true;
-	}
-
-	inline function countMeshVertices(mesh:Mesh):Int {
-		if (mesh == null)
-			return 0;
-
-		var total = 0;
-		for (p in mesh)
-			total += p.length;
-		return total;
-	}
-
-	inline function countMeshIndices(mesh:Mesh):Int {
-		if (mesh == null)
-			return 0;
-
-		var total = 0;
-		for (p in mesh) {
-			var n = p.length;
-			if (n >= 3)
-				total += (n - 2) * 3;
-		}
-		return total;
-	}
-
-	inline function clampDrawCount(start:Int, count:Int, totalIndices:Int):Int {
-		if (start >= totalIndices)
-			return 0;
-
-		var drawCount = count < 0 ? (totalIndices - start) : count;
-		if (drawCount > totalIndices - start)
-			drawCount = totalIndices - start;
-		if (drawCount < 0)
-			drawCount = 0;
-		return drawCount;
-	}
-
-	inline function nextCapacity(value:Int):Int {
-		var cap = 1;
-		while (cap < value)
-			cap <<= 1;
-		return cap;
-	}
-
-	inline function appendOrGetMeshRange(slot:DrawState, mesh:Mesh, localVertexCount:Int, localIndexCount:Int, forceDirty:Bool):MeshRange {
-		var range = slot.meshRanges.get(mesh);
-		if (range != null) {
+	inline function appendOrGetMeshRange(s:DrawState, mesh:Mesh, vc:Int, ic:Int, forceDirty:Bool):MeshRange {
+		var r = s.meshRanges.get(mesh);
+		if (r != null) {
 			if (forceDirty)
-				slot.meshDirty = true;
-			return range;
+				s.meshDirty = true;
+			return r;
 		}
 
-		var pos = slot.meshRefCount;
-		var sameAsPrev = pos < slot.prevMeshRefCount
-			&& slot.meshRefs[pos] == mesh
-			&& slot.meshVertexCounts[pos] == localVertexCount
-			&& slot.meshIndexCounts[pos] == localIndexCount;
+		var pos = s.meshRefCount;
+		var sameAsPrev = pos < s.prevMeshRefCount && s.meshRefs[pos] == mesh && s.meshVertexCounts[pos] == vc && s.meshIndexCounts[pos] == ic;
 
 		if (!sameAsPrev || forceDirty)
-			slot.meshDirty = true;
+			s.meshDirty = true;
 
-		if (pos < slot.meshRefs.length)
-			slot.meshRefs[pos] = mesh;
+		if (pos < s.meshRefs.length)
+			s.meshRefs[pos] = mesh;
 		else
-			slot.meshRefs.push(mesh);
+			s.meshRefs.push(mesh);
 
-		if (pos < slot.meshVertexCounts.length)
-			slot.meshVertexCounts[pos] = localVertexCount;
+		if (pos < s.meshVertexCounts.length)
+			s.meshVertexCounts[pos] = vc;
 		else
-			slot.meshVertexCounts.push(localVertexCount);
+			s.meshVertexCounts.push(vc);
 
-		if (pos < slot.meshIndexCounts.length)
-			slot.meshIndexCounts[pos] = localIndexCount;
+		if (pos < s.meshIndexCounts.length)
+			s.meshIndexCounts[pos] = ic;
 		else
-			slot.meshIndexCounts.push(localIndexCount);
+			s.meshIndexCounts.push(ic);
 
-		range = {
-			start: slot.indexCount,
-			count: localIndexCount
-		};
+		r = {start: s.indexCount, count: ic};
+		s.meshRanges.set(mesh, r);
 
-		slot.meshRanges.set(mesh, range);
-		slot.meshRefCount++;
-		slot.vertexCount += localVertexCount;
-		slot.indexCount += localIndexCount;
+		s.meshRefCount++;
+		s.vertexCount += vc;
+		s.indexCount += ic;
 
-		return range;
+		return r;
 	}
 
-	inline function ensureBuffers(slot:DrawState) {
-		if (slot == null || slot.pipeline == null)
+	inline function ensureBuffers(s:DrawState) {
+		if (s == null || s.pipeline == null || s.vertexCount <= 0 || s.indexCount <= 0)
 			return;
 
-		if (slot.vertexCount <= 0 || slot.indexCount <= 0)
-			return;
+		var structure = s.pipeline.inputLayout[0];
 
-		var structure = slot.pipeline.inputLayout[0];
+		if (s.vertexBuffer == null || s.vbCapacity < s.vertexCount) {
+			if (s.vertexBuffer != null)
+				s.vertexBuffer.delete();
 
-		if (slot.vertexBuffer == null || slot.vbCapacity < slot.vertexCount) {
-			if (slot.vertexBuffer != null)
-				slot.vertexBuffer.delete();
+			s.vbCapacity = nextCapacity(s.vertexCount);
+			s.vertexBuffer = new VertexBuffer(s.vbCapacity, structure, StaticUsage);
+			s.meshDirty = true;
 
-			slot.vbCapacity = nextCapacity(slot.vertexCount);
-			slot.vertexBuffer = new VertexBuffer(slot.vbCapacity, structure, StaticUsage);
-			slot.meshDirty = true;
+			#if S2D_DEBUG_FPS
+			++ vbAllocations;
+			#end
 		}
 
-		if (slot.indexBuffer == null || slot.ibCapacity < slot.indexCount) {
-			if (slot.indexBuffer != null)
-				slot.indexBuffer.delete();
+		if (s.indexBuffer == null || s.ibCapacity < s.indexCount) {
+			if (s.indexBuffer != null)
+				s.indexBuffer.delete();
 
-			slot.ibCapacity = nextCapacity(slot.indexCount);
-			slot.indexBuffer = new IndexBuffer(slot.ibCapacity, StaticUsage);
-			slot.meshDirty = true;
+			s.ibCapacity = nextCapacity(s.indexCount);
+			s.indexBuffer = new IndexBuffer(s.ibCapacity, StaticUsage);
+			s.meshDirty = true;
+
+			#if S2D_DEBUG_FPS
+			++ ibAllocations;
+			#end
 		}
 
-		if (!slot.meshDirty)
+		if (!s.meshDirty)
 			return;
 
-		uploadMesh(slot);
-		slot.meshDirty = false;
-	}
-
-	inline function uploadMesh(slot:DrawState) {
-		var vert = slot.vertexBuffer.lock();
-		var ind = slot.indexBuffer.lock();
-
-		var floatsPerVertex = slot.vertexBuffer.stride() >> 2;
+		var vert = s.vertexBuffer.lock();
+		var ind = s.indexBuffer.lock();
+		var fpv = s.vertexBuffer.stride() >> 2;
 
 		var vertexOffset = 0;
 		var vertWrite = 0;
 		var indWrite = 0;
 
-		for (m in 0...slot.meshRefCount) {
-			var mesh = slot.meshRefs[m];
+		for (m in 0...s.meshRefCount) {
+			var mesh = s.meshRefs[m];
 
 			for (p in mesh) {
 				var n = p.length;
@@ -358,53 +360,110 @@ class Context3D {
 					continue;
 
 				for (v in p) {
-					if (v.length != floatsPerVertex)
-						throw 'Vertex size mismatch. Expected $floatsPerVertex floats, got ${v.length}.';
+					if (v.length != fpv)
+						throw 'Vertex size mismatch. Expected $fpv floats, got ${v.length}.';
 
-					for (i in 0...floatsPerVertex)
+					for (i in 0...fpv)
 						vert[vertWrite + i] = v[i];
-
-					vertWrite += floatsPerVertex;
+					vertWrite += fpv;
 				}
 
-				if (n >= 3) {
+				if (n >= 3)
 					for (i in 1...n - 1) {
 						ind[indWrite++] = vertexOffset;
 						ind[indWrite++] = vertexOffset + i;
 						ind[indWrite++] = vertexOffset + i + 1;
 					}
-				}
 
 				vertexOffset += n;
 			}
 		}
 
-		slot.vertexBuffer.unlock();
-		slot.indexBuffer.unlock();
+		s.vertexBuffer.unlock();
+		s.indexBuffer.unlock();
+		s.meshDirty = false;
 	}
 
-	inline function hasPendingRecording():Bool {
+	inline function hasPendingRecording():Bool
 		return recordingDirty && (recordingMesh != null || step.commands.length > 0 || step.instanceCount != null);
-	}
 
-	function pushStep(slot:DrawState, start:Int, count:Int, instanceCount:Null<Int>, commands:Array<DrawCommand>) {
+	function pushStep(s:DrawState, start:Int, count:Int, instanceCount:Null<Int>, commands:Array<DrawCommand>) {
 		if (count == 0 && commands.length == 0)
 			return;
 
-		if (commands.length == 0 && count > 0 && instanceCount == null && slot.steps.length > 0) {
-			var prev = slot.steps[slot.steps.length - 1];
+		if (commands.length == 0 && count > 0 && instanceCount == null && s.steps.length > 0) {
+			var prev = s.steps[s.steps.length - 1];
 			if (prev.instanceCount == null && prev.start + prev.count == start) {
 				prev.count += count;
 				return;
 			}
 		}
 
-		slot.steps.push({
+		s.steps.push({
 			start: start,
 			count: count,
 			instanceCount: instanceCount,
 			commands: commands
 		});
+	}
+
+	inline function applyCommand(command:DrawCommand) {
+		switch command {
+			case Clear(color, depth, stencil):
+				graphics.clear(color, depth, stencil);
+
+			case Scissor(x, y, width, height):
+				graphics.scissor(x, y, width, height);
+
+			case DisableScissor:
+				graphics.disableScissor();
+
+			case UniformBool(location, value):
+				graphics.setBool(location, value);
+
+			case UniformInt(location, value):
+				graphics.setInt(location, value);
+
+			case UniformInts(location, value):
+				graphics.setInts(location, value);
+
+			case UniformIVec2(location, value):
+				graphics.setInt2(location, value.x, value.y);
+
+			case UniformIVec3(location, value):
+				graphics.setInt3(location, value.x, value.y, value.z);
+
+			case UniformIVec4(location, value):
+				graphics.setInt4(location, value.x, value.y, value.z, value.w);
+
+			case UniformFloat(location, value):
+				graphics.setFloat(location, value);
+
+			case UniformFloats(location, value):
+				graphics.setFloats(location, value);
+
+			case UniformVec2(location, value):
+				graphics.setVector2(location, value);
+
+			case UniformVec3(location, value):
+				graphics.setVector3(location, value);
+
+			case UniformVec4(location, value):
+				graphics.setVector4(location, value);
+
+			case UniformMat3(location, value):
+				graphics.setMatrix3(location, value);
+
+			case UniformMat4(location, value):
+				graphics.setMatrix(location, value);
+
+			case UniformTexture(unit, image):
+				graphics.setTexture(unit, image);
+
+			case UniformTextureParameters(unit, parameters):
+				graphics.setTextureParameters(unit, parameters.uAddressing, parameters.vAddressing, parameters.minificationFilter,
+					parameters.magnificationFilter, parameters.mipmapFilter);
+		}
 	}
 
 	public inline function begin(?mrt:Array<kha.Canvas>) {
@@ -414,100 +473,46 @@ class Context3D {
 
 		graphics.begin(mrt);
 
-		frameId++;
-		frameStateCount = 0;
-		resetRecording();
+		frameStates.resize(0);
+		pipelineUseCounts = new ObjectMap();
+		commandStateUseCount = 0;
+
+		resetRecording(true);
 	}
 
 	public inline function end() {
 		#if S2D_DEBUG_FPS
-		cpuTime = haxe.Timer.stamp() * 1000 - beginTime;
+		var currentCpuTime = haxe.Timer.stamp() * 1000 - beginTime;
+		cpuTime += currentCpuTime;
 		#end
 
 		if (hasPendingRecording())
-			commit();
+			draw();
 
-		for (i in 0...frameStateCount)
-			finalizeStateSlot(states[i]);
+		for (s in frameStates)
+			finalizeFrameState(s);
 
 		try {
-			for (i in 0...frameStateCount) {
-				var slot = states[i];
+			for (s in frameStates) {
+				ensureBuffers(s);
 
-				ensureBuffers(slot);
+				if (s.pipeline != null)
+					graphics.setPipeline(s.pipeline);
 
-				graphics.setPipeline(slot.pipeline);
-
-				if (slot.vertexBuffer != null && slot.indexBuffer != null) {
-					graphics.setIndexBuffer(slot.indexBuffer);
-					graphics.setVertexBuffer(slot.vertexBuffer);
+				if (s.vertexBuffer != null && s.indexBuffer != null) {
+					graphics.setIndexBuffer(s.indexBuffer);
+					graphics.setVertexBuffer(s.vertexBuffer);
 				}
 
-				for (step in slot.steps) {
-					for (command in step.commands) {
-						switch command {
-							case Clear(color, depth, stencil):
-								graphics.clear(color, depth, stencil);
+				for (st in s.steps) {
+					for (command in st.commands)
+						applyCommand(command);
 
-							case Scissor(x, y, width, height):
-								graphics.scissor(x, y, width, height);
-
-							case DisableScissor:
-								graphics.disableScissor();
-
-							case UniformBool(location, value):
-								graphics.setBool(location, value);
-
-							case UniformInt(location, value):
-								graphics.setInt(location, value);
-
-							case UniformInts(location, value):
-								graphics.setInts(location, value);
-
-							case UniformIVec2(location, value):
-								graphics.setInt2(location, value.x, value.y);
-
-							case UniformIVec3(location, value):
-								graphics.setInt3(location, value.x, value.y, value.z);
-
-							case UniformIVec4(location, value):
-								graphics.setInt4(location, value.x, value.y, value.z, value.w);
-
-							case UniformFloat(location, value):
-								graphics.setFloat(location, value);
-
-							case UniformFloats(location, value):
-								graphics.setFloats(location, value);
-
-							case UniformVec2(location, value):
-								graphics.setVector2(location, value);
-
-							case UniformVec3(location, value):
-								graphics.setVector3(location, value);
-
-							case UniformVec4(location, value):
-								graphics.setVector4(location, value);
-
-							case UniformMat3(location, value):
-								graphics.setMatrix3(location, value);
-
-							case UniformMat4(location, value):
-								graphics.setMatrix(location, value);
-
-							case UniformTexture(unit, image):
-								graphics.setTexture(unit, image);
-
-							case UniformTextureParameters(unit, parameters):
-								graphics.setTextureParameters(unit, parameters.uAddressing, parameters.vAddressing, parameters.minificationFilter,
-									parameters.magnificationFilter, parameters.mipmapFilter);
-						}
-					}
-
-					if (step.count > 0) {
-						if (step.instanceCount != null)
-							graphics.drawIndexedVerticesInstanced(step.instanceCount, step.start, step.count);
+					if (st.count > 0) {
+						if (st.instanceCount != null)
+							graphics.drawIndexedVerticesInstanced(st.instanceCount, st.start, st.count);
 						else
-							graphics.drawIndexedVertices(step.start, step.count);
+							graphics.drawIndexedVertices(st.start, st.count);
 
 						#if S2D_DEBUG_FPS
 						++ drawCalls;
@@ -522,50 +527,40 @@ class Context3D {
 		graphics.end();
 
 		#if S2D_DEBUG_FPS
-		gpuTime = haxe.Timer.stamp() * 1000 - beginTime - cpuTime;
+		gpuTime += haxe.Timer.stamp() * 1000 - beginTime - currentCpuTime;
 		#end
 	}
 
-	public inline function commitInstanced(instanceCount:Int, start:Int = 0, count:Int = -1) {
+	public inline function drawInstanced(instanceCount:Int, start:Int = 0, count:Int = -1) {
 		step.instanceCount = instanceCount;
-		commit(start, count);
+		draw(start, count);
 	}
 
-	public inline function commit(start:Int = 0, count:Int = -1) {
-		if (recordingPipeline == null) {
-			resetStepOnly();
-			return;
+	public inline function draw(start:Int = 0, count:Int = -1) {
+		if (recordingPipeline != null) {
+			if (start < 0)
+				start = 0;
+			if (start > recordingIndexCount)
+				start = recordingIndexCount;
+
+			var drawCount = clampCount(start, count, recordingIndexCount);
+
+			var prev = frameStates.length > 0 ? frameStates[frameStates.length - 1] : null;
+			var canBatch = prev != null && prev.pipeline == recordingPipeline && step.instanceCount == null;
+
+			var s = canBatch ? prev : acquirePipelineState(recordingPipeline);
+
+			var globalStart = 0;
+			if (recordingMesh != null && recordingIndexCount > 0) {
+				var range = appendOrGetMeshRange(s, recordingMesh, recordingVertexCount, recordingIndexCount, recordingForceDirty);
+				globalStart = range.start + start;
+			}
+
+			pushStep(s, globalStart, drawCount, step.instanceCount, step.commands);
+		} else if (step.commands.length > 0) {
+			var s = acquireCommandState();
+			pushStep(s, 0, 0, null, step.commands);
 		}
-
-		if (start < 0)
-			start = 0;
-
-		if (start > recordingIndexCount)
-			start = recordingIndexCount;
-
-		var drawCount = clampDrawCount(start, count, recordingIndexCount);
-
-		var slot:DrawState;
-		var prev = frameStateCount > 0 ? states[frameStateCount - 1] : null;
-
-		var canBatch = prev != null && prev.pipeline == recordingPipeline && step.instanceCount == null;
-
-		if (canBatch) {
-			slot = prev;
-		} else {
-			slot = acquireStateSlot(frameStateCount);
-			prepareStateSlot(slot, recordingPipeline);
-			frameStateCount++;
-		}
-
-		var globalStart = 0;
-
-		if (recordingMesh != null && recordingIndexCount > 0) {
-			var range = appendOrGetMeshRange(slot, recordingMesh, recordingVertexCount, recordingIndexCount, recordingForceDirty);
-			globalStart = range.start + start;
-		}
-
-		pushStep(slot, globalStart, drawCount, step.instanceCount, step.commands);
 
 		resetStepOnly();
 	}
@@ -576,22 +571,28 @@ class Context3D {
 	}
 
 	public inline function invalidateAllStates() {
-		for (s in states)
-			s.meshDirty = true;
+		for (pipeline in pipelineStateCache.keys()) {
+			var list = pipelineStateCache.get(pipeline);
+			if (list != null)
+				for (s in list)
+					s.meshDirty = true;
+		}
 	}
 
-	public inline function setPipeline(pipeline:PipelineState)
+	public inline function setPipeline(pipeline:PipelineState) {
 		recordingPipeline = pipeline;
+		markDirty();
+	}
 
 	public inline function setMesh(mesh:Mesh) {
 		recordingMesh = mesh;
-		recordingVertexCount = countMeshVertices(mesh);
-		recordingIndexCount = countMeshIndices(mesh);
-		recordingDirty = true;
+		recordingVertexCount = meshVertices(mesh);
+		recordingIndexCount = meshIndices(mesh);
+		markDirty();
 	}
 
 	public inline function addCommand(command:DrawCommand) {
-		recordingDirty = true;
+		markDirty();
 		step.commands.push(command);
 	}
 

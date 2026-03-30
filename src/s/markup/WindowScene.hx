@@ -82,7 +82,7 @@ class WindowScene implements s.shortcut.Shortcut {
 		root.syncTree();
 
 		#if S2D_DEBUG_FPS
-		@:privateAccess Context3D.drawCalls = 0;
+		Context3D.reset();
 		#end
 		final ctx = target.context2D;
 		ctx.begin();
@@ -112,10 +112,12 @@ class WindowScene implements s.shortcut.Shortcut {
 		}
 
 		draw("FPS: " + fps);
-		draw("Draw calls: " + Context3D.drawCalls);
 		draw("Frame (ms): " + roundTo(time * 1000, 1));
-		draw("CPU (ms): " + roundTo(target.context3D.cpuTime, 1));
-		draw("GPU (ms): " + roundTo(target.context3D.gpuTime, 1));
+		draw("CPU (ms): " + roundTo(Context3D.cpuTime, 1));
+		draw("GPU (ms): " + roundTo(Context3D.gpuTime, 1));
+		draw("Draw calls: " + Context3D.drawCalls);
+		draw("IB allocations: " + Context3D.ibAllocations);
+		draw("VB allocations: " + Context3D.vbAllocations);
 		ctx.end();
 		#end
 		ctx.popTransform();
