@@ -49,7 +49,7 @@ class TextShader extends TexturedShader {
 		for (c in chars) {
 			ctx.setVec4(rectCL, c.pos.x, c.pos.y, c.pos.width, c.pos.height);
 			ctx.setVec4(clipRectCL, c.uv);
-			ctx.draw();
+			ctx.commit();
 		}
 	}
 }

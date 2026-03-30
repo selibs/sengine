@@ -11,6 +11,6 @@ class ImageShader extends TexturedShader {
 		ctx.setTexture(sourceTU, img);
 		ctx.setVec4(rectCL, dx, dy, dw, dh);
 		ctx.setVec4(clipRectCL, sx, sy, sw, sh);
-		ctx.draw();
+		ctx.commit();
 	}
 }

@@ -44,11 +44,10 @@ class ShadowPass {
 		// ctx.clear(White);
 		// if (light.isMappingShadows) {
 		// 	ctx.setPipeline(pipeline);
-		// 	ctx.setIndexBuffer(light.layer.shadowBuffer.indices);
 		// 	ctx.setVertexBuffer(light.layer.shadowBuffer.vertices);
 		// 	ctx.setMat3(vpCL, stage.viewProjection);
 		// 	ctx.setFloat2(lightPosCL, light.x, light.y);
-		// 	ctx.draw();
+		// 	ctx.commit();
 		// }
 		// ctx.end();
 	}

@@ -51,29 +51,41 @@ class Stage extends DrawableElement {
 		layers.remove(layer);
 	}
 
-	public function local2WorldSpace(point:Vec2):Vec2 {
+	extern overload public inline function local2WorldSpace(x:Float, y:Float):Vec2
+		return local2WorldSpace(vec2(x, y));
+
+	extern overload public inline function local2WorldSpace(point:Vec2):Vec2
 		return (inverse(viewProjection) * vec3(point, 1.0)).xy;
-	}
 
-	public function world2LocalSpace(point:Vec2):Vec2 {
+	extern overload public inline function world2LocalSpace(x:Float, y:Float):Vec2
+		return world2LocalSpace(vec2(x, y));
+
+	extern overload public inline function world2LocalSpace(point:Vec2):Vec2
 		return (viewProjection * vec3(point, 1.0)).xy;
-	}
 
-	public function screen2LocalSpace(point:Vec2):Vec2 {
+	extern overload public inline function screen2LocalSpace(x:Float, y:Float):Vec2
+		return screen2LocalSpace(vec2(x, y));
+
+	extern overload public inline function screen2LocalSpace(point:Vec2):Vec2
 		return vec2(point.x / width, point.y / height) * 2.0 - 1.0;
-	}
 
-	public function local2ScreenSpace(point:Vec2):Vec2 {
+	extern overload public inline function local2ScreenSpace(x:Float, y:Float):Vec2
+		return local2ScreenSpace(vec2(x, y));
+
+	extern overload public inline function local2ScreenSpace(point:Vec2):Vec2
 		return vec2(point.x * width, point.y * height) * 0.5 - 0.5;
-	}
 
-	public function screen2WorldSpace(point:Vec2):Vec2 {
+	extern overload public inline function screen2WorldSpace(x:Float, y:Float):Vec2
+		return screen2WorldSpace(vec2(x, y));
+
+	extern overload public inline function screen2WorldSpace(point:Vec2):Vec2
 		return local2WorldSpace(screen2LocalSpace(point));
-	}
 
-	public function world2ScreenSpace(point:Vec2):Vec2 {
+	extern overload public inline function world2ScreenSpace(x:Float, y:Float):Vec2
+		return world2ScreenSpace(vec2(x, y));
+
+	extern overload public inline function world2ScreenSpace(point:Vec2):Vec2
 		return local2ScreenSpace(world2LocalSpace(point));
-	}
 
 	// @:slot(widthChanged, heightChanged)
 	function __syncSizeChanged__(_) {

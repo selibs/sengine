@@ -38,7 +38,7 @@ class Filter extends PPEffect {
 		// ctx3d.setTexture(textureMapTU, Renderer.buffer.src);
 		// for (kernel in kernels) {
 		// 	ctx3d.setMat3(kernelCL, kernel);
-		// 	ctx3d.draw();
+		// 	ctx3d.commit();
 		// }
 		// ctx.end();
 	}

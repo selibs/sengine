@@ -30,8 +30,7 @@ abstract class Shader2D extends Shader {
 		var color = style.color;
 		var ctx = context.context;
 		ctx.setPipeline(pipeline);
-		ctx.setIndexBuffer(Shader.rectIndices2D);
-		ctx.setVertexBuffer(Shader.rectVertices2D);
+		ctx.setMesh(Shader.quad);
 		ctx.setMat3(mvpCL, context.transform);
 		ctx.setVec4(colorCL, color.r, color.g, color.b, color.a * style.opacity);
 	}

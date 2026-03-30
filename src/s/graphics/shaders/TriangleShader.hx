@@ -24,30 +24,14 @@ class TriangleShader extends Shader {
 	}
 
 	public function render(context:Context2D, x1:Float, y1:Float, x2:Float, y2:Float, x3:Float, y3:Float) {
-		var vert = Shader.triVertices2D.lock();
-		vert[0] = x1;
-		vert[1] = y1;
-		vert[2] = 0.0;
-		vert[3] = 1.0;
-		vert[4] = x2;
-		vert[5] = y2;
-		vert[6] = 0.5;
-		vert[7] = 0.0;
-		vert[8] = x3;
-		vert[9] = y3;
-		vert[10] = 1.0;
-		vert[11] = 1.0;
-		Shader.triVertices2D.unlock();
-
 		var style = context.style;
 		var color = style.color;
 
 		var ctx = @:privateAccess context.context;
 		ctx.setPipeline(pipeline);
-		ctx.setIndexBuffer(Shader.triIndices2D);
-		ctx.setVertexBuffer(Shader.triVertices2D);
+		ctx.setMesh([[[x1, y1, 0.0, 1.0], [x2, y2, 0.5, 0.0], [x3, y3, 1.0, 1.0]]]);
 		ctx.setMat3(mvpCL, context.transform);
 		ctx.setVec4(colorCL, color.r, color.g, color.b, color.a * style.opacity);
-		ctx.draw();
+		ctx.commit();
 	}
 }

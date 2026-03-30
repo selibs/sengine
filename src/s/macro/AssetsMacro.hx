@@ -196,8 +196,7 @@ class AssetsMacro {
 		Compiler.addGlobalMetadata(path, '@:build(s.macro.AssetsMacro.buildAssetType("$capName"))');
 		try {
 			Context.getType(path);
-		} catch (e) {
-			#if (display_details != 1)
+		} catch (e)
 			Context.onAfterInitMacros(() -> Context.defineType({
 				pack: abstractTypePath.pack,
 				name: abstractTypePath.name,
@@ -218,8 +217,6 @@ class AssetsMacro {
 				fields: [],
 				pos: pos
 			}));
-			#end
-		}
 
 		assetTypes.set(listName, {
 			type: abstractType,

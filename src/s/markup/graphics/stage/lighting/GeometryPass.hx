@@ -62,9 +62,8 @@ class GeometryPass extends StageRenderPass {
 		]);
 		ctx.clear(Black, 1.0);
 		ctx.setPipeline(pipeline);
-		ctx.setIndexBuffer(Drawers.rectIndices2D);
 		#if (S2D_SPRITE_INSTANCING != 1)
-		ctx.setVertexBuffer(Drawers.rectVertices2D);
+		ctx.setMesh(Shader.quad);
 		#end
 		ctx.setMat3(viewProjectionCL, stage.viewProjection);
 		for (layer in stage.layers) {
@@ -80,7 +79,7 @@ class GeometryPass extends StageRenderPass {
 				#if (S2D_LIGHTING_PBR == 1)
 				ctx.setTexture(ormMapTU, material.ormMap);
 				#end
-				ctx.drawInstanced(material.sprites.length);
+				ctx.commitInstanced(material.sprites.length);
 			}
 			#else
 			for (sprite in layer.sprites) {
@@ -93,7 +92,7 @@ class GeometryPass extends StageRenderPass {
 				#if (S2D_LIGHTING_PBR == 1)
 				ctx.setTexture(ormMapTU, sprite.material.ormMap);
 				#end
-				ctx.draw();
+				ctx.commit();
 			}
 			#end
 		}

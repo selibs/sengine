@@ -67,9 +67,8 @@ class LightingPass extends StageRenderPass {
 		ctx.begin();
 		ctx.clear(stage.color);
 		ctx.setPipeline(pipeline);
-		ctx.setIndexBuffer(Drawers.rectIndices2D);
 		#if (S2D_SPRITE_INSTANCING != 1)
-		ctx.setVertexBuffer(Drawers.rectVertices2D);
+		ctx.setMesh(Shader.quad);
 		#end
 		ctx.setMat3(viewProjectionCL, stage.viewProjection);
 		#if (S2D_LIGHTING_ENVIRONMENT == 1)
@@ -91,14 +90,13 @@ class LightingPass extends StageRenderPass {
 				ShadowPass.render(light);
 				ctx.begin();
 				ctx.setPipeline(pipeline);
-				ctx.setIndexBuffer(Drawers.rectIndices2D);
-				ctx.setVertexBuffer(Drawers.rectVertices2D);
+				ctx.setMesh(Shader.quad);
 				ctx.setTexture(shadowMapTU, buffer.shadowMap);
 				#end
 				ctx.setFloat3(lightPositionCL, light.x, light.y, light.z);
 				ctx.setVec3(lightColorCL, light.color.RGB);
 				ctx.setFloat2(lightAttribCL, light.power, light.radius);
-				ctx.draw();
+				ctx.commit();
 			}
 		}
 		#else
@@ -113,7 +111,7 @@ class LightingPass extends StageRenderPass {
 				#if (S2D_LIGHTING_PBR == 1)
 				ctx.setTexture(ormMapTU, material.ormMap, {});
 				#end
-				ctx.drawInstanced(material.sprites.length);
+				ctx.commitInstanced(material.sprites.length);
 			}
 			#else
 			for (sprite in layer.sprites) {
@@ -126,7 +124,7 @@ class LightingPass extends StageRenderPass {
 				#if (S2D_LIGHTING_PBR == 1)
 				ctx.setTexture(ormMapTU, sprite.material.ormMap, {});
 				#end
-				ctx.draw();
+				ctx.commit();
 			}
 			#end
 		}

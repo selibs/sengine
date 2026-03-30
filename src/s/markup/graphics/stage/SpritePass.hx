@@ -47,9 +47,8 @@ class SpritePass extends StageRenderPass {
 		ctx.begin();
 		ctx.clear(stage.color);
 		ctx.setPipeline(pipeline);
-		ctx.setIndexBuffer(Shader.rectIndices2D);
 		#if (S2D_SPRITE_INSTANCING != 1)
-		ctx.setVertexBuffer(Shader.rectVertices2D);
+		ctx.setMesh(Shader.quad);
 		#end
 		ctx.setMat3(viewProjectionCL, stage.viewProjection);
 		for (layer in stage.layers) {
@@ -57,7 +56,7 @@ class SpritePass extends StageRenderPass {
 			for (material in layer.materials) {
 				ctx.setVertexBuffers(material.vertices);
 				ctx.setTexture(textureMapTU, material.textureMap);
-				ctx.drawInstanced(material.sprites.length);
+				ctx.commitInstanced(material.sprites.length);
 			}
 			#else
 			for (sprite in layer.sprites) {
@@ -65,7 +64,7 @@ class SpritePass extends StageRenderPass {
 				ctx.setMat3(modelCL, sprite.transform);
 				ctx.setVec4(cropRectCL, sprite.cropRect);
 				ctx.setTexture(textureMapTU, sprite.material.textureMap);
-				ctx.draw();
+				ctx.commit();
 			}
 			#end
 		}

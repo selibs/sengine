@@ -48,12 +48,11 @@ abstract class ElementDrawer<T:DrawableElement> extends Shader {
 
 	function setBuffers(target:RenderTarget) {
 		final ctx = target.context3D;
-		ctx.setIndexBuffer(Shader.rectIndices2D);
-		ctx.setVertexBuffer(Shader.rectVertices2D);
+		ctx.setMesh(Shader.quad);
 	}
 
 	function draw(target:RenderTarget, element:T):Void {
 		final ctx = target.context3D;
-		ctx.draw();
+		ctx.commit();
 	}
 }

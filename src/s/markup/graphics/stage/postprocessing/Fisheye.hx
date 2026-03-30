@@ -37,7 +37,7 @@ class Fisheye extends PPEffect {
 		// ctx3d.setTexture(textureMapTU, Renderer.buffer.src);
 		// ctx3d.setVec2(positionCL, position);
 		// ctx3d.setFloat(strengthCL, strength);
-		// ctx3d.draw();
+		// ctx3d.commit();
 		// ctx.end();
 	}
 }
