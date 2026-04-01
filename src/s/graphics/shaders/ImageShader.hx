@@ -1,6 +1,5 @@
 package s.graphics.shaders;
 
-import kha.graphics4.ConstantLocation;
 import s.assets.Image;
 
 class ImageShader extends TexturedShader {
@@ -9,12 +8,7 @@ class ImageShader extends TexturedShader {
 		final ctx = context.context;
 
 		ctx.setTexture(sourceTU, img);
-		ctx.streamQuad(
-			dx, dy + dh, sx, sy + sh,
-			dx, dy, sx, sy,
-			dx + dw, dy, sx + sw, sy,
-			dx + dw, dy + dh, sx + sw, sy + sh
-		);
+		setRect(ctx, dx, dy, dw, dh, sx, sy, sw, sh);
 		ctx.draw();
 	}
 }

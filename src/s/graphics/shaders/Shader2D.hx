@@ -33,11 +33,11 @@ abstract class Shader2D extends Shader {
 	}
 
 	function setRect(ctx:Context3D, x:Float, y:Float, rw:Float, rh:Float, u:Float, v:Float, cw:Float, ch:Float) {
-		ctx.streamQuad(
-			x, y + rh, u, v + ch,
-			x, y, u, v,
-			x + rw, y, u + cw, v,
-			x + rw, y + rh, u + cw, v + ch
-		);
+		ctx.addPolygon([
+			[x, y + rh, u, v + ch],
+			[x, y, u, v],
+			[x + rw, y, u + cw, v],
+			[x + rw, y + rh, u + cw, v + ch]
+		]);
 	}
 }
