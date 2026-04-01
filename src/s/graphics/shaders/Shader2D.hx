@@ -4,7 +4,6 @@ import kha.graphics4.ConstantLocation;
 
 abstract class Shader2D extends Shader {
 	var mvpCL:ConstantLocation;
-	var rectCL:ConstantLocation;
 	var colorCL:ConstantLocation;
 
 	function new(frag:String = "shader2d", vert:String = "shader2d") {
@@ -21,7 +20,6 @@ abstract class Shader2D extends Shader {
 
 	override function setup() {
 		mvpCL = pipeline.getConstantLocation("mvp");
-		rectCL = pipeline.getConstantLocation("rect");
 		colorCL = pipeline.getConstantLocation("color");
 	}
 
@@ -30,8 +28,16 @@ abstract class Shader2D extends Shader {
 		var color = style.color;
 		var ctx = context.context;
 		ctx.setPipeline(pipeline);
-		ctx.setMesh(Shader.quad);
 		ctx.setMat3(mvpCL, context.transform);
 		ctx.setVec4(colorCL, color.r, color.g, color.b, color.a * style.opacity);
+	}
+
+	function setRect(ctx:Context3D, x:Float, y:Float, rw:Float, rh:Float, u:Float, v:Float, cw:Float, ch:Float) {
+		ctx.streamQuad(
+			x, y + rh, u, v + ch,
+			x, y, u, v,
+			x + rw, y, u + cw, v,
+			x + rw, y + rh, u + cw, v + ch
+		);
 	}
 }

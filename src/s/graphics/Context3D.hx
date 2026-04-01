@@ -62,24 +62,18 @@ typedef DrawState = {
 	?indexBuffer:IndexBuffer,
 	?vertexBuffer:VertexBuffer,
 
-	meshRefs:Array<Mesh>,
-	meshVertexCounts:Array<Int>,
-	meshIndexCounts:Array<Int>,
-	meshRanges:ObjectMap<Mesh, MeshRange>,
-	meshRefCount:Int,
-	prevMeshRefCount:Int,
-
 	steps:Array<DrawStep>,
 
-	vertexCount:Int,
-	indexCount:Int,
-	prevVertexCount:Int,
-	prevIndexCount:Int,
+	streamVerts:Float32Array,
+	streamInds:Int32Array,
+	streamFloatCount:Int,
+	streamVertCount:Int,
+	streamIndCount:Int,
+	streamVertCap:Int,
+	streamIndCap:Int,
 
 	vbCapacity:Int,
-	ibCapacity:Int,
-
-	meshDirty:Bool
+	ibCapacity:Int
 }
 
 @:allow(s.graphics.RenderTarget)
@@ -98,11 +92,12 @@ class Context3D {
 	// current recorder bindings
 	var recordingPipeline:PipelineState;
 	var recordingMesh:Mesh;
-	var recordingVertexCount:Int = 0;
-	var recordingIndexCount:Int = 0;
 	var recordingForceDirty:Bool = false;
 	var recordingDirty:Bool = false;
 	var step:DrawStep;
+	var recordingStreamState:DrawState;
+	var recordingStreamStart:Int = 0;
+	var recordingStreamCount:Int = 0;
 
 	#if S2D_DEBUG_FPS
 	public static var cpuTime(default, null):Float;
@@ -110,6 +105,14 @@ class Context3D {
 	public static var drawCalls(default, null):Int = 0;
 	public static var ibAllocations(default, null):Int = 0;
 	public static var vbAllocations(default, null):Int = 0;
+	public static var stepCount(default, null):Int = 0;
+	public static var commandCount(default, null):Int = 0;
+	public static var pipelineBatches(default, null):Int = 0;
+	public static var streamVerts(default, null):Int = 0;
+	public static var streamInds(default, null):Int = 0;
+	public static var ensureMs(default, null):Float = 0;
+	public static var commandMs(default, null):Float = 0;
+	public static var drawMs(default, null):Float = 0;
 
 	public static function reset() {
 		cpuTime = 0;
@@ -117,6 +120,14 @@ class Context3D {
 		drawCalls = 0;
 		ibAllocations = 0;
 		vbAllocations = 0;
+		stepCount = 0;
+		commandCount = 0;
+		pipelineBatches = 0;
+		streamVerts = 0;
+		streamInds = 0;
+		ensureMs = 0;
+		commandMs = 0;
+		drawMs = 0;
 	}
 
 	var beginTime:Float;
@@ -139,28 +150,25 @@ class Context3D {
 
 	inline function newState():DrawState
 		return {
-			meshRefs: [],
-			meshVertexCounts: [],
-			meshIndexCounts: [],
-			meshRanges: new ObjectMap(),
-			meshRefCount: 0,
-			prevMeshRefCount: 0,
 			steps: [],
-			vertexCount: 0,
-			indexCount: 0,
-			prevVertexCount: 0,
-			prevIndexCount: 0,
+			streamVerts: null,
+			streamInds: null,
+			streamFloatCount: 0,
+			streamVertCount: 0,
+			streamIndCount: 0,
+			streamVertCap: 0,
+			streamIndCap: 0,
 			vbCapacity: 0,
-			ibCapacity: 0,
-			meshDirty: true
+			ibCapacity: 0
 		};
 
 	inline function resetRecording(full:Bool = false) {
 		if (full) {
 			recordingPipeline = null;
 			recordingMesh = null;
-			recordingVertexCount = 0;
-			recordingIndexCount = 0;
+			recordingStreamState = null;
+			recordingStreamStart = 0;
+			recordingStreamCount = 0;
 		}
 		recordingForceDirty = false;
 		recordingDirty = false;
@@ -175,23 +183,6 @@ class Context3D {
 
 	inline function markDirty()
 		recordingDirty = true;
-
-	inline function meshVertices(mesh:Mesh):Int {
-		var n = 0;
-		if (mesh != null)
-			for (p in mesh)
-				n += p.length;
-		return n;
-	}
-
-	inline function meshIndices(mesh:Mesh):Int {
-		var n = 0;
-		if (mesh != null)
-			for (p in mesh)
-				if (p.length >= 3)
-					n += (p.length - 2) * 3;
-		return n;
-	}
 
 	inline function clampCount(start:Int, count:Int, total:Int):Int {
 		if (start >= total)
@@ -208,24 +199,38 @@ class Context3D {
 		return c;
 	}
 
+	inline function ensureStreamCapacity(s:DrawState, addVerts:Int, addFloats:Int, addInds:Int) {
+		var needFloats = s.streamFloatCount + addFloats;
+		if (s.streamVerts == null || s.streamVertCap < needFloats) {
+			var newCap = nextCapacity(needFloats);
+			var next = new Float32Array(newCap);
+			if (s.streamVerts != null)
+				for (i in 0...s.streamFloatCount)
+					next[i] = s.streamVerts[i];
+			s.streamVerts = next;
+			s.streamVertCap = newCap;
+		}
+
+		var needInds = s.streamIndCount + addInds;
+		if (s.streamInds == null || s.streamIndCap < needInds) {
+			var newCap = nextCapacity(needInds);
+			var next = new Int32Array(newCap);
+			if (s.streamInds != null)
+				for (i in 0...s.streamIndCount)
+					next[i] = s.streamInds[i];
+			s.streamInds = next;
+			s.streamIndCap = newCap;
+		}
+	}
+
 	inline function prepareFrameState(s:DrawState) {
-		s.prevMeshRefCount = s.meshRefCount;
-		s.prevVertexCount = s.vertexCount;
-		s.prevIndexCount = s.indexCount;
-
-		for (i in 0...s.meshRefCount)
-			s.meshRanges.remove(s.meshRefs[i]);
-
-		s.meshRefCount = 0;
-		s.vertexCount = 0;
-		s.indexCount = 0;
+		s.streamFloatCount = 0;
+		s.streamVertCount = 0;
+		s.streamIndCount = 0;
 		s.steps.resize(0);
 	}
 
-	inline function finalizeFrameState(s:DrawState) {
-		if (s.meshRefCount != s.prevMeshRefCount || s.vertexCount != s.prevVertexCount || s.indexCount != s.prevIndexCount)
-			s.meshDirty = true;
-	}
+	inline function finalizeFrameState(s:DrawState) {}
 
 	inline function acquirePipelineState(pipeline:PipelineState):DrawState {
 		var list = pipelineStateCache.get(pipeline);
@@ -269,119 +274,102 @@ class Context3D {
 		return s;
 	}
 
-	inline function appendOrGetMeshRange(s:DrawState, mesh:Mesh, vc:Int, ic:Int, forceDirty:Bool):MeshRange {
-		var r = s.meshRanges.get(mesh);
-		if (r != null) {
-			if (forceDirty)
-				s.meshDirty = true;
-			return r;
+	function appendMeshToStream(s:DrawState, mesh:Mesh):MeshRange {
+		var start = s.streamIndCount;
+		if (mesh == null)
+			return {start: start, count: 0};
+
+		var addVerts = 0;
+		var addFloats = 0;
+		var addInds = 0;
+		for (p in mesh) {
+			var n = p.length;
+			addVerts += n;
+			if (n >= 3)
+				addInds += (n - 2) * 3;
+			for (v in p)
+				addFloats += v.length;
 		}
 
-		var pos = s.meshRefCount;
-		var sameAsPrev = pos < s.prevMeshRefCount && s.meshRefs[pos] == mesh && s.meshVertexCounts[pos] == vc && s.meshIndexCounts[pos] == ic;
+		ensureStreamCapacity(s, addVerts, addFloats, addInds);
 
-		if (!sameAsPrev || forceDirty)
-			s.meshDirty = true;
+		var verts = s.streamVerts;
+		var inds = s.streamInds;
+		var floatWrite = s.streamFloatCount;
+		var indWrite = s.streamIndCount;
+		var vertexOffset = s.streamVertCount;
 
-		if (pos < s.meshRefs.length)
-			s.meshRefs[pos] = mesh;
-		else
-			s.meshRefs.push(mesh);
+		for (p in mesh) {
+			var n = p.length;
+			if (n == 0)
+				continue;
 
-		if (pos < s.meshVertexCounts.length)
-			s.meshVertexCounts[pos] = vc;
-		else
-			s.meshVertexCounts.push(vc);
+			var polyStart = vertexOffset;
+			for (v in p) {
+				for (i in 0...v.length)
+					verts[floatWrite++] = v[i];
+				vertexOffset++;
+			}
 
-		if (pos < s.meshIndexCounts.length)
-			s.meshIndexCounts[pos] = ic;
-		else
-			s.meshIndexCounts.push(ic);
+			if (n >= 3) {
+				for (i in 1...n - 1) {
+					inds[indWrite++] = polyStart;
+					inds[indWrite++] = polyStart + i;
+					inds[indWrite++] = polyStart + i + 1;
+				}
+			}
+		}
 
-		r = {start: s.indexCount, count: ic};
-		s.meshRanges.set(mesh, r);
+		s.streamFloatCount = floatWrite;
+		s.streamVertCount = vertexOffset;
+		s.streamIndCount = indWrite;
 
-		s.meshRefCount++;
-		s.vertexCount += vc;
-		s.indexCount += ic;
-
-		return r;
+		return {start: start, count: indWrite - start};
 	}
 
 	inline function ensureBuffers(s:DrawState) {
-		if (s == null || s.pipeline == null || s.vertexCount <= 0 || s.indexCount <= 0)
+		if (s == null || s.pipeline == null || s.streamVertCount <= 0 || s.streamIndCount <= 0)
 			return;
 
 		var structure = s.pipeline.inputLayout[0];
 
-		if (s.vertexBuffer == null || s.vbCapacity < s.vertexCount) {
+		if (s.vertexBuffer == null || s.vbCapacity < s.streamVertCount) {
 			if (s.vertexBuffer != null)
 				s.vertexBuffer.delete();
 
-			s.vbCapacity = nextCapacity(s.vertexCount);
-			s.vertexBuffer = new VertexBuffer(s.vbCapacity, structure, StaticUsage);
-			s.meshDirty = true;
+			s.vbCapacity = nextCapacity(s.streamVertCount);
+			s.vertexBuffer = new VertexBuffer(s.vbCapacity, structure, DynamicUsage);
 
 			#if S2D_DEBUG_FPS
 			++ vbAllocations;
 			#end
 		}
 
-		if (s.indexBuffer == null || s.ibCapacity < s.indexCount) {
+		if (s.indexBuffer == null || s.ibCapacity < s.streamIndCount) {
 			if (s.indexBuffer != null)
 				s.indexBuffer.delete();
 
-			s.ibCapacity = nextCapacity(s.indexCount);
-			s.indexBuffer = new IndexBuffer(s.ibCapacity, StaticUsage);
-			s.meshDirty = true;
+			s.ibCapacity = nextCapacity(s.streamIndCount);
+			s.indexBuffer = new IndexBuffer(s.ibCapacity, DynamicUsage);
 
 			#if S2D_DEBUG_FPS
 			++ ibAllocations;
 			#end
 		}
 
-		if (!s.meshDirty)
-			return;
-
 		var vert = s.vertexBuffer.lock();
 		var ind = s.indexBuffer.lock();
-		var fpv = s.vertexBuffer.stride() >> 2;
 
-		var vertexOffset = 0;
-		var vertWrite = 0;
-		var indWrite = 0;
+		var floatCount = s.streamFloatCount;
+		for (i in 0...floatCount)
+			vert[i] = s.streamVerts[i];
 
-		for (m in 0...s.meshRefCount) {
-			var mesh = s.meshRefs[m];
-
-			for (p in mesh) {
-				var n = p.length;
-				if (n == 0)
-					continue;
-
-				for (v in p) {
-					if (v.length != fpv)
-						throw 'Vertex size mismatch. Expected $fpv floats, got ${v.length}.';
-
-					for (i in 0...fpv)
-						vert[vertWrite + i] = v[i];
-					vertWrite += fpv;
-				}
-
-				if (n >= 3)
-					for (i in 1...n - 1) {
-						ind[indWrite++] = vertexOffset;
-						ind[indWrite++] = vertexOffset + i;
-						ind[indWrite++] = vertexOffset + i + 1;
-					}
-
-				vertexOffset += n;
-			}
-		}
+		var indCount = s.streamIndCount;
+		for (i in 0...indCount)
+			ind[i] = s.streamInds[i];
 
 		s.vertexBuffer.unlock();
 		s.indexBuffer.unlock();
-		s.meshDirty = false;
 	}
 
 	inline function hasPendingRecording():Bool
@@ -489,12 +477,32 @@ class Context3D {
 		if (hasPendingRecording())
 			draw();
 
+		#if S2D_DEBUG_FPS
+		var localSteps = 0;
+		var localCommands = 0;
+		var localPipelines = frameStates.length;
+		var localStreamVerts = 0;
+		var localStreamInds = 0;
+		var localEnsureMs = 0.0;
+		var localCommandMs = 0.0;
+		var localDrawMs = 0.0;
+		#end
+
 		for (s in frameStates)
 			finalizeFrameState(s);
 
 		try {
 			for (s in frameStates) {
+				#if S2D_DEBUG_FPS
+				localSteps += s.steps.length;
+				localStreamVerts += s.streamVertCount;
+				localStreamInds += s.streamIndCount;
+				var tEnsure = haxe.Timer.stamp() * 1000;
+				#end
 				ensureBuffers(s);
+				#if S2D_DEBUG_FPS
+				localEnsureMs += haxe.Timer.stamp() * 1000 - tEnsure;
+				#end
 
 				if (s.pipeline != null)
 					graphics.setPipeline(s.pipeline);
@@ -505,10 +513,20 @@ class Context3D {
 				}
 
 				for (st in s.steps) {
+					#if S2D_DEBUG_FPS
+					localCommands += st.commands.length;
+					var tCommands = haxe.Timer.stamp() * 1000;
+					#end
 					for (command in st.commands)
 						applyCommand(command);
+					#if S2D_DEBUG_FPS
+					localCommandMs += haxe.Timer.stamp() * 1000 - tCommands;
+					#end
 
 					if (st.count > 0) {
+						#if S2D_DEBUG_FPS
+						var tDraw = haxe.Timer.stamp() * 1000;
+						#end
 						if (st.instanceCount != null)
 							graphics.drawIndexedVerticesInstanced(st.instanceCount, st.start, st.count);
 						else
@@ -516,10 +534,21 @@ class Context3D {
 
 						#if S2D_DEBUG_FPS
 						++ drawCalls;
+						localDrawMs += haxe.Timer.stamp() * 1000 - tDraw;
 						#end
 					}
 				}
 			}
+			#if S2D_DEBUG_FPS
+			stepCount += localSteps;
+			commandCount += localCommands;
+			pipelineBatches += localPipelines;
+			streamVerts += localStreamVerts;
+			streamInds += localStreamInds;
+			ensureMs += localEnsureMs;
+			commandMs += localCommandMs;
+			drawMs += localDrawMs;
+			#end
 		} catch (e) {
 			logger.error("Failed: " + e.message);
 		}
@@ -536,14 +565,23 @@ class Context3D {
 		draw(start, count);
 	}
 
-	public inline function draw(start:Int = 0, count:Int = -1) {
-		if (recordingPipeline != null) {
-			if (start < 0)
-				start = 0;
-			if (start > recordingIndexCount)
-				start = recordingIndexCount;
+	public function draw(start:Int = 0, count:Int = -1) {
+		if (recordingStreamCount > 0 && recordingStreamState != null) {
+			pushStep(recordingStreamState, recordingStreamStart, recordingStreamCount, step.instanceCount, step.commands);
+			recordingStreamState = null;
+			recordingStreamStart = 0;
+			recordingStreamCount = 0;
+			resetStepOnly();
+			return;
+		}
 
-			var drawCount = clampCount(start, count, recordingIndexCount);
+		if (recordingPipeline != null) {
+			if (recordingMesh == null && step.commands.length > 0) {
+				var s = acquireCommandState();
+				pushStep(s, 0, 0, null, step.commands);
+				resetStepOnly();
+				return;
+			}
 
 			var prev = frameStates.length > 0 ? frameStates[frameStates.length - 1] : null;
 			var canBatch = prev != null && prev.pipeline == recordingPipeline && step.instanceCount == null;
@@ -551,8 +589,15 @@ class Context3D {
 			var s = canBatch ? prev : acquirePipelineState(recordingPipeline);
 
 			var globalStart = 0;
-			if (recordingMesh != null && recordingIndexCount > 0) {
-				var range = appendOrGetMeshRange(s, recordingMesh, recordingVertexCount, recordingIndexCount, recordingForceDirty);
+			var drawCount = 0;
+			if (recordingMesh != null) {
+				var range = appendMeshToStream(s, recordingMesh);
+				var total = range.count;
+				if (start < 0)
+					start = 0;
+				if (start > total)
+					start = total;
+				drawCount = clampCount(start, count, total);
 				globalStart = range.start + start;
 			}
 
@@ -571,12 +616,7 @@ class Context3D {
 	}
 
 	public inline function invalidateAllStates() {
-		for (pipeline in pipelineStateCache.keys()) {
-			var list = pipelineStateCache.get(pipeline);
-			if (list != null)
-				for (s in list)
-					s.meshDirty = true;
-		}
+		// no-op in streaming mode
 	}
 
 	public inline function setPipeline(pipeline:PipelineState) {
@@ -586,8 +626,104 @@ class Context3D {
 
 	public inline function setMesh(mesh:Mesh) {
 		recordingMesh = mesh;
-		recordingVertexCount = meshVertices(mesh);
-		recordingIndexCount = meshIndices(mesh);
+		markDirty();
+	}
+
+	public inline function streamQuad(x0:Float, y0:Float, u0:Float, v0:Float, x1:Float, y1:Float, u1:Float, v1:Float, x2:Float, y2:Float, u2:Float, v2:Float,
+			x3:Float, y3:Float, u3:Float, v3:Float) {
+		var prev = frameStates.length > 0 ? frameStates[frameStates.length - 1] : null;
+		var canBatch = prev != null && prev.pipeline == recordingPipeline && step.instanceCount == null;
+		var s = canBatch ? prev : acquirePipelineState(recordingPipeline);
+
+		ensureStreamCapacity(s, 4, 16, 6);
+
+		var verts = s.streamVerts;
+		var inds = s.streamInds;
+		var floatWrite = s.streamFloatCount;
+		var indWrite = s.streamIndCount;
+		var vertexOffset = s.streamVertCount;
+
+		verts[floatWrite] = x0;
+		verts[floatWrite + 1] = y0;
+		verts[floatWrite + 2] = u0;
+		verts[floatWrite + 3] = v0;
+		verts[floatWrite + 4] = x1;
+		verts[floatWrite + 5] = y1;
+		verts[floatWrite + 6] = u1;
+		verts[floatWrite + 7] = v1;
+		verts[floatWrite + 8] = x2;
+		verts[floatWrite + 9] = y2;
+		verts[floatWrite + 10] = u2;
+		verts[floatWrite + 11] = v2;
+		verts[floatWrite + 12] = x3;
+		verts[floatWrite + 13] = y3;
+		verts[floatWrite + 14] = u3;
+		verts[floatWrite + 15] = v3;
+
+		inds[indWrite++] = vertexOffset;
+		inds[indWrite++] = vertexOffset + 1;
+		inds[indWrite++] = vertexOffset + 2;
+		inds[indWrite++] = vertexOffset;
+		inds[indWrite++] = vertexOffset + 2;
+		inds[indWrite++] = vertexOffset + 3;
+
+		s.streamFloatCount = floatWrite + 16;
+		s.streamVertCount = vertexOffset + 4;
+		s.streamIndCount = indWrite;
+
+		if (recordingStreamState != s || recordingStreamCount == 0) {
+			recordingStreamState = s;
+			recordingStreamStart = indWrite - 6;
+			recordingStreamCount = 6;
+		} else {
+			recordingStreamCount += 6;
+		}
+
+		markDirty();
+	}
+
+	public inline function streamTri(x0:Float, y0:Float, u0:Float, v0:Float, x1:Float, y1:Float, u1:Float, v1:Float, x2:Float, y2:Float, u2:Float, v2:Float) {
+		var prev = frameStates.length > 0 ? frameStates[frameStates.length - 1] : null;
+		var canBatch = prev != null && prev.pipeline == recordingPipeline && step.instanceCount == null;
+		var s = canBatch ? prev : acquirePipelineState(recordingPipeline);
+
+		ensureStreamCapacity(s, 3, 12, 3);
+
+		var verts = s.streamVerts;
+		var inds = s.streamInds;
+		var floatWrite = s.streamFloatCount;
+		var indWrite = s.streamIndCount;
+		var vertexOffset = s.streamVertCount;
+
+		verts[floatWrite] = x0;
+		verts[floatWrite + 1] = y0;
+		verts[floatWrite + 2] = u0;
+		verts[floatWrite + 3] = v0;
+		verts[floatWrite + 4] = x1;
+		verts[floatWrite + 5] = y1;
+		verts[floatWrite + 6] = u1;
+		verts[floatWrite + 7] = v1;
+		verts[floatWrite + 8] = x2;
+		verts[floatWrite + 9] = y2;
+		verts[floatWrite + 10] = u2;
+		verts[floatWrite + 11] = v2;
+
+		inds[indWrite++] = vertexOffset;
+		inds[indWrite++] = vertexOffset + 1;
+		inds[indWrite++] = vertexOffset + 2;
+
+		s.streamFloatCount = floatWrite + 12;
+		s.streamVertCount = vertexOffset + 3;
+		s.streamIndCount = indWrite;
+
+		if (recordingStreamState != s || recordingStreamCount == 0) {
+			recordingStreamState = s;
+			recordingStreamStart = indWrite - 3;
+			recordingStreamCount = 3;
+		} else {
+			recordingStreamCount += 3;
+		}
+
 		markDirty();
 	}
 

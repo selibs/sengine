@@ -58,7 +58,7 @@ class Label extends DrawableElement {
 
 		if (charsAreDirty) {
 			chars = [];
-            var lineChars = [];
+			var lineChars = [];
 			var lineWidth = 0.0;
 			for (i in 0...text.length) {
 				var c = font.getFontChar(text.fastCodeAt(i));
@@ -116,8 +116,18 @@ class Label extends DrawableElement {
 				xoff: char.xoff,
 				yoff: char.yoff,
 				advance: char.advance,
-				pos: new Rect(char.pos.x, char.pos.y, char.pos.width, char.pos.height),
-				uv: new Rect(char.uv.x, char.uv.y, char.uv.width, char.uv.height)
+				pos: {
+					x: char.pos.x,
+					y: char.pos.y,
+					width: char.pos.width,
+					height: char.pos.height
+				},
+				uv: {
+					x: char.uv.x,
+					y: char.uv.y,
+					width: char.uv.width,
+					height: char.uv.height
+				}
 			}
 
 		final ec = font.getFontChar(".".code);

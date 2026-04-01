@@ -502,34 +502,43 @@ class Context2D implements s.shortcut.Shortcut {
 	public inline function drawFontChars(chars:Array<FontChar>)
 		s.graphics.shaders.TextShader.shader.render(this, chars);
 
-	public inline function drawString(text:String, x:Float, y:Float)
-		drawCharacters([for (i in 0...text.length) text.charCodeAt(i)], 0, text.length, x, y);
+	public inline function drawString(text:String, x:Float, y:Float) {
+		if (text == null || text.length == 0 || style.font.pixelSize == 0)
+			return;
+		s.graphics.shaders.TextShader.shader.renderString(this, text, x, y);
+	}
 
 	public inline function drawCharacters(text:Array<Int>, start:Int, length:Int, x:Float, y:Float) {
 		if (text == null || length <= 0 || style.font.pixelSize == 0)
 			return;
 
-		final font = style.font;
-		final atlas = font.getAtlas();
-		final scale = font.pixelSize / atlas.size;
-		final end = Std.int(Math.min(start + length, text.length));
-		var chars = [];
-		var originX = x;
-		var originY = y;
-		var offset = originX;
-		var snapGlyphs = font.snapToPixel;
-		for (i in start...end) {
-			var char = font.getFontCharFromAtlas(atlas, scale, text[i]);
-			char.pos.x = offset + char.xoff;
-			char.pos.y = originY + (snapGlyphs ? Math.round(char.yoff) : char.yoff);
-			offset += char.advance;
-			chars.push(char);
-		}
-		drawFontChars(chars);
+		s.graphics.shaders.TextShader.shader.renderCharacters(this, text, start, length, x, y);
 	}
 
 	public inline function drawAlignedString(text:String, x:Float, y:Float, alignment:Alignment):Void
-		drawAlignedCharacters([for (i in 0...text.length) text.charCodeAt(i)], 0, text.length, x, y, alignment);
+		drawAlignedStringInternal(text, x, y, alignment);
+
+	inline function drawAlignedStringInternal(text:String, x:Float, y:Float, alignment:Alignment):Void {
+		if (text == null || text.length == 0 || style.font.pixelSize == 0)
+			return;
+
+		var xoffset = 0.0;
+		if (alignment & AlignHCenter != 0 || alignment & AlignRight != 0) {
+			var width = style.font.widthOfString(text, 0, text.length);
+			if (alignment & AlignHCenter != 0)
+				xoffset = -width * 0.5;
+			else
+				xoffset = -width;
+		}
+		var yoffset = 0.0;
+		if (alignment & AlignVCenter != 0 || alignment & AlignBottom != 0) {
+			if (alignment & AlignVCenter != 0)
+				yoffset = -style.font.pixelSize * 0.5;
+			else
+				yoffset = -style.font.pixelSize;
+		}
+		s.graphics.shaders.TextShader.shader.renderString(this, text, x + xoffset, y + yoffset);
+	}
 
 	public inline function drawAlignedCharacters(text:Array<Int>, start:Int, length:Int, x:Float, y:Float, alignment:Alignment):Void {
 		var xoffset = 0.0;

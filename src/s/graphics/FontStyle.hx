@@ -6,8 +6,8 @@ typedef FontChar = {
 	xoff:Float,
 	yoff:Float,
 	advance:Float,
-	pos:s.geometry.Rect,
-	uv:s.geometry.Rect
+	pos:{x:Float, y:Float, width:Float, height:Float},
+	uv:{x:Float, y:Float, width:Float, height:Float}
 }
 
 enum abstract FontWeight(Int) from Int to Int {
@@ -52,10 +52,9 @@ class FontStyle implements s.shortcut.Shortcut {
 	public var softness:Float = 0.0;
 	public var outlineColor:Color = Transparent;
 	public var outlineWidth:Float = 0.0;
+
 	// public var backgroundColor:Color = Transparent; // TODO
-
 	// public var capitalization:FontCapitalization; // TODO
-
 	public var pointSize(get, set):Float;
 	@:attr public var pixelSize(default, set):Int = 18;
 
@@ -124,6 +123,21 @@ class FontStyle implements s.shortcut.Shortcut {
 		return width;
 	}
 
+	public function widthOfString(text:String, start:Int, length:Int):Float {
+		if (pixelSize <= 0 || text == null || length <= 0)
+			return 0.0;
+
+		final atlas = getAtlas();
+		final scale = pixelSize / atlas.size;
+		final end = Std.int(Math.min(start + length, text.length));
+
+		var width = 0.0;
+		for (i in start...end)
+			width += atlas.getGlyph(text.charCodeAt(i)).xadvance * scale;
+
+		return width;
+	}
+
 	inline function getSpacing(char:Int) {
 		var spacing = letterSpacing;
 		if (char == " ".code || char == "\t".code)
@@ -143,7 +157,7 @@ class FontStyle implements s.shortcut.Shortcut {
 		sdfWeight = ((weight : Int) - (FontWeight.Medium : Int)) / 400.0 * 0.5 + (bold ? 0.75 : 0.0);
 
 	inline function set_italic(value:Bool) {
-        italicSlant = value ? 0.21256 : 0.0;
+		italicSlant = value ? 0.21256 : 0.0;
 		return italic = value;
 	}
 

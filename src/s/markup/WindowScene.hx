@@ -79,17 +79,29 @@ class WindowScene implements s.shortcut.Shortcut {
 
 	@:access(s.Window)
 	function render(target:RenderTarget) {
+		#if S2D_DEBUG_FPS
+		var tSync = haxe.Timer.stamp() * 1000;
+		#end
 		root.syncTree();
+		#if S2D_DEBUG_FPS
+		var syncMs = haxe.Timer.stamp() * 1000 - tSync;
+		#end
 
 		#if S2D_DEBUG_FPS
 		Context3D.reset();
 		#end
 		final ctx = target.context2D;
+		#if S2D_DEBUG_FPS
+		var tRender = haxe.Timer.stamp() * 1000;
+		#end
 		ctx.begin();
 		ctx.clear(color);
 		ctx.pushTransform(projection);
 		Element.renderElement(root, target);
 		ctx.end();
+		#if S2D_DEBUG_FPS
+		var renderMs = haxe.Timer.stamp() * 1000 - tRender;
+		#end
 		#if (S2D_UI_DEBUG_ELEMENT_BOUNDS == 1)
 		ctx.begin();
 		var e = elementAt(App.input.mouse.x, App.input.mouse.y);
@@ -118,6 +130,16 @@ class WindowScene implements s.shortcut.Shortcut {
 		draw("Draw calls: " + Context3D.drawCalls);
 		draw("IB allocations: " + Context3D.ibAllocations);
 		draw("VB allocations: " + Context3D.vbAllocations);
+		draw("Steps: " + Context3D.stepCount);
+		draw("Commands: " + Context3D.commandCount);
+		draw("Pipelines: " + Context3D.pipelineBatches);
+		draw("Stream verts: " + Context3D.streamVerts);
+		draw("Stream inds: " + Context3D.streamInds);
+		draw("Ensure (ms): " + roundTo(Context3D.ensureMs, 2));
+		draw("Commands (ms): " + roundTo(Context3D.commandMs, 2));
+		draw("Draw (ms): " + roundTo(Context3D.drawMs, 2));
+		draw("Sync (ms): " + roundTo(syncMs, 2));
+		draw("Render (ms): " + roundTo(renderMs, 2));
 		ctx.end();
 		#end
 		ctx.popTransform();
