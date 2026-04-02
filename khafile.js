@@ -153,7 +153,7 @@ for (const [k, v] of Object.entries(process.assetTypes)) {
 for (const [k, v] of Object.entries(process.shortcuts ?? {})) {
     if (typeof k !== "string" || typeof v !== "string" || !v) continue;
     project.addParameter(
-        `--macro s.markup.macro.MarkupMacro.useShortcut(${JSON.stringify(k)}, ${JSON.stringify(v)})`
+        `--macro s.ui.macro.MarkupMacro.useShortcut(${JSON.stringify(k)}, ${JSON.stringify(v)})`
     );
 }
 

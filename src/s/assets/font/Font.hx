@@ -25,6 +25,7 @@ class Font extends Asset<kha.Font> {
 	public static inline final sdfInf:Float = 1e20;
 	public static inline final sdfQuadraticFlatnessSq:Float = 0.02;
 	public static inline final sdfCubicFlatnessSq:Float = 0.02;
+	public static inline final sdfFast:Bool = true;
 
 	static final defaultGlyphs:Array<Int> = [for (i in 32...127) i];
 
@@ -383,6 +384,63 @@ class Font extends Asset<kha.Font> {
 	}
 
 	static function buildGlyphSdf(info:Stbtt_fontinfo, glyphIndex:Int, scale:Float, pixels:Blob, atlasWidth:Int, glyph:Stbtt_bakedchar) {
+		if (sdfFast) {
+			buildGlyphSdfFast(info, glyphIndex, scale, pixels, atlasWidth, glyph);
+			return;
+		}
+		buildGlyphSdfSlow(info, glyphIndex, scale, pixels, atlasWidth, glyph);
+	}
+
+	static function buildGlyphSdfFast(info:Stbtt_fontinfo, glyphIndex:Int, scale:Float, pixels:Blob, atlasWidth:Int, glyph:Stbtt_bakedchar) {
+		final width = glyph.x1 - glyph.x0;
+		final height = glyph.y1 - glyph.y0;
+		if (width <= 0 || height <= 0)
+			return;
+
+		final segments = buildGlyphSegments(info, glyphIndex, scale, glyph);
+		if (segments.length == 0)
+			return;
+
+		final count = width * height;
+		final inside = new Vector<Float>(count);
+		final outside = new Vector<Float>(count);
+		rasterizeGlyphMask(segments, width, height, inside, outside);
+
+		final distInside = edt2d(inside, width, height);
+		final distOutside = edt2d(outside, width, height);
+
+		final band = sdfSpread + 2.0;
+		for (y in 0...height) {
+			final row = y * width;
+			final atlasRow = (glyph.y0 + y) * atlasWidth + glyph.x0;
+			for (x in 0...width) {
+				final idx = row + x;
+				final approxSigned = Math.sqrt(distOutside[idx]) - Math.sqrt(distInside[idx]);
+				if (approxSigned <= -band) {
+					pixels.writeU8(atlasRow + x, 0);
+					continue;
+				}
+				if (approxSigned >= band) {
+					pixels.writeU8(atlasRow + x, 255);
+					continue;
+				}
+
+				final px = x + 0.5;
+				final py = y + 0.5;
+				var minDistSq = sdfInf;
+				for (segment in segments) {
+					final distSq = pointSegmentDistanceSq(px, py, segment);
+					if (distSq < minDistSq)
+						minDistSq = distSq;
+				}
+				final signed = (inside[idx] == 0.0 ? 1.0 : -1.0) * Math.sqrt(minDistSq);
+				final normalized = Math.max(0.0, Math.min(1.0, 0.5 + signed / (2.0 * sdfSpread)));
+				pixels.writeU8(atlasRow + x, Std.int(Math.round(normalized * 255.0)));
+			}
+		}
+	}
+
+	static function buildGlyphSdfSlow(info:Stbtt_fontinfo, glyphIndex:Int, scale:Float, pixels:Blob, atlasWidth:Int, glyph:Stbtt_bakedchar) {
 		final width = glyph.x1 - glyph.x0;
 		final height = glyph.y1 - glyph.y0;
 		if (width <= 0 || height <= 0)
@@ -405,6 +463,50 @@ class Font extends Asset<kha.Font> {
 				final signed = (pointInsideGlyph(px, py, segments) ? 1.0 : -1.0) * Math.sqrt(minDistSq);
 				final normalized = Math.max(0.0, Math.min(1.0, 0.5 + signed / (2.0 * sdfSpread)));
 				pixels.writeU8(glyph.x0 + x + (glyph.y0 + y) * atlasWidth, Std.int(Math.round(normalized * 255.0)));
+			}
+		}
+	}
+
+	static function rasterizeGlyphMask(segments:Array<GlyphSegment>, width:Int, height:Int, inside:Vector<Float>, outside:Vector<Float>) {
+		final count = width * height;
+		for (i in 0...count) {
+			inside[i] = sdfInf;
+			outside[i] = 0.0;
+		}
+
+		final intersections:Array<Float> = [];
+		for (y in 0...height) {
+			intersections.resize(0);
+			final py = y + 0.5;
+			for (segment in segments) {
+				final ay = segment.ay;
+				final by = segment.by;
+				if ((ay > py) == (by > py))
+					continue;
+				final x = segment.ax + (py - ay) * (segment.bx - segment.ax) / (by - ay);
+				intersections.push(x);
+			}
+			if (intersections.length == 0)
+				continue;
+			intersections.sort((a, b) -> a < b ? -1 : a > b ? 1 : 0);
+
+			var i = 0;
+			while (i + 1 < intersections.length) {
+				var start = Std.int(Math.ceil(intersections[i] - 0.5));
+				var end = Std.int(Math.floor(intersections[i + 1] - 0.5));
+				if (end >= 0 && start < width) {
+					if (start < 0)
+						start = 0;
+					if (end >= width)
+						end = width - 1;
+					var idx = y * width + start;
+					for (x in start...end + 1) {
+						inside[idx] = 0.0;
+						outside[idx] = sdfInf;
+						++idx;
+					}
+				}
+				i += 2;
 			}
 		}
 	}

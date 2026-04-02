@@ -1,4 +1,4 @@
-#include "s.markup/std/pbr"
+#include "s.ui/std/pbr"
 
 const vec3 viewDir = vec3(0.0, 0.0, 1.0); // 2D
 

@@ -38,6 +38,7 @@ abstract class Object<T:Object<T>> implements s.shortcut.Shortcut {
 	 * instead of mutating internal storage directly.
 	 */
 	public var parent(get, set):T;
+
 	/**
 	 * Direct child nodes.
 	 *
@@ -62,9 +63,8 @@ abstract class Object<T:Object<T>> implements s.shortcut.Shortcut {
 	@:signal public function descendantRemoved(descendant:T):Void;
 
 	/** Creates an empty node with no parent and no children. */
-	public function new() {
+	public function new()
 		children = new ObjectList(cast this);
-	}
 
 	/**
 	 * Sets the parent node.
@@ -73,14 +73,12 @@ abstract class Object<T:Object<T>> implements s.shortcut.Shortcut {
 	 *
 	 * @param value New parent node.
 	 */
-	public function setParent(value:T):Void {
+	public function setParent(value:T):Void
 		parent = value;
-	}
 
 	/** Detaches this node from its parent. */
-	public function removeParent():Void {
+	public function removeParent():Void
 		parent = null;
-	}
 
 	/**
 	 * Adds a direct child.
@@ -90,9 +88,8 @@ abstract class Object<T:Object<T>> implements s.shortcut.Shortcut {
 	 * @param value Child node to add.
 	 * @return The added child or `null` if it is already present.
 	 */
-	public function addChild(value:T) {
+	public function addChild(value:T)
 		return children.add(value);
-	}
 
 	/**
 	 * Removes a direct child.
@@ -100,9 +97,8 @@ abstract class Object<T:Object<T>> implements s.shortcut.Shortcut {
 	 * @param value Child node to remove.
 	 * @return `true` if the child was removed.
 	 */
-	public function removeChild(value:T) {
+	public function removeChild(value:T)
 		return children.remove(value);
-	}
 
 	/**
 	 * Returns the first direct child with the given tag.
@@ -127,9 +123,8 @@ abstract class Object<T:Object<T>> implements s.shortcut.Shortcut {
 	 * @param tag Tag to match.
 	 * @return Matching direct children.
 	 */
-	public function getChildren(tag:String):Array<T> {
+	public function getChildren(tag:String):Array<T>
 		return children.filter(e -> e.tag == tag);
-	}
 
 	/**
 	 * Searches the full descendant tree for the first node with the given tag.
@@ -152,9 +147,8 @@ abstract class Object<T:Object<T>> implements s.shortcut.Shortcut {
 	}
 
 	/** Returns an iterator over direct children. */
-	public function iterator() {
+	public function iterator()
 		return children.iterator();
-	}
 
 	/**
 	 * Traverses all descendants depth-first and applies a callback.
@@ -171,23 +165,19 @@ abstract class Object<T:Object<T>> implements s.shortcut.Shortcut {
 	}
 
 	/** Returns a debug-friendly string containing the class name and tag. */
-	public function toString():String {
-		return '${Type.getClassName(Type.getClass(this))} #$tag';
-	}
+	public function toString():String
+		return Type.getClassName(Type.getClass(this)) + (tag != null ? '#$tag' : "");
 
 	@:slot(childAdded, descendantAdded)
-	function __childAdded__(child:T) {
+	function __childAdded__(child:T)
 		parent?.descendantAdded(child);
-	}
 
 	@:slot(childRemoved, descendantRemoved)
-	function __childRemoved__(child:T) {
+	function __childRemoved__(child:T)
 		parent?.descendantRemoved(child);
-	}
 
-	function get_parent():T {
+	function get_parent():T
 		return _parent;
-	}
 
 	function set_parent(value:T):T {
 		if (value != null)
@@ -205,27 +195,22 @@ private extern abstract ObjectList<T:Object<T>>(ArrayData<T>) to ArrayData<T> {
 	var element(get, never):T;
 
 	@:to
-	inline function toArray():Array<T> {
+	inline function toArray():Array<T>
 		return list.copy();
-	}
 
 	public var length(get, never):Int;
 
-	public inline function excluded(x:T) {
+	public inline function excluded(x:T)
 		return copy().remove(x);
-	}
 
-	public inline function concat(a:Array<T>):Array<T> {
+	public inline function concat(a:Array<T>):Array<T>
 		return list.concat(a);
-	}
 
-	public inline function join(sep:String):String {
+	public inline function join(sep:String):String
 		return list.join(sep);
-	}
 
-	public inline function pop():Null<T> {
+	public inline function pop():Null<T>
 		return inline rem(list.pop());
-	}
 
 	public inline function add(x:T):T {
 		if (contains(x))
@@ -234,21 +219,17 @@ private extern abstract ObjectList<T:Object<T>>(ArrayData<T>) to ArrayData<T> {
 		return inline addEl(x);
 	}
 
-	public inline function reverse():Void {
+	public inline function reverse():Void
 		list.reverse();
-	}
 
-	public inline function shift():Null<T> {
+	public inline function shift():Null<T>
 		return inline rem(list.shift());
-	}
 
-	public inline function slice(pos:Int, ?end:Int):Array<T> {
+	public inline function slice(pos:Int, ?end:Int):Array<T>
 		return list.slice(pos, end);
-	}
 
-	public inline function sort(f:T->T->Int):Void {
+	public inline function sort(f:T->T->Int):Void
 		list.sort(f);
-	}
 
 	public inline function splice(pos:Int, len:Int):Array<T> {
 		var els = list.splice(pos, len);
@@ -257,9 +238,8 @@ private extern abstract ObjectList<T:Object<T>>(ArrayData<T>) to ArrayData<T> {
 		return els;
 	}
 
-	public inline function toString():String {
+	public inline function toString():String
 		return list.toString();
-	}
 
 	public inline function unshift(x:T):T {
 		if (contains(x))
@@ -282,42 +262,33 @@ private extern abstract ObjectList<T:Object<T>>(ArrayData<T>) to ArrayData<T> {
 		return r;
 	}
 
-	public inline function contains(x:T):Bool {
+	public inline function contains(x:T):Bool
 		return x?._parent == this.element;
-	}
 
-	public inline function indexOf(x:T, ?fromIndex:Int):Int {
+	public inline function indexOf(x:T, ?fromIndex:Int):Int
 		return list.indexOf(x, fromIndex);
-	}
 
-	public inline function lastIndexOf(x:T, ?fromIndex:Int):Int {
+	public inline function lastIndexOf(x:T, ?fromIndex:Int):Int
 		return list.lastIndexOf(x, fromIndex);
-	}
 
-	public inline function copy():Array<T> {
+	public inline function copy():Array<T>
 		return list.copy();
-	}
 
-	public inline function iterator():haxe.iterators.ArrayIterator<T> {
+	public inline function iterator():haxe.iterators.ArrayIterator<T>
 		return list.iterator();
-	}
 
-	public inline function keyValueIterator():haxe.iterators.ArrayKeyValueIterator<T> {
+	public inline function keyValueIterator():haxe.iterators.ArrayKeyValueIterator<T>
 		return list.keyValueIterator();
-	}
 
-	public inline function map<S>(f:T->S):Array<S> {
+	public inline function map<S>(f:T->S):Array<S>
 		return list.map(f);
-	}
 
-	public inline function filter(f:T->Bool):Array<T> {
+	public inline function filter(f:T->Bool):Array<T>
 		return list.filter(f);
-	}
 
 	@:op([])
-	inline function arrayRead(i:Int):T {
+	inline function arrayRead(i:Int):T
 		return list[i];
-	}
 
 	@:op([])
 	inline function arrayWrite(i:Int, x:T):T {
@@ -338,9 +309,8 @@ private extern abstract ObjectList<T:Object<T>>(ArrayData<T>) to ArrayData<T> {
 		return x;
 	}
 
-	inline function get_length():Int {
+	inline function get_length():Int
 		return list.length;
-	}
 
 	inline function rem(x:T) {
 		if (x != null) {
@@ -352,13 +322,11 @@ private extern abstract ObjectList<T:Object<T>>(ArrayData<T>) to ArrayData<T> {
 		return x;
 	}
 
-	inline function get_list():Array<T> {
+	inline function get_list():Array<T>
 		return this.list;
-	}
 
-	inline function get_element():T {
+	inline function get_element():T
 		return this.element;
-	}
 }
 
 private class ArrayData<T:Object<T>> {

@@ -46,11 +46,7 @@ enum DrawCommand {
 }
 
 typedef DrawState = {
-	dirty:Bool,
 	pipeline:PipelineState,
-	vertexCount:Int,
-	indexCount:Int,
-	stepCount:Int,
 
 	?mesh:Mesh,
 	?indexBuffer:IndexBuffer,
@@ -169,6 +165,29 @@ class Context3D {
 		}
 	}
 
+	inline function cloneMesh(mesh:Mesh):Mesh
+		return mesh == null ? null : [for (polygon in mesh) polygon];
+
+	inline function appendMesh(target:Mesh, source:Mesh):Mesh {
+		if (source == null || source.length == 0)
+			return target;
+		if (target == null)
+			return cloneMesh(source);
+		for (polygon in source)
+			target.push(polygon);
+		return target;
+	}
+
+	inline function meshIndexCount(mesh:Mesh):Int {
+		if (mesh == null)
+			return 0;
+		var count = 0;
+		for (polygon in mesh)
+			if (polygon.length >= 3)
+				count += (polygon.length - 2) * 3;
+		return count;
+	}
+
 	public inline function begin(?mrt:Array<kha.Canvas>) {
 		#if S2D_DEBUG_FPS
 		beginTime = haxe.Timer.stamp() * 1000;
@@ -186,13 +205,13 @@ class Context3D {
 		try {
 			graphics.begin(targets);
 
-			for (state in states) {
-				if (state.dirty) {
-					bakeState(state);
-					state.dirty = false;
-				}
+			for (i in 0...buffer.stateId) {
+				var state = states[i];
+				if (state == null || state.pipeline == null)
+					continue;
 
-				if (state.pipeline == null || state.indexBuffer == null || state.indexCount <= 0)
+				bakeState(state);
+				if (state.indexBuffer == null)
 					continue;
 
 				graphics.setPipeline(state.pipeline);
@@ -204,8 +223,7 @@ class Context3D {
 				else
 					continue;
 
-				for (stepId in 0...state.stepCount) {
-					var step = state.steps[stepId];
+				for (step in state.steps) {
 					if (step == null)
 						continue;
 
@@ -213,18 +231,13 @@ class Context3D {
 						for (command in step.commands)
 							applyCommand(command);
 
-					if (step.start < 0 || step.start >= state.indexCount)
-						continue;
-
-					var maxCount = state.indexCount - step.start;
-					var drawCount = step.count == -1 ? maxCount : Std.int(Math.min(step.count, maxCount));
-					if (drawCount <= 0)
+					if (step.count <= 0)
 						continue;
 
 					if (step.instanceCount != null)
-						graphics.drawIndexedVerticesInstanced(step.instanceCount, step.start, drawCount);
+						graphics.drawIndexedVerticesInstanced(step.instanceCount, step.start, step.count);
 					else
-						graphics.drawIndexedVertices(step.start, drawCount);
+						graphics.drawIndexedVertices(step.start, step.count);
 
 					#if S2D_DEBUG_FPS
 					++ drawCalls;
@@ -242,36 +255,29 @@ class Context3D {
 	}
 
 	inline function bakeState(state:DrawState) {
+		if (state == null)
+			return;
+
 		if (state.pipeline == null || state.mesh == null || state.mesh.length == 0) {
-			state.vertexCount = 0;
-			state.indexCount = 0;
+			state.vertexBuffer?.delete();
+			state.indexBuffer?.delete();
+			state.vertexBuffer = null;
+			state.indexBuffer = null;
 			return;
 		}
 
-		var struct = state.pipeline.inputLayout[0];
-		var floatsPerVertex = struct.byteSize() >> 2;
+		final struct = state.pipeline.inputLayout[0];
+		final structSize = struct.byteSize() >> 2;
 
-		var vertCount = 0;
-		var indCount = 0;
-		for (polygon in state.mesh) {
-			var polygonVertCount = polygon.length;
-			vertCount += polygonVertCount;
-			if (polygonVertCount >= 3)
-				indCount += (polygonVertCount - 2) * 3;
+		var indCount = 0, vertCount = 0;
+		for (p in state.mesh) {
+			vertCount += p.length;
+			if (p.length >= 3)
+				indCount += (p.length - 2) * 3;
 		}
-
-		if (vertCount <= 0 || indCount <= 0) {
-			state.vertexCount = 0;
-			state.indexCount = 0;
-			return;
-		}
-
-		state.vertexCount = vertCount;
-		state.indexCount = indCount;
 
 		if (state.vertexBuffer == null || vertCount > state.vertexBuffer.count()) {
-			if (state.vertexBuffer != null)
-				state.vertexBuffer.delete();
+			state.vertexBuffer?.delete();
 			state.vertexBuffer = new VertexBuffer(vertCount, struct, StaticUsage);
 
 			#if S2D_DEBUG_FPS
@@ -280,8 +286,7 @@ class Context3D {
 		}
 
 		if (state.indexBuffer == null || indCount > state.indexBuffer.count()) {
-			if (state.indexBuffer != null)
-				state.indexBuffer.delete();
+			state.indexBuffer?.delete();
 			state.indexBuffer = new IndexBuffer(indCount, StaticUsage);
 
 			#if S2D_DEBUG_FPS
@@ -289,99 +294,89 @@ class Context3D {
 			#end
 		}
 
-		var vert = state.vertexBuffer.lock(0, vertCount);
-		var ind = state.indexBuffer.lock(0, indCount);
+		final ind = state.indexBuffer.lock(0, indCount);
+		final vert = state.vertexBuffer.lock(0, vertCount);
 
-		var vertWrite = 0;
-		var indWrite = 0;
-		var vertexOffset = 0;
+		var i = 0, v = 0, offset = 0;
 
-		for (polygon in state.mesh) {
-			var polygonVertCount = polygon.length;
-			if (polygonVertCount == 0)
-				continue;
-
-			for (vertex in polygon) {
-				if (vertex.length != floatsPerVertex)
-					throw 'Vertex size mismatch. Expected $floatsPerVertex floats, got ${vertex.length}.';
-
-				for (value in vertex)
-					vert[vertWrite++] = value;
-			}
-
-			if (polygonVertCount >= 3) {
-				for (i in 1...polygonVertCount - 1) {
-					ind[indWrite++] = vertexOffset;
-					ind[indWrite++] = vertexOffset + i;
-					ind[indWrite++] = vertexOffset + i + 1;
+		for (p in state.mesh) {
+			if (p.length >= 3)
+				for (j in 1...p.length - 1) {
+					ind[i++] = offset;
+					ind[i++] = offset + j;
+					ind[i++] = offset + j + 1;
 				}
-			}
+			offset += p.length;
 
-			vertexOffset += polygonVertCount;
+			for (vertex in p)
+				for (value in vertex)
+					vert[v++] = value;
 		}
 
-		state.vertexBuffer.unlock(vertCount);
 		state.indexBuffer.unlock(indCount);
+		state.vertexBuffer.unlock(vertCount);
 	}
 
 	public inline function draw(?instanceCount:Int, start:Int = 0, count:Int = -1) {
 		if (buffer.pipeline == null)
 			return;
 
-		var stateId = buffer.stateId;
-		var state = states[stateId];
-		var commands = buffer.commands;
+		var mesh = buffer.mesh;
+		var drawCount = count;
+		if (drawCount == -1)
+			drawCount = meshIndexCount(mesh) - start;
+		if (drawCount < 0)
+			drawCount = 0;
 
-		if (state == null) {
-			state = {
-				dirty: true,
-				pipeline: buffer.pipeline,
-				vertexCount: 0,
-				indexCount: 0,
-				stepCount: 1,
-				mesh: buffer.mesh,
-				steps: [
-					{
-						start: start,
-						count: count,
-						instanceCount: instanceCount,
-						commands: commands
-					}
-				]
+		var nextStateId = buffer.stateId;
+		var stateId = nextStateId - 1;
+		var state = stateId >= 0 ? states[stateId] : null;
+
+		if (state != null && state.pipeline == buffer.pipeline) {
+			var drawStart = meshIndexCount(state.mesh) + start;
+			state.mesh = appendMesh(state.mesh, mesh);
+
+			var stepId = buffer.stepId;
+			var step = {
+				start: drawStart,
+				count: drawCount,
+				instanceCount: instanceCount,
+				commands: buffer.commands
 			};
-			if (stateId == states.length)
+
+			if (stepId == state.steps.length)
+				state.steps.push(step);
+			else
+				state.steps[stepId] = step;
+
+			buffer = {
+				stateId: nextStateId,
+				stepId: stepId + 1,
+				commands: []
+			};
+		} else {
+			state = {
+				pipeline: buffer.pipeline,
+				mesh: cloneMesh(mesh),
+				steps: [{
+					start: start,
+					count: drawCount,
+					instanceCount: instanceCount,
+					commands: buffer.commands
+				}]
+			};
+
+			if (nextStateId == states.length)
 				states.push(state);
 			else
-				states[stateId] = state;
-		} else {
-			state.dirty = true;
-			state.pipeline = buffer.pipeline;
-			state.mesh = buffer.mesh;
-			state.vertexCount = 0;
-			state.indexCount = 0;
-			state.stepCount = 1;
+				states[nextStateId] = state;
 
-			var step = state.steps[0];
-			if (step == null)
-				state.steps[0] = {
-					start: start,
-					count: count,
-					instanceCount: instanceCount,
-					commands: commands
-				};
-			else {
-				step.start = start;
-				step.count = count;
-				step.instanceCount = instanceCount;
-				step.commands = commands;
-			}
+			buffer = {
+				stateId: nextStateId + 1,
+				stepId: 1,
+				commands: []
+			};
 		}
-
-		buffer = {
-			stateId: stateId + 1,
-			stepId: 0,
-			commands: []
-		};
 	}
 
 	public inline function setPipeline(pipeline:PipelineState)
@@ -390,28 +385,17 @@ class Context3D {
 	public inline function setMesh(mesh:Mesh)
 		buffer.mesh = mesh;
 
-	public inline function addPolygon(polygon:Polygon) {
-		var mesh:Mesh = buffer.mesh;
-		if (mesh == null) {
-			mesh = [];
-			buffer.mesh = mesh;
-		}
-		mesh.push(polygon);
+	public inline function addPolygon(p:Polygon) {
+		if (buffer.mesh == null)
+			buffer.mesh = [];
+		buffer.mesh.push(p);
 	}
 
 	public inline function addVertex(vertex:Vertex) {
-		var mesh:Mesh = buffer.mesh;
-		if (mesh == null || mesh.length == 0) {
-			mesh = [[vertex]];
-			buffer.mesh = mesh;
-		} else {
-			var polygon:Polygon = mesh[0];
-			if (polygon == null) {
-				polygon = [];
-				mesh[0] = polygon;
-			}
-			polygon.push(vertex);
-		}
+		if (buffer.mesh == null || buffer.mesh.length == 0)
+			buffer.mesh = [[vertex]];
+		else
+			buffer.mesh[buffer.mesh.length - 1].push(vertex);
 	}
 
 	public inline function addCommand(command:DrawCommand)

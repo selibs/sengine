@@ -6,7 +6,7 @@ import s.math.SMath;
 import s.assets.Image;
 import s.geometry.Rect;
 import s.graphics.FontStyle;
-import s.markup.Alignment;
+import s.ui.Alignment;
 
 using StringTools;
 

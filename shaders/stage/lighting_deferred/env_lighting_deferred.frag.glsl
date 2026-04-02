@@ -1,6 +1,6 @@
 #version 450
 
-#include "s.markup/std/lighting"
+#include "s.ui/std/lighting"
 
 layout(location = 0) in vec2 fragCoord;
 layout(location = 0) out vec4 fragColor;
