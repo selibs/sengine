@@ -3,7 +3,7 @@ package s.ui.elements;
 import s.graphics.RenderTarget;
 import s.graphics.Context2D;
 
-class Canvas2D extends DrawableElement {
+class Canvas extends DrawableElement {
 	var texture:RenderTarget;
 
 	public function new() {
@@ -16,6 +16,7 @@ class Canvas2D extends DrawableElement {
 
 	override function sync() {
 		super.sync();
+		
 		if (widthIsDirty || heightIsDirty) {
 			texture.unload();
 			texture = new RenderTarget(Std.int(width), Std.int(height));

@@ -2,16 +2,17 @@ package s.ui;
 
 import s.Time;
 import s.Color;
-import s.graphics.RenderTarget;
 import s.Window;
 import s.math.Mat3;
 import s.math.SMath;
 import s.graphics.Context2D;
 import s.graphics.Context3D;
+import s.graphics.RenderTarget;
+import s.ui.elements.Element;
 
 using s.extensions.StringExt;
 
-@:allow(s.ui.Element)
+@:allow(s.ui.elements.Element)
 class WindowScene implements s.shortcut.Shortcut {
 	var projection:Mat3;
 
@@ -99,7 +100,7 @@ class WindowScene implements s.shortcut.Shortcut {
 		#end
 
 		#if S2D_DEBUG_FPS
-		drawDebugInfo(ctx:Context2D);
+		drawDebugInfo(ctx);
 		#end
 
 		ctx.popTransform();

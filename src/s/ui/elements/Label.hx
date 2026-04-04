@@ -15,7 +15,7 @@ class Label extends DrawableElement {
 	@:attr var textY:Float = 0.0;
 	@:attr var textWidth:Float = 0.0;
 
-	@:attr.group public var font(default, never):FontStyle = new FontStyle();
+	@:attr.attached public final font:FontStyle = new FontStyle();
 
 	@:attr public var text:String;
 	@:attr public var alignment:Alignment = AlignLeft | AlignTop;
@@ -46,8 +46,10 @@ class Label extends DrawableElement {
 
 	override function sync() {
 		super.sync();
+
 		if (text.length == 0 || !font.isLoaded || font.pixelSize == 0)
 			return;
+
 		syncText();
 	}
 

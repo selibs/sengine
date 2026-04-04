@@ -16,15 +16,15 @@ import s.ui.graphics.stage.postprocessing.Compositor;
 @:dox(hide)
 class PostProcessing {
 	#if S2D_PP_BLOOM
-	public static var bloom(default, never) = new Bloom();
+	public static final bloom = new Bloom();
 	#end
 	#if S2D_PP_FISHEYE
-	public static var fisheye(default, never) = new Fisheye();
+	public static final fisheye = new Fisheye();
 	#end
 	#if S2D_PP_FILTER
-	public static var filter(default, never) = new Filter();
+	public static final filter = new Filter();
 	#end
 	#if S2D_PP_COMPOSITOR
-	public static var compositor(default, never) = new Compositor();
+	public static final compositor = new Compositor();
 	#end
 }

@@ -1,6 +1,6 @@
 package s.ui;
 
-import s.ui.Element;
+import s.ui.elements.Element;
 
 using StringTools;
 

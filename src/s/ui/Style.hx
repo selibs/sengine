@@ -1,6 +1,7 @@
 package s.ui;
 
 import s.ui.Selector;
+import s.ui.elements.Element;
 
 typedef Stylesheet = Array<Style>;
 

@@ -1,7 +1,9 @@
 package s.ui;
 
-@:allow(s.ui.Element)
-class Anchors implements s.shortcut.Shortcut {
+import s.ui.elements.Element;
+
+@:allow(s.ui.elements.Element)
+class Anchors extends AttachedAttribute {
 	@:attr public var left:HorizontalAnchor = null;
 	@:attr public var hCenter:HorizontalAnchor = null;
 	@:attr public var right:HorizontalAnchor = null;
@@ -9,7 +11,8 @@ class Anchors implements s.shortcut.Shortcut {
 	@:attr public var vCenter:VerticalAnchor = null;
 	@:attr public var bottom:VerticalAnchor = null;
 
-	public function new() {}
+	function new(element:Element)
+		super(element);
 
 	public function clear() {
 		clearH();
@@ -113,8 +116,8 @@ typedef VerticalAnchor = Anchor<VerticalAnchorLine>;
 
 @:forward()
 @:forward.new
-@:allow(s.ui.Element)
-extern abstract Anchor<T:AnchorLine>(T) {
+@:allow(s.ui.elements.Element)
+extern abstract Anchor<T:AnchorLine>(T) to AnchorLine {
 	private var self(get, never):T;
 
 	public var position(get, never):Float;
@@ -132,11 +135,12 @@ extern abstract Anchor<T:AnchorLine>(T) {
 private class HorizontalAnchorLine extends AnchorLine {}
 private class VerticalAnchorLine extends AnchorLine {}
 
-@:allow(s.ui.Element)
-abstract class AnchorLine implements s.shortcut.Shortcut {
+@:allow(s.ui.elements.Element)
+abstract class AnchorLine extends AttachedAttribute {
 	@:attr public var position:Float = 0.0;
 	@:attr public var padding:Float = 0.0;
 	@:attr public var margin:Float = 0.0;
 
-	public function new() {}
+	function new(element:Element)
+		super(element);
 }

@@ -4,13 +4,8 @@ import s.math.Vec2;
 import s.math.Mat3;
 
 abstract class Object2D<This:Object2D<This>> extends s.Object<This> {
-	@:attr final transform:Mat3 = Mat3.identity();
-
-	public var z(default, set):Float = 0;
-
-	public function new() {
-		super();
-	}
+	final transform:Mat3 = Mat3.identity();
+	var transformIsDirty:Bool = false;
 
 	public var translationX(get, set):Float;
 	public var translationY(get, set):Float;
@@ -19,6 +14,8 @@ abstract class Object2D<This:Object2D<This>> extends s.Object<This> {
 	public var rotation(get, set):Float;
 	public var shearX(get, set):Float;
 	public var shearY(get, set):Float;
+
+	public var z(default, set):Float = 0;
 
 	extern overload public inline function setTranslation(x:Float, y:Float) {
 		translationX = x;

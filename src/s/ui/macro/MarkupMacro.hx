@@ -29,17 +29,16 @@ class MarkupMacro {
 	static var stylesheets:Map<String, Map<String, Array<Expr>>>;
 
 	public static var shortcuts(default, null):Map<String, String> = [
-		"element" => "s.ui.Element",
+		"element" => "s.ui.elements.Element",
 		"drawable" => "s.ui.elements.DrawableElement",
 		"interactive" => "s.ui.elements.InteractiveElement",
 		// controls
 		// "button" => "s.ui.controls.Button",
 		// "input" => "s.ui.controls.TextInput",
-		// elements
-		"label" => "s.ui.elements.Label",
-		// "positioner" => "s.ui.elements.Positioner",
-		"text" => "s.ui.elements.Text",
 		// "edit" => "s.ui.elements.TextEdit",
+		// elements
+		"text" => "s.ui.elements.Text",
+		"label" => "s.ui.elements.Label",
 		"canvas" => "s.ui.elements.Canvas",
 		"image" => "s.ui.elements.ImageElement",
 		// shapes
@@ -48,13 +47,18 @@ class MarkupMacro {
 		"triangle" => "s.ui.elements.shapes.Triangle",
 		"rectangle" => "s.ui.elements.shapes.Rectangle",
 		// gradients
+		"gradient.conic" => "s.ui.elements.gradients.ConicGradient",
 		"gradient.linear" => "s.ui.elements.gradients.LinearGradient",
 		"gradient.radial" => "s.ui.elements.gradients.RadialGradient",
-		"gradient.conic" => "s.ui.elements.gradients.ConicGradient",
+		// positioners
+		"row" => "s.ui.elements.positioners.Row",
+		"flow" => "s.ui.elements.positioners.Flow",
+		"column" => "s.ui.elements.positioners.Column",
 		// layouts
-		"box" => "s.ui.layouts.BoxLayout",
-		// "vbox" => "s.ui.layouts.VBoxLayout",
-		// "hbox" => "s.ui.layouts.HBoxLayout",
+		"layout.box" => "s.ui.elements.layouts.BoxLayout",
+		"layout.row" => "s.ui.elements.layouts.RowLayout",
+		"layout.flow" => "s.ui.elements.layouts.FlowLayout",
+		"layout.column" => "s.ui.elements.layouts.ColumnLayout",
 		// widgets
 		// "progress" => "s.ui.widgets.ProgressBar",
 		// "scroll" => "s.ui.widgets.ScrollView",
@@ -281,7 +285,7 @@ class MarkupMacro {
 		}
 		args.push({
 			name: "parent",
-			type: macro :s.ui.Element
+			type: macro :s.ui.elements.Element
 		});
 
 		if (expr != null)

@@ -20,16 +20,6 @@ abstract class Object<T:Object<T>> implements s.shortcut.Shortcut {
 	var _parent:T;
 
 	/**
-	 * Optional application-defined tag used for lookup.
-	 *
-	 * Tags are not required to be unique. Methods such as
-	 * [`getChild`](s.Object.getChild), [`getChildren`](s.Object.getChildren), and
-	 * [`findChild`](s.Object.findChild) use this field for simple structural
-	 * queries.
-	 */
-	@:attr public var tag:String;
-
-	/**
 	 * Parent node or `null` if this node is detached.
 	 *
 	 * Assigning this field re-parents the node. Most code should use
@@ -100,52 +90,6 @@ abstract class Object<T:Object<T>> implements s.shortcut.Shortcut {
 	public function removeChild(value:T)
 		return children.remove(value);
 
-	/**
-	 * Returns the first direct child with the given tag.
-	 *
-	 * This only checks direct children and does not recurse into descendants.
-	 *
-	 * @param tag Tag to match.
-	 * @return The found child or `null`.
-	 */
-	public function getChild(tag:String):T {
-		for (c in children)
-			if (c.tag == tag)
-				return c;
-		return null;
-	}
-
-	/**
-	 * Returns all direct children with the given tag.
-	 *
-	 * This only checks direct children and does not recurse into descendants.
-	 *
-	 * @param tag Tag to match.
-	 * @return Matching direct children.
-	 */
-	public function getChildren(tag:String):Array<T>
-		return children.filter(e -> e.tag == tag);
-
-	/**
-	 * Searches the full descendant tree for the first node with the given tag.
-	 *
-	 * Search order is depth-first in child order.
-	 *
-	 * @param tag Tag to match.
-	 * @return The found descendant or `null`.
-	 */
-	public function findChild(tag:String):T {
-		for (child in children)
-			if (child.tag == tag)
-				return child;
-			else {
-				var c = child.findChild(tag);
-				if (c != null)
-					return c;
-			}
-		return null;
-	}
-
 	/** Returns an iterator over direct children. */
 	public function iterator()
 		return children.iterator();
@@ -166,7 +110,7 @@ abstract class Object<T:Object<T>> implements s.shortcut.Shortcut {
 
 	/** Returns a debug-friendly string containing the class name and tag. */
 	public function toString():String
-		return Type.getClassName(Type.getClass(this)) + (tag != null ? '#$tag' : "");
+		return Type.getClassName(Type.getClass(this));
 
 	@:slot(childAdded, descendantAdded)
 	function __childAdded__(child:T)

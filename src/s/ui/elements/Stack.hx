@@ -17,6 +17,8 @@ class Stack extends Element {
 	}
 
 	override function syncTree() {
+		if (!isDirty)
+			return;
 		sync();
 		final c = current;
 		if (c != null)

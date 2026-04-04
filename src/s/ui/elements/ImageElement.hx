@@ -28,7 +28,7 @@ enum ImageSampling {
  * Image-based drawable markup element.
  *
  * `ImageElement` renders a [`s.assets.Image`](s.assets.Image) inside the
- * rectangular bounds inherited from [`Element`](s.ui.Element). The image is
+ * rectangular bounds inherited from [`Element`](s.ui.elements.Element). The image is
  * loaded through an internal [`ImageAsset`](s.assets.ImageAsset), can be
  * restricted to a source sub-rectangle with
  * [`sourceClipRect`](s.ui.elements.ImageElement.sourceClipRect), fitted by
