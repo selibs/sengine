@@ -6,33 +6,33 @@ import kha.math.FastMatrix4 as KhaMat4;
 @:forward.new
 @:forward(_00, _10, _20, _30, _01, _11, _21, _31, _02, _12, _22, _32, _03, _13, _23, _33)
 extern abstract Mat4(KhaMat4) from KhaMat4 to KhaMat4 {
-	public static inline function identity():Mat4 {
+	public static inline function identity():Mat4
 		return KhaMat4.identity();
-	}
 
-	public static inline function empty():Mat4 {
+	public static inline function empty():Mat4
 		return KhaMat4.empty();
-	}
 
-	public static inline function translation(x:Float, y:Float, z:Float):Mat4 {
+	public static inline function translation(x:Float, y:Float, z:Float):Mat4
 		return KhaMat4.translation(x, y, z);
-	}
 
-	public static inline function scale(x:Float, y:Float, z:Float):Mat4 {
+	public static inline function scale(x:Float, y:Float, z:Float):Mat4
 		return KhaMat4.scale(x, y, z);
-	}
 
-	public static inline function rotation(yaw:Float, pitch:Float, roll:Float):Mat4 {
+	public static inline function rotation(yaw:Float, pitch:Float, roll:Float):Mat4
 		return KhaMat4.rotation(yaw, pitch, roll);
-	}
 
-	public static inline function orthogonalProjection(left:Float, right:Float, bottom:Float, top:Float, zn:Float, zf:Float):Mat4 {
+	public static inline function orthogonalProjection(left:Float, right:Float, bottom:Float, top:Float, zn:Float, zf:Float):Mat4
 		return KhaMat4.orthogonalProjection(left, right, bottom, top, zn, zf);
-	}
 
-	public static inline function perspectiveProjection(fovY:Float, aspect:Float, zn:Float, zf:Float):Mat4 {
+	public static inline function perspectiveProjection(fovY:Float, aspect:Float, zn:Float, zf:Float):Mat4
 		return KhaMat4.perspectiveProjection(fovY, aspect, zn, zf);
-	}
+
+	overload public inline function new()
+		this = identity();
+
+	overload public inline function new(a00:Float, a10:Float, a20:Float, a30:Float, a01:Float, a11:Float, a21:Float, a31:Float, a02:Float, a12:Float,
+			a22:Float, a32:Float, a03:Float, a13:Float, a23:Float, a33:Float)
+		this = new KhaMat4(a00, a10, a20, a30, a01, a11, a21, a31, a02, a12, a22, a32, a03, a13, a23, a33);
 
 	public inline function set(a00:Float, a10:Float, a20:Float, a30:Float, a01:Float, a11:Float, a21:Float, a31:Float, a02:Float, a12:Float, a22:Float,
 			a32:Float, a03:Float, a13:Float, a23:Float, a33:Float) {
@@ -59,23 +59,20 @@ extern abstract Mat4(KhaMat4) from KhaMat4 to KhaMat4 {
 		return this;
 	}
 
-	public inline function clone():Mat4 {
+	public inline function clone():Mat4
 		return new Mat4(this._00, this._10, this._20, this._30, this._01, this._11, this._21, this._31, this._02, this._12, this._22, this._32, this._03,
 			this._13, this._23, this._33);
-	}
 
-	public inline function matrixCompMult(n:Mat4):Mat4 {
+	public inline function matrixCompMult(n:Mat4):Mat4
 		return new Mat4(this._00 * n._00, this._10 * n._10, this._20 * n._20, this._30 * n._30, this._01 * n._01, this._11 * n._11, this._21 * n._21,
 			this._31 * n._31, this._02 * n._02, this._12 * n._12, this._22 * n._22, this._32 * n._32, this._03 * n._03, this._13 * n._13, this._23 * n._23,
 			this._33 * n._33);
-	}
 
 	// extended methods
 
-	public inline function transpose():Mat4 {
+	public inline function transpose():Mat4
 		return new Mat4(this._00, this._01, this._02, this._03, this._10, this._11, this._12, this._13, this._20, this._21, this._22, this._23, this._30,
 			this._31, this._32, this._33);
-	}
 
 	public inline function determinant():Float {
 		var b0 = this._00 * this._11 - this._10 * this._01;
@@ -104,8 +101,6 @@ extern abstract Mat4(KhaMat4) from KhaMat4 to KhaMat4 {
 		var b09 = this._12 * this._23 - this._22 * this._13;
 		var b10 = this._12 * this._33 - this._32 * this._13;
 		var b11 = this._22 * this._33 - this._32 * this._23;
-
-		// determinant
 		var det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
 
 		var f = 1.0 / det;
@@ -175,13 +170,12 @@ extern abstract Mat4(KhaMat4) from KhaMat4 to KhaMat4 {
 			+ this._22 * b00);
 	}
 
-	public inline function toString() {
+	public inline function toString()
 		return 'mat4(' + '${this._00}, ${this._10}, ${this._20}, ${this._30}, ' + '${this._01}, ${this._11}, ${this._21}, ${this._31}, '
 			+ '${this._02}, ${this._12}, ${this._22}, ${this._32}, ' + '${this._03}, ${this._13}, ${this._23}, ${this._33}' + ')';
-	}
 
 	@:op(-a)
-	static private inline function neg(m:Mat4) {
+	static private inline function neg(m:Mat4)
 		return new Mat4(-m._00,
 			-m._10,
 			-m._20,
@@ -198,7 +192,6 @@ extern abstract Mat4(KhaMat4) from KhaMat4 to KhaMat4 {
 			-m._13,
 			-m._23,
 			-m._33);
-	}
 
 	@:op(++a)
 	static private inline function prefixIncrement(m:Mat4) {
@@ -321,7 +314,7 @@ extern abstract Mat4(KhaMat4) from KhaMat4 to KhaMat4 {
 		return a.copyFrom(a - f);
 
 	@:op(a + b)
-	static private inline function add(m:Mat4, n:Mat4):Mat4 {
+	static private inline function add(m:Mat4, n:Mat4):Mat4
 		return new Mat4(m._00
 			+ n._00, m._10
 			+ n._10, m._20
@@ -340,10 +333,9 @@ extern abstract Mat4(KhaMat4) from KhaMat4 to KhaMat4 {
 			+ n._13, m._23
 			+ n._23, m._33
 			+ n._33);
-	}
 
 	@:op(a + b) @:commutative
-	static private inline function addScalar(m:Mat4, f:Float):Mat4 {
+	static private inline function addScalar(m:Mat4, f:Float):Mat4
 		return new Mat4(m._00
 			+ f, m._10
 			+ f, m._20
@@ -362,10 +354,9 @@ extern abstract Mat4(KhaMat4) from KhaMat4 to KhaMat4 {
 			+ f, m._23
 			+ f, m._33
 			+ f);
-	}
 
 	@:op(a - b)
-	static private inline function sub(m:Mat4, n:Mat4):Mat4 {
+	static private inline function sub(m:Mat4, n:Mat4):Mat4
 		return new Mat4(m._00
 			- n._00, m._10
 			- n._10, m._20
@@ -384,10 +375,9 @@ extern abstract Mat4(KhaMat4) from KhaMat4 to KhaMat4 {
 			- n._13, m._23
 			- n._23, m._33
 			- n._33);
-	}
 
 	@:op(a - b)
-	static private inline function subScalar(m:Mat4, f:Float):Mat4 {
+	static private inline function subScalar(m:Mat4, f:Float):Mat4
 		return new Mat4(m._00
 			- f, m._10
 			- f, m._20
@@ -406,10 +396,9 @@ extern abstract Mat4(KhaMat4) from KhaMat4 to KhaMat4 {
 			- f, m._23
 			- f, m._33
 			- f);
-	}
 
 	@:op(a - b)
-	static private inline function subScalarInv(f:Float, m:Mat4):Mat4 {
+	static private inline function subScalarInv(f:Float, m:Mat4):Mat4
 		return new Mat4(f
 			- m._00, f
 			- m._10, f
@@ -428,10 +417,9 @@ extern abstract Mat4(KhaMat4) from KhaMat4 to KhaMat4 {
 			- m._13, f
 			- m._23, f
 			- m._33);
-	}
 
 	@:op(a * b)
-	static private inline function mul(m:Mat4, n:Mat4):Mat4 {
+	static private inline function mul(m:Mat4, n:Mat4):Mat4
 		return new Mat4(m._00 * n._00
 			+ m._01 * n._10
 			+ m._02 * n._20
@@ -488,10 +476,9 @@ extern abstract Mat4(KhaMat4) from KhaMat4 to KhaMat4 {
 			+ m._31 * n._13
 			+ m._32 * n._23
 			+ m._33 * n._33);
-	}
 
 	@:op(a * b)
-	static private inline function postMulVec4(m:Mat4, v:Vec4):Vec4 {
+	static private inline function postMulVec4(m:Mat4, v:Vec4):Vec4
 		return new Vec4(m._00 * v.x
 			+ m._01 * v.y
 			+ m._02 * v.z
@@ -506,41 +493,35 @@ extern abstract Mat4(KhaMat4) from KhaMat4 to KhaMat4 {
 			+ m._31 * v.y
 			+ m._32 * v.z
 			+ m._33 * v.w);
-	}
 
 	@:op(a * b)
-	static private inline function preMulVec4(v:Vec4, m:Mat4):Vec4 {
+	static private inline function preMulVec4(v:Vec4, m:Mat4):Vec4
 		return new Vec4(v.dot(new Vec4(m._00, m._10, m._20, m._30)), v.dot(new Vec4(m._01, m._11, m._21, m._31)), v.dot(new Vec4(m._02, m._12, m._22, m._32)),
 			v.dot(new Vec4(m._03, m._13, m._23, m._33)));
-	}
 
 	@:op(a * b) @:commutative
-	static private inline function mulScalar(m:Mat4, f:Float):Mat4 {
+	static private inline function mulScalar(m:Mat4, f:Float):Mat4
 		return new Mat4(m._00 * f, m._10 * f, m._20 * f, m._30 * f, m._01 * f, m._11 * f, m._21 * f, m._31 * f, m._02 * f, m._12 * f, m._22 * f, m._32 * f,
 			m._03 * f, m._13 * f, m._23 * f, m._33 * f);
-	}
 
 	@:op(a / b)
 	static private inline function div(m:Mat4, n:Mat4):Mat4
 		return m.matrixCompMult(1.0 / n);
 
 	@:op(a / b)
-	static private inline function divScalar(m:Mat4, f:Float):Mat4 {
+	static private inline function divScalar(m:Mat4, f:Float):Mat4
 		return new Mat4(m._00 / f, m._10 / f, m._20 / f, m._30 / f, m._01 / f, m._11 / f, m._21 / f, m._31 / f, m._02 / f, m._12 / f, m._22 / f, m._32 / f,
 			m._03 / f, m._13 / f, m._23 / f, m._33 / f);
-	}
 
 	@:op(a / b)
-	static private inline function divScalarInv(f:Float, m:Mat4):Mat4 {
+	static private inline function divScalarInv(f:Float, m:Mat4):Mat4
 		return new Mat4(f / m._00, f / m._10, f / m._20, f / m._30, f / m._01, f / m._11, f / m._21, f / m._31, f / m._02, f / m._12, f / m._22, f / m._32,
 			f / m._03, f / m._13, f / m._23, f / m._33);
-	}
 
 	@:op(a == b)
-	static private inline function equal(m:Mat4, n:Mat4):Bool {
+	static private inline function equal(m:Mat4, n:Mat4):Bool
 		return m._00 == n._00 && m._10 == n._10 && m._20 == n._20 && m._30 == n._30 && m._01 == n._01 && m._11 == n._11 && m._21 == n._21 && m._31 == n._31
 			&& m._02 == n._02 && m._12 == n._12 && m._22 == n._22 && m._32 == n._32 && m._03 == n._03 && m._13 == n._13 && m._23 == n._23 && m._33 == n._33;
-	}
 
 	@:op(a != b)
 	static private inline function notEqual(m:Mat4, n:Mat4):Bool
@@ -550,8 +531,7 @@ extern abstract Mat4(KhaMat4) from KhaMat4 to KhaMat4 {
 		Copies matrix elements in column-major order into a type that supports array-write access
 	**/
 	@:overload(function<T>(arrayLike:T, index:Int):T {})
-	public macro function copyIntoArray(self:haxe.macro.Expr.ExprOf<Mat4>, array:haxe.macro.Expr.ExprOf<ArrayAccess<Float>>,
-			index:haxe.macro.Expr.ExprOf<Int>) {
+	public macro function copyIntoArray(self:haxe.macro.Expr.ExprOf<Mat4>, array:haxe.macro.Expr.ExprOf<ArrayAccess<Float>>, index:haxe.macro.Expr.ExprOf<Int>)
 		return macro {
 			var self = $self;
 			var array = $array;
@@ -562,14 +542,12 @@ extern abstract Mat4(KhaMat4) from KhaMat4 to KhaMat4 {
 			self[3].copyIntoArray(array, i + 12);
 			array;
 		}
-	}
 
 	/**
 		Copies matrix elements in column-major order from a type that supports array-read access
 	**/
 	@:overload(function<T>(arrayLike:T, index:Int):Mat4 {})
-	public macro function copyFromArray(self:haxe.macro.Expr.ExprOf<Mat4>, array:haxe.macro.Expr.ExprOf<ArrayAccess<Float>>,
-			index:haxe.macro.Expr.ExprOf<Int>) {
+	public macro function copyFromArray(self:haxe.macro.Expr.ExprOf<Mat4>, array:haxe.macro.Expr.ExprOf<ArrayAccess<Float>>, index:haxe.macro.Expr.ExprOf<Int>)
 		return macro {
 			var self = $self;
 			var array = $array;
@@ -580,17 +558,15 @@ extern abstract Mat4(KhaMat4) from KhaMat4 to KhaMat4 {
 			self[3].copyFromArray(array, i + 12);
 			self;
 		}
-	}
 
 	// static macros
 
 	@:overload(function<T>(arrayLike:T, index:Int):T {})
-	public static macro function fromArray(array:ExprOf<ArrayAccess<Float>>, index:ExprOf<Int>):ExprOf<Mat4> {
+	public static macro function fromArray(array:ExprOf<ArrayAccess<Float>>, index:ExprOf<Int>):ExprOf<Mat4>
 		return macro {
 			var array = $array;
 			var i:Int = $index;
 			new Mat4(array[0 + i], array[1 + i], array[2 + i], array[3 + i], array[4 + i], array[5 + i], array[6 + i], array[7 + i], array[8 + i],
 				array[9 + i], array[10 + i], array[11 + i], array[12 + i], array[13 + i], array[14 + i], array[15 + i]);
 		}
-	}
 }

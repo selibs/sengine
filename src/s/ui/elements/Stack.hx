@@ -16,9 +16,7 @@ class Stack extends Element {
 		ctx.style.popOpacity();
 	}
 
-	override function syncTree() {
-		if (!isDirty)
-			return;
+	override function syncChildren() {
 		sync();
 		final c = current;
 		if (c != null)
@@ -29,8 +27,8 @@ class Stack extends Element {
 	inline function get_current():Element
 		return currentIndex >= 0 && currentIndex < children.length ? children[currentIndex] : null;
 
-	override function __childRemoved__(child:Element) {
-		super.__childRemoved__(child);
+	override function syncChildRemoved(child:Element) {
+		super.syncChildRemoved(child);
 		if (currentIndex >= children.length)
 			currentIndex = children.length - 1;
 	}

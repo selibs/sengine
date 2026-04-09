@@ -1,10 +1,10 @@
 package s.ui.elements.positioners;
 
-import s.ui.Anchors;
+import s.ui.AnchorsAttribute;
 import s.ui.Direction;
 
 class Flow extends Positioner {
-	@:attr public var axis:Axis;
+	@:attr(flowLayout) public var axis:Axis;
 
 	public function new(axis:Axis = Horizontal, direction:Direction = LeftToRight) {
 		super(direction);
@@ -12,21 +12,20 @@ class Flow extends Positioner {
 	}
 
 	function syncFlow() {
-		if (axisIsDirty)
-			flowIsDirty = true;
+		if (flowLayoutDirty)
+			flowDirty = true;
 
 		final primaryHorizontal = axis == Horizontal;
 		final forward = primaryHorizontal ? direction & RightToLeft == 0 : direction & BottomToTop == 0;
 		final crossForward = primaryHorizontal ? direction & BottomToTop == 0 : direction & RightToLeft == 0;
 
-		final pStart:AnchorLine = primaryHorizontal ? left : top;
-		final pEnd:AnchorLine = primaryHorizontal ? right : bottom;
-		final cStart:AnchorLine = primaryHorizontal ? top : left;
-		final cEnd:AnchorLine = primaryHorizontal ? bottom : right;
+		final pStart:AnchorLineAttribute = primaryHorizontal ? left : top;
+		final pEnd:AnchorLineAttribute = primaryHorizontal ? right : bottom;
+		final cStart:AnchorLineAttribute = primaryHorizontal ? top : left;
+		final cEnd:AnchorLineAttribute = primaryHorizontal ? bottom : right;
 
-		var boundsAreDirty = pStart.positionIsDirty || pEnd.positionIsDirty || pStart.paddingIsDirty || pEnd.paddingIsDirty || cStart.positionIsDirty
-			|| cEnd.positionIsDirty || cStart.paddingIsDirty || cEnd.paddingIsDirty;
-		var offsetIsDirty = flowIsDirty || axisIsDirty || directionIsDirty || spacingIsDirty || boundsAreDirty;
+		var boundsAreDirty = pStart.offsetDirty || pEnd.offsetDirty || cStart.offsetDirty || cEnd.offsetDirty;
+		var offsetDirty = children.dirty || flowDirty || flowLayoutDirty || boundsAreDirty;
 
 		final start = forward ? pStart.position + pStart.padding : pEnd.position - pEnd.padding;
 		final limit = forward ? pEnd.position - pEnd.padding : pStart.position + pStart.padding;
@@ -37,32 +36,32 @@ class Flow extends Positioner {
 		var hasInLine = false;
 
 		for (c in children) {
-			var childDirty = offsetIsDirty;
+			var childDirty = offsetDirty;
 
-			final cpStart:AnchorLine = primaryHorizontal ? c.left : c.top;
-			final cpEnd:AnchorLine = primaryHorizontal ? c.right : c.bottom;
-			final ccStart:AnchorLine = primaryHorizontal ? c.top : c.left;
-			final ccEnd:AnchorLine = primaryHorizontal ? c.bottom : c.right;
+			final cpStart:AnchorLineAttribute = primaryHorizontal ? c.left : c.top;
+			final cpEnd:AnchorLineAttribute = primaryHorizontal ? c.right : c.bottom;
+			final ccStart:AnchorLineAttribute = primaryHorizontal ? c.top : c.left;
+			final ccEnd:AnchorLineAttribute = primaryHorizontal ? c.bottom : c.right;
 
 			final pLead = forward ? cpStart : cpEnd;
 			final pTrail = forward ? cpEnd : cpStart;
 			final cLead = crossForward ? ccStart : ccEnd;
 			final cTrail = crossForward ? ccEnd : ccStart;
 
-			var lm = pLead.marginIsDirty;
-			var rm = pTrail.marginIsDirty;
-			var lp = pLead.positionIsDirty;
-			var rp = pTrail.positionIsDirty;
+			var lm = pLead.marginDirty;
+			var rm = pTrail.marginDirty;
+			var lp = pLead.positionDirty;
+			var rp = pTrail.positionDirty;
 
-			var tm = cLead.marginIsDirty;
-			var bm = cTrail.marginIsDirty;
-			var tp = cLead.positionIsDirty;
-			var bp = cTrail.positionIsDirty;
+			var tm = cLead.marginDirty;
+			var bm = cTrail.marginDirty;
+			var tp = cLead.positionDirty;
+			var bp = cTrail.positionDirty;
 
 			childDirty = childDirty
-				|| c.visibleIsDirty
+				|| c.visibleDirty
 				|| c.visible
-				&& (lm || rm || lp || rp || tm || bm || tp || bp || c.widthIsDirty || c.heightIsDirty);
+				&& (lm || rm || lp || rp || tm || bm || tp || bp || c.widthDirty || c.heightDirty);
 
 			if (c.visible) {
 				final mStart = pLead.margin;
@@ -80,7 +79,7 @@ class Flow extends Positioner {
 					lineSize = 0.0;
 					hasInLine = false;
 					childDirty = true;
-					offsetIsDirty = true;
+					offsetDirty = true;
 				}
 
 				if (childDirty) {
@@ -110,7 +109,7 @@ class Flow extends Positioner {
 				syncChild(c);
 			}
 
-			offsetIsDirty = childDirty;
+			offsetDirty = childDirty;
 		}
 	}
 }

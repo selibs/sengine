@@ -22,7 +22,23 @@ class AssetsMacro {
 	static var assetTypeFields:StringMap<Array<Field>> = new StringMap();
 
 	public static function build():Array<Field> {
+		var fields = assetsFields.copy();
+
 		function makeFunction(loadName, args, f, iter, call, waitForLoad:Bool) {
+			#if (display || display_details == 1)
+			fields.push({
+				name: loadName,
+				access: [APublic, AStatic],
+				kind: FFun({
+					args: args,
+					ret: macro :Void,
+					expr: macro {}
+				}),
+				pos: Context.currentPos()
+			});
+			return;
+			#end
+
 			var exprs = [];
 			exprs.push(macro var total = 0);
 			exprs.push(macro var progress = 0.0);
@@ -59,7 +75,7 @@ class AssetsMacro {
 						}
 					});
 			}
-			assetsFields.push({
+			fields.push({
 				name: loadName,
 				access: [APublic, AStatic],
 				kind: FFun({
@@ -115,9 +131,9 @@ class AssetsMacro {
 		makeFunction("unloadShelf", [shelfArrArg, progressArg], v -> v.unload, arrIter, arrCall, false);
 
 		for (field in Context.getBuildFields())
-			assetsFields.push(field);
+			fields.push(field);
 
-		return assetsFields;
+		return fields;
 	}
 
 	public static function addAssetType(name:String, type:String, formats:Array<{extension:String, type:String}>) {
@@ -130,6 +146,9 @@ class AssetsMacro {
 		var loadName = "load" + capName;
 		var reloadName = "reload" + capName;
 		var unloadName = "unload" + capName;
+
+		if (assetTypes.exists(listName))
+			return;
 
 		var resName = switch capName {
 			case "Video", "Image", "Sound", "Font":
@@ -193,31 +212,6 @@ class AssetsMacro {
 			}
 		}).fields);
 
-		Compiler.addGlobalMetadata(path, '@:build(s.macro.AssetsMacro.buildAssetType("$capName"))');
-		try {
-			Context.getType(path);
-		} catch (e)
-			Context.onAfterInitMacros(() -> Context.defineType({
-				pack: abstractTypePath.pack,
-				name: abstractTypePath.name,
-				doc: "",
-				isExtern: true,
-				meta: [
-					{
-						name: ":forward",
-						pos: pos
-					},
-					{
-						name: ":forward.new",
-						pos: pos
-					}
-				],
-				params: [],
-				kind: TDAbstract(t, [AbFrom(t), AbTo(t)], [t], [t]),
-				fields: [],
-				pos: pos
-			}));
-
 		assetTypes.set(listName, {
 			type: abstractType,
 			load: loadName,
@@ -237,6 +231,17 @@ class AssetsMacro {
 		var locationArg = {name: "location", type: macro :s.Assets.AssetLocation, opt: true};
 		var failedArg = {name: "failed", type: macro :s.Assets.AssetError->Void, opt: true};
 
+		#if (display || display_details == 1)
+		var loadExpr = macro {
+			var asset = $i{listName}.get(name);
+			if (asset == null) {
+				asset = new $abstractTypePath(name);
+				$i{listName}.add(name, asset);
+			}
+			return asset;
+		}
+		var reloadExpr = macro {};
+		#else
 		var decode = {
 			expr: ESwitch(macro location.extension, [
 				for (f in formats) {
@@ -255,6 +260,23 @@ class AssetsMacro {
 			], macro throw "Unknown format: " + location.extension),
 			pos: pos
 		}
+		var loadExpr = macro {
+			var asset = $i{listName}.get(name);
+			if (asset == null) {
+				asset = new $abstractTypePath(name);
+				$i{listName}.add(name, asset);
+				location = location ?? (name : s.Assets.AssetLocation);
+				${loadBytes(resName, decode)};
+			}
+			return asset;
+		}
+		var reloadExpr = macro {
+			var asset = $i{listName}.get(name);
+			if (location == null)
+				location = asset != null ? asset.location : (name : s.Assets.AssetLocation);
+			${loadBytes(resName, decode)};
+		}
+		#end
 
 		// load
 		assetsFields.push({
@@ -263,16 +285,7 @@ class AssetsMacro {
 			kind: FFun({
 				args: [nameArg, locationArg, failedArg],
 				ret: abstractType,
-				expr: macro {
-					var asset = $i{listName}.get(name);
-					if (asset == null) {
-						asset = new $abstractTypePath(name);
-						$i{listName}.add(name, asset);
-						location = location ?? (name : s.Assets.AssetLocation);
-						${loadBytes(resName, decode)};
-					}
-					return asset;
-				}
+				expr: loadExpr
 			}),
 			pos: Context.currentPos()
 		});
@@ -296,12 +309,7 @@ class AssetsMacro {
 			kind: FFun({
 				args: [nameArg, locationArg, failedArg],
 				ret: macro :Void,
-				expr: macro {
-					var asset = $i{listName}.get(name);
-					if (location == null)
-						location = asset != null ? asset.location : (name : s.Assets.AssetLocation);
-					${loadBytes(resName, decode)};
-				}
+				expr: reloadExpr
 			}),
 			pos: Context.currentPos()
 		});
@@ -316,19 +324,17 @@ class AssetsMacro {
 		switch t {
 			case TInst(t, _):
 				var cls = t.get();
-				if (cls.name.substr(0, cls.name.length - 6) == name) {
-					var assetFields = assetTypeFields.get(name);
-					for (field in assetFields) {
-						var exists = false;
-						for (f in fields)
-							if (f.name == field.name) {
-								exists = true;
-								break;
-							}
-						if (!exists) {
-							field.pos = cls.pos;
-							fields.push(field);
+				var assetFields = assetTypeFields.get(name);
+				for (field in assetFields) {
+					var exists = false;
+					for (f in fields)
+						if (f.name == field.name) {
+							exists = true;
+							break;
 						}
+					if (!exists) {
+						field.pos = cls.pos;
+						fields.push(field);
 					}
 				}
 			default:

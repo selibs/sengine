@@ -11,15 +11,15 @@ using StringTools;
 class Label extends DrawableElement {
 	var chars:Array<FontChar> = [];
 
-	@:attr var textX:Float = 0.0;
-	@:attr var textY:Float = 0.0;
-	@:attr var textWidth:Float = 0.0;
+	@:attr(textHorizontal) var textX:Float = 0.0;
+	@:attr(textVertical) var textY:Float = 0.0;
+	@:attr(textHorizontal) var textWidth:Float = 0.0;
 
 	@:attr.attached public final font:FontStyle = new FontStyle();
 
-	@:attr public var text:String;
+	@:attr(textContent) public var text:String;
 	@:attr public var alignment:Alignment = AlignLeft | AlignTop;
-	@:attr public var elideMode:ElideMode = ElideNone;
+	@:attr(textContent) public var elideMode:ElideMode = ElideNone;
 
 	@:readonly @:alias public var displayX:Float = textX;
 	@:readonly @:alias public var displayY:Float = textY;
@@ -35,13 +35,8 @@ class Label extends DrawableElement {
 		if (text.length == 0 || !font.isLoaded || font.pixelSize == 0)
 			return;
 		var ctx = target.context2D;
-		var prevFont = ctx.style.font;
-		var prevColor = ctx.style.color;
 		ctx.style.font = font;
-		ctx.style.color = color;
 		ctx.drawFontChars(chars);
-		ctx.style.color = prevColor;
-		ctx.style.font = prevFont;
 	}
 
 	override function sync() {
@@ -54,9 +49,9 @@ class Label extends DrawableElement {
 	}
 
 	function syncText():Void {
-		final hIsDirty = left.positionIsDirty || right.positionIsDirty || left.paddingIsDirty || right.paddingIsDirty;
-		final vIsDirty = top.positionIsDirty || bottom.positionIsDirty || top.paddingIsDirty || bottom.paddingIsDirty;
-		final charsAreDirty = textIsDirty || font.isDirty || elideMode != ElideNone && (elideModeIsDirty || hIsDirty);
+		final hDirty = left.offsetDirty || right.offsetDirty;
+		final vDirty = top.offsetDirty || bottom.offsetDirty;
+		final charsAreDirty = textContentDirty || font.spacingDirty || font.metricsDirty || elideMode != ElideNone && hDirty;
 
 		if (charsAreDirty) {
 			chars = [];
@@ -70,14 +65,14 @@ class Label extends DrawableElement {
 			textWidth = elideLineChars(lineChars, lineWidth);
 		}
 
-		if (textWidthIsDirty || font.pixelSizeIsDirty || hIsDirty || vIsDirty || alignmentIsDirty) {
+		if (textHorizontalDirty || font.metricsDirty || hDirty || vDirty || alignmentDirty) {
 			textX = alignLineX(textWidth);
 			textY = alignLineY(font.pixelSize);
 		}
 
-		if (charsAreDirty || textXIsDirty)
+		if (charsAreDirty || textHorizontalDirty)
 			alignCharsX(textX);
-		if (charsAreDirty || textYIsDirty)
+		if (charsAreDirty || textVerticalDirty)
 			alignCharsY(textY);
 	}
 

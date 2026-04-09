@@ -110,11 +110,11 @@ abstract Selector(SelectorData) from SelectorData {
 					var s = new Selector(rule);
 					var slotApply = c -> s.select(c, callback);
 					var slotRemove = c -> s.deselect(c);
-					element.onChildAdded(slotApply);
-					element.onChildRemoved(slotRemove);
+					// element.onChildAdded(slotApply);
+					// element.onChildRemoved(slotRemove);
 					slots.push(() -> {
-						element.offChildAdded(slotApply);
-						element.offChildRemoved(slotRemove);
+						// element.offChildAdded(slotApply);
+						// element.offChildRemoved(slotRemove);
 						for (c in element.children)
 							slotRemove(c);
 					});
@@ -128,9 +128,9 @@ abstract Selector(SelectorData) from SelectorData {
 						if (element.parent != null)
 							s.select(element.parent, callback);
 					};
-					element.onParentChanged(slot);
+					// element.onParentChanged(slot);
 					slots.push(() -> {
-						element.offParentChanged(slot);
+						// element.offParentChanged(slot);
 						if (element.parent != null)
 							s.deselect(element.parent);
 					});

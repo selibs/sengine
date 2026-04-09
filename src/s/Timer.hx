@@ -1,10 +1,10 @@
 package s;
 
-import s.Time;
+import s.app.Time;
 
-@:access(s.Time)
+@:access(s.app.Time)
 /**
- * Utility timer built on top of [`Time`](s.Time) scaled time listeners.
+ * Utility timer built on top of [`Time`](s.app.Time) scaled time listeners.
  *
  * `Timer` is a small convenience wrapper for one-shot, repeated, and looping
  * delayed callbacks driven by scaled engine time. It is a good fit for gameplay

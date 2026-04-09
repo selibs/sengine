@@ -61,7 +61,7 @@ extern abstract RenderTarget(ImageTexture) {
 		return toResource();
 }
 
-private class ImageTexture extends s.assets.image.Image {
+private class ImageTexture extends s.assets.internal.image.Image {
 	/**
 	 * 1D graphics context for this texture.
 	 *

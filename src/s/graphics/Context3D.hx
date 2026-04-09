@@ -1,7 +1,5 @@
 package s.graphics;
 
-import haxe.ds.ObjectMap;
-import s.geometry.Mesh;
 import kha.arrays.Int32Array;
 import kha.arrays.Float32Array;
 import kha.graphics4.Graphics;
@@ -19,6 +17,7 @@ import s.math.Vec3I;
 import s.math.Vec4I;
 import s.math.SMath;
 import s.assets.Image;
+import s.geometry.Mesh;
 import s.graphics.VertexBuffer;
 import s.graphics.RenderTarget;
 
@@ -78,21 +77,15 @@ class Context3D {
 	var buffer:DrawStateBuffer;
 
 	#if S2D_DEBUG_FPS
-	public static var cpuTime(default, null):Float;
-	public static var gpuTime(default, null):Float;
 	public static var drawCalls(default, null):Int = 0;
 	public static var ibAllocations(default, null):Int = 0;
 	public static var vbAllocations(default, null):Int = 0;
 
-	public static function reset() {
-		cpuTime = 0;
-		gpuTime = 0;
+	public static function resetDebugInfo() {
 		drawCalls = 0;
 		ibAllocations = 0;
 		vbAllocations = 0;
 	}
-
-	var beginTime:Float;
 	#end
 
 	public final vsynced:Bool;
@@ -188,20 +181,12 @@ class Context3D {
 		return count;
 	}
 
-	public inline function begin(?mrt:Array<kha.Canvas>) {
-		#if S2D_DEBUG_FPS
-		beginTime = haxe.Timer.stamp() * 1000;
-		#end
+	public inline function reset(?mrt:Array<kha.Canvas>) {
 		targets = mrt;
 		buffer = {stateId: 0, stepId: 0, commands: []}
 	}
 
-	public inline function end() {
-		#if S2D_DEBUG_FPS
-		var currentCpuTime = haxe.Timer.stamp() * 1000 - beginTime;
-		cpuTime += currentCpuTime;
-		#end
-
+	public inline function execute() {
 		try {
 			graphics.begin(targets);
 
@@ -240,7 +225,7 @@ class Context3D {
 						graphics.drawIndexedVertices(step.start, step.count);
 
 					#if S2D_DEBUG_FPS
-					++ drawCalls;
+					drawCalls++;
 					#end
 				}
 			}
@@ -248,10 +233,6 @@ class Context3D {
 			graphics.end();
 		} catch (e)
 			logger.error("Failed: " + e.message);
-
-		#if S2D_DEBUG_FPS
-		gpuTime += haxe.Timer.stamp() * 1000 - beginTime - currentCpuTime;
-		#end
 	}
 
 	inline function bakeState(state:DrawState) {
@@ -317,7 +298,7 @@ class Context3D {
 		state.vertexBuffer.unlock(vertCount);
 	}
 
-	public inline function draw(?instanceCount:Int, start:Int = 0, count:Int = -1) {
+	public inline function flush(?instanceCount:Int, start:Int = 0, count:Int = -1) {
 		if (buffer.pipeline == null)
 			return;
 
@@ -358,12 +339,14 @@ class Context3D {
 			state = {
 				pipeline: buffer.pipeline,
 				mesh: cloneMesh(mesh),
-				steps: [{
-					start: start,
-					count: drawCount,
-					instanceCount: instanceCount,
-					commands: buffer.commands
-				}]
+				steps: [
+					{
+						start: start,
+						count: drawCount,
+						instanceCount: instanceCount,
+						commands: buffer.commands
+					}
+				]
 			};
 
 			if (nextStateId == states.length)

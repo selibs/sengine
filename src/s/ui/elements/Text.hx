@@ -34,20 +34,20 @@ class Text extends Label {
 	// 	final contentBottom = bottom.position - bottom.padding;
 	// 	final contentHCenter = (contentLeft + contentRight) * 0.5;
 	// 	final contentVCenter = (contentTop + contentBottom) * 0.5;
-	// 	final hBoundsIsDirty = left.positionIsDirty || left.paddingIsDirty || right.positionIsDirty || right.paddingIsDirty;
-	// 	final vBoundsIsDirty = top.positionIsDirty || top.paddingIsDirty || bottom.positionIsDirty || bottom.paddingIsDirty;
-	// 	final elideRelayoutIsDirty = elideMode != ElideNone
-	// 		&& (elideModeIsDirty || heightIsDirty || widthIsDirty || vBoundsIsDirty || fontSizeIsDirty || lineHeightIsDirty || lineHeightModeIsDirty);
-	// 	if (textIsDirty
-	// 		|| fontSizeIsDirty
-	// 		|| maxLineCountIsDirty
-	// 		|| wrapModeIsDirty
-	// 		|| ((widthIsDirty || hBoundsIsDirty) && wrapMode != NoWrap)
-	// 		|| elideRelayoutIsDirty)
+	// 	final hBoundsDirty = left.positionDirty || left.paddingDirty || right.positionDirty || right.paddingDirty;
+	// 	final vBoundsDirty = top.positionDirty || top.paddingDirty || bottom.positionDirty || bottom.paddingDirty;
+	// 	final elideRelayoutDirty = elideMode != ElideNone
+	// 		&& (elideModeDirty || heightDirty || widthDirty || vBoundsDirty || fontSizeDirty || lineHeightDirty || lineHeightModeDirty);
+	// 	if (textDirty
+	// 		|| fontSizeDirty
+	// 		|| maxLineCountDirty
+	// 		|| wrapModeDirty
+	// 		|| ((widthDirty || hBoundsDirty) && wrapMode != NoWrap)
+	// 		|| elideRelayoutDirty)
 	// 		wrapText();
-	// 	if (elideMode != ElideNone && (linesIsDirty || elideRelayoutIsDirty))
+	// 	if (elideMode != ElideNone && (linesDirty || elideRelayoutDirty))
 	// 		elideText();
-	// 	if (linesIsDirty || fontSizeIsDirty) {
+	// 	if (linesDirty || fontSizeDirty) {
 	// 		textWidth = Math.NEGATIVE_INFINITY;
 	// 		textX = Math.POSITIVE_INFINITY;
 	// 		if ((alignment & AlignHCenter) != 0)
@@ -69,17 +69,17 @@ class Text extends Label {
 	// 				textX = Math.min(textX, l.x);
 	// 			}
 	// 	} else {
-	// 		if ((alignmentIsDirty || hBoundsIsDirty) && (alignment & AlignHCenter) != 0)
+	// 		if ((alignmentDirty || hBoundsDirty) && (alignment & AlignHCenter) != 0)
 	// 			for (l in lines)
 	// 				l.x = contentHCenter - l.width * 0.5;
-	// 		else if ((alignmentIsDirty || hBoundsIsDirty) && (alignment & AlignRight) != 0)
+	// 		else if ((alignmentDirty || hBoundsDirty) && (alignment & AlignRight) != 0)
 	// 			for (l in lines)
 	// 				l.x = contentRight - l.width;
-	// 		else if (alignmentIsDirty || hBoundsIsDirty)
+	// 		else if (alignmentDirty || hBoundsDirty)
 	// 			for (l in lines)
 	// 				l.x = contentLeft;
 	// 	}
-	// 	if (linesIsDirty || fontSizeIsDirty || lineHeightIsDirty || lineHeightModeIsDirty) {
+	// 	if (linesDirty || fontSizeDirty || lineHeightDirty || lineHeightModeDirty) {
 	// 		var realLineHeight = switch lineHeightMode {
 	// 			case Proportional: font.pixelSize * lineHeight;
 	// 			case Fixed: lineHeight;
@@ -88,17 +88,17 @@ class Text extends Label {
 	// 			l.height = realLineHeight;
 	// 		textHeight = lineCount * realLineHeight;
 	// 	}
-	// 	var vDirty = alignmentIsDirty || textHeightIsDirty || vBoundsIsDirty;
+	// 	var vDirty = alignmentDirty || textHeightDirty || vBoundsDirty;
 	// 	if (vDirty && (alignment & AlignVCenter) != 0)
 	// 		textY = contentVCenter - textHeight * 0.5;
 	// 	else if (vDirty && (alignment & AlignBottom) != 0)
 	// 		textY = contentBottom - textHeight;
 	// 	else if (vDirty)
 	// 		textY = contentTop;
-	// 	if (linesIsDirty || textYIsDirty) {
+	// 	if (linesDirty || textYDirty) {
 	// 		for (i in 0...lineCount)
 	// 			lines[i].y = textY + lines[i].height * i;
-	// 		if (linesIsDirty) {
+	// 		if (linesDirty) {
 	// 			var buf = new StringBuf();
 	// 			for (i in 0...lines.length) {
 	// 				buf.add(lines[i].text);
@@ -351,7 +351,7 @@ class Text extends Label {
 	// 		changed = elideLine(lines[lineCount - 1], removedLines) || changed;
 	// 	}
 	// 	if (changed) {
-	// 		linesIsDirty = true;
+	// 		linesDirty = true;
 	// 		textHeight = visibleHeight;
 	// 	}
 	// }

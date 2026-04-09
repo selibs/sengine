@@ -15,7 +15,7 @@ class Stage extends DrawableElement {
 	var renderBuffer:RenderBuffer = new RenderBuffer();
 	@:inject(updateViewProjection)
 	var aspectRatio:Float = 1.0;
-	var viewProjection:Mat3 = Mat3.identity();
+	var viewProjection:Mat3 = new Mat3();
 
 	@:inject(updateViewProjection)
 	public var stageScale:Float = 1.0;

@@ -137,7 +137,7 @@ class ImageElement extends DrawableElement {
 	 * project's asset pipeline, but it typically matches the engine's image
 	 * identifiers such as `"ui/logo"` or `"atlas/icons"`.
 	 */
-	@:attr public var source:Image;
+	@:attr(sourceAsset) public var source:Image;
 
 	/**
 	 * Optional source-space clipping rectangle in image pixels.
@@ -156,7 +156,7 @@ class ImageElement extends DrawableElement {
 	 *
 	 * @default `null`
 	 */
-	@:attr public var sourceClipRect:Rect = null;
+	@:attr(sourceRegion) public var sourceClipRect:Rect = null;
 
 	/**
 	 * Whether the image should use mipmaps when sampled smaller than its native
@@ -168,7 +168,7 @@ class ImageElement extends DrawableElement {
 	 *
 	 * @default `false`
 	 */
-	@:attr public var mipmap(get, set):Bool;
+	@:attr(sampling) public var mipmap(get, set):Bool;
 
 	/**
 	 * Whether the image should use linear filtering inside each sampled mip
@@ -202,7 +202,7 @@ class ImageElement extends DrawableElement {
 	 *
 	 * @default `Stretch`
 	 */
-	@:attr public var fillMode:FillMode = Stretch;
+	@:attr(imageLayout) public var fillMode:FillMode = Stretch;
 
 	/**
 	 * Alignment policy used together with
@@ -221,7 +221,7 @@ class ImageElement extends DrawableElement {
 	 *
 	 * @default `AlignCenter`
 	 */
-	@:attr public var alignment:Alignment = AlignCenter;
+	@:attr(imageLayout) public var alignment:Alignment = AlignCenter;
 
 	/**
 	 * Creates a new image element bound to the given source asset.
@@ -231,7 +231,7 @@ class ImageElement extends DrawableElement {
 	public function new(source:String) {
 		super();
 		this.source = source;
-		this.source.onLoaded(() -> sourceIsDirty = true);
+		this.source.onLoaded(() -> sourceDirty = true);
 	}
 
 	override function sync() {
@@ -240,17 +240,16 @@ class ImageElement extends DrawableElement {
 		if (!isLoaded)
 			return;
 
-		if (sourceIsDirty || mipmapIsDirty)
+		if (sourceAssetDirty || samplingDirty)
 			if (mipmap)
 				source.generateMipmaps(1);
 			else
 				source.setMipmaps([]);
 
-		final hBoundsIsDirty = left.positionIsDirty || right.positionIsDirty;
-		final vBoundsIsDirty = top.positionIsDirty || bottom.positionIsDirty;
+		final hBoundsDirty = left.positionDirty || right.positionDirty;
+		final vBoundsDirty = top.positionDirty || bottom.positionDirty;
 
-		if (!(sourceIsDirty || sourceClipRectIsDirty || fillModeIsDirty || alignmentIsDirty || widthIsDirty || heightIsDirty || hBoundsIsDirty
-			|| vBoundsIsDirty))
+		if (!(sourceAssetDirty || sourceRegionDirty || imageLayoutDirty || widthDirty || heightDirty || hBoundsDirty || vBoundsDirty))
 			return;
 
 		final imageWidth = source.width;

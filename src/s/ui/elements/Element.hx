@@ -1,21 +1,19 @@
 package s.ui.elements;
 
-import s.math.Vec2;
 import s.math.Mat3;
 import s.math.SMath;
 import s.geometry.Size;
 import s.geometry.Position;
-import s.graphics.RenderTarget;
 import s.ui.Style;
-import s.ui.Anchors;
+import s.ui.AnchorsAttribute;
+import s.ui.AnchorLineAttribute;
+#if S2D_UI_DEBUG_ELEMENT_BOUNDS
+import s.graphics.Context2D;
 
-enum ElementPosition {
-	Relative;
-	Absolute;
-}
+using s.extensions.StringExt;
+#end
 
-@:allow(s.ui.WindowScene)
-@:allow(s.ui.AttachedAttribute)
+@:allow(s.AttachedAttribute)
 class Element extends Object2D<Element> {
 	overload extern public static inline function mapToElement(element:Element, x:Float, y:Float):Position
 		return element.mapFromGlobal(x, y);
@@ -41,16 +39,13 @@ class Element extends Object2D<Element> {
 	overload extern public static inline function mapFromElementNormalized(element:Element, p:Position):Position
 		return element.mapToGlobalNormalized(p.x, p.y);
 
-	public static function renderElement(element:Element, target:RenderTarget) {
-		if (!element.visible)
-			return;
-		final ctx = target.context2D;
-		ctx.pushTransform(element.transform);
-		element.render(target);
-		ctx.popTransform();
-	}
+	@:attr var globalTransform:Mat3 = new Mat3();
+	@:attr var globalOpacity:Float = 1.0;
+	@:attr var globalVisible:Bool = true;
+	@:attr(globalOrigin) var globalOriginX:Float = 0.0;
+	@:attr(globalOrigin) var globalOriginY:Float = 0.0;
 
-	@:attr var globalTransform:Mat3 = Mat3.identity();
+	public var scene(default, null):Scene;
 
 	/**
 	 * Optional application-defined tag used for lookup.
@@ -62,16 +57,15 @@ class Element extends Object2D<Element> {
 	 */
 	@:attr public var tag:String;
 
-	public var clip:Bool = false; // TODO: stencil test
-	@:attr public var opacity:Float = 1.0;
-	@:attr public var visible:Bool = true;
-	@:attr.attached public final layout:Layout;
+	public var clip:Bool = false; // TODO: stencil test (?)
+	@:attr(visibility) @:clamp public var opacity:Float = 1.0;
+	@:attr(visibility) public var visible:Bool = true;
+	@:attr.attached public final layout:LayoutAttribute;
 
 	public var padding(never, set):Float;
 	public var margins(never, set):Float;
-	@:attr.attached public final anchors:Anchors;
+	@:attr.attached public final anchors:AnchorsAttribute;
 
-	@:attr public var position:ElementPosition = Relative;
 	@:attr.attached public final left:HorizontalAnchor;
 	@:attr.attached public final hCenter:HorizontalAnchor;
 	@:attr.attached public final right:HorizontalAnchor;
@@ -79,18 +73,18 @@ class Element extends Object2D<Element> {
 	@:attr.attached public final vCenter:VerticalAnchor;
 	@:attr.attached public final bottom:VerticalAnchor;
 
-	@:attr public var x(default, set):Float = 0.0;
-	@:attr public var y(default, set):Float = 0.0;
-	@:attr public var width(default, set):Float = 0.0;
-	@:attr public var height(default, set):Float = 0.0;
+	@:attr(horizontal) public var x(default, set):Float = 0.0;
+	@:attr(vertical) public var y(default, set):Float = 0.0;
+	@:attr(horizontal) public var width(default, set):Float = 0.0;
+	@:attr(vertical) public var height(default, set):Float = 0.0;
 
-	@:attr public var originX:Float = Math.NaN;
-	@:attr public var originY:Float = Math.NaN;
+	@:attr(origin) public var originX:Float = Math.NaN;
+	@:attr(origin) public var originY:Float = Math.NaN;
 
 	public function new() {
 		super();
-		layout = new Layout(this);
-		anchors = new Anchors(this);
+		layout = new LayoutAttribute(this);
+		anchors = new AnchorsAttribute(this);
 		left = new HorizontalAnchor(this);
 		hCenter = new HorizontalAnchor(this);
 		right = new HorizontalAnchor(this);
@@ -147,13 +141,13 @@ class Element extends Object2D<Element> {
 		return mapFromGlobal(vec2(x, y));
 
 	overload extern public inline function mapFromGlobal(p:Position):Position
-		return transform * p - vec2(left.position, top.position);
+		return globalTransform * p - vec2(left.position, top.position);
 
 	overload extern public inline function mapToGlobal(x:Float, y:Float):Position
 		return mapToGlobal(vec2(x, y));
 
 	overload extern public inline function mapToGlobal(p:Position):Position
-		return inverse(transform) * p;
+		return inverse(globalTransform) * p;
 
 	overload extern public inline function mapFromGlobalNormalized(x:Float, y:Float):Position
 		return mapFromGlobalNormalized(vec2(x, y));
@@ -199,7 +193,7 @@ class Element extends Object2D<Element> {
 	 * @return Matching direct children.
 	 */
 	public function getChildren(tag:String):Array<Element>
-		return children.filter(e -> e.tag == tag);
+		return children.filter(c -> c.tag == tag);
 
 	/**
 	 * Searches the full descendant tree for the first node with the given tag.
@@ -222,7 +216,7 @@ class Element extends Object2D<Element> {
 	}
 
 	public function childAt(x:Float, y:Float):Element {
-		var i = children.length;
+		var i = children.count;
 		while (0 < i) {
 			final c = children[--i];
 			if (c.covers(x, y))
@@ -232,7 +226,7 @@ class Element extends Object2D<Element> {
 	}
 
 	public function descendantAt(x:Float, y:Float):Element {
-		var i = children.length;
+		var i = children.count;
 		while (0 < i) {
 			final c = children[--i];
 			var cat = c.descendantAt(x, y);
@@ -262,60 +256,164 @@ class Element extends Object2D<Element> {
 	override function toString():String
 		return super.toString() + (tag != null ? '#$tag' : "");
 
-	override function __childAdded__(child:Element) {
-		super.__childAdded__(child);
-		if (child.isDirty)
-			isDirty = true;
-		if (!child.isHorizontallyAnchored())
-			child.left.self.position = left.position + child.x;
-		if (!child.isVerticallyAnchored())
-			child.top.self.position = top.position + child.y;
+	function syncTree() {
+		sync();
+		syncChildren();
+		flush();
 	}
 
-	override function __childRemoved__(child:Element) {
-		super.__childRemoved__(child);
-		if (!child.isHorizontallyAnchored())
-			child.left.self.position -= left.position;
-		if (!child.isVerticallyAnchored())
-			child.top.self.position -= top.position;
-	}
-
-	function render(target:RenderTarget) {
-		final ctx = target.context2D;
-		ctx.style.pushOpacity(opacity);
+	function syncChildren()
 		for (c in children)
-			Element.renderElement(c, target);
-		ctx.style.popOpacity();
-	}
+			syncChild(c);
 
-	function sync() {
+	function syncChild(child:Element)
+		if (scene?.collectDrawables || child.dirty || globalVisibleDirty || globalOpacityDirty || globalTransformDirty)
+			child.syncTree();
+
+	override function sync() {
+		super.sync();
+
+		// parent
+		if (parentDirty)
+			scene = parent?.scene;
+
+		// bounds
 		s.ui.macro.ElementMacro.syncAxis("left", "hCenter", "right", "x", "width");
 		s.ui.macro.ElementMacro.syncAxis("top", "vCenter", "bottom", "y", "height");
 
-		syncTransform();
-	}
+		// origin
+		if (horizontalDirty || originDirty)
+			globalOriginX = left.position + (Math.isNaN(originX) ? width * 0.5 : originX);
+		if (verticalDirty || originDirty)
+			globalOriginY = top.position + (Math.isNaN(originY) ? height * 0.5 : originY);
 
-	function syncTransform() {
-		if (parent != null && parent.globalTransformIsDirty || originXIsDirty || originYIsDirty || transformIsDirty) {
-			var ox = left.position + (Math.isNaN(originX) ? width * 0.5 : originX);
-			var oy = top.position + (Math.isNaN(originY) ? height * 0.5 : originY);
-			globalTransform = Mat3.translation(-ox, -oy) * transform * Mat3.translation(ox, oy);
+		// transform
+		if (globalOriginDirty || transformDirty || parentDirty || parent?.globalTransformDirty) {
+			globalTransform = Mat3.translation(-globalOriginX, -globalOriginY) * transform * Mat3.translation(globalOriginX, globalOriginY);
 			if (parent != null)
-				globalTransform.copyFrom(parent.globalTransform * globalTransform);
+				globalTransform *= parent.globalTransform;
+		}
+
+		// opacity
+		if (visibilityDirty || parentDirty || parent?.globalOpacityDirty) {
+			globalOpacity = opacity;
+			if (parent != null)
+				globalOpacity = parent.globalOpacity * globalOpacity;
+		}
+
+		// visible
+		if (visibilityDirty || parentDirty || parent?.globalVisibleDirty || globalOpacityDirty || widthDirty || heightDirty) {
+			globalVisible = visible && globalOpacity > 0.0 && width > 0.0 && height > 0.0;
+			if (parent != null)
+				globalVisible = parent.globalVisible && globalVisible;
 		}
 	}
 
-	function syncChild(c:Element)
-		c.syncTree();
+	#if S2D_UI_DEBUG_ELEMENT_BOUNDS
+	function drawBounds(ctx:Context2D) {
+		final style = ctx.style;
 
-	function syncTree() {
-		if (!isDirty)
-			return;
-		sync();
-		for (c in children)
-			syncChild(c);
-		flush();
+		style.opacity = 0.5;
+		style.font.family = "font_default";
+		style.font.pixelSize = 16;
+
+		final lm = left.margin;
+		final tm = top.margin;
+		final rm = right.margin;
+		final bm = bottom.margin;
+		final lp = left.padding;
+		final tp = top.padding;
+		final rp = right.padding;
+		final bp = bottom.padding;
+
+		style.color = Black;
+		ctx.fillRectangle(left.position - lm, top.position - tm, width + lm + rm, height + tm + bm);
+
+		// margins
+		style.color = s.Color.rgb(0.75, 0.25, 0.75);
+		ctx.fillRectangle(left.position - lm, top.position, lm, height);
+		ctx.fillRectangle(left.position - lm, top.position - tm, lm + width + rm, tm);
+		ctx.fillRectangle(left.position + width, top.position, rm, height);
+		ctx.fillRectangle(left.position - lm, top.position + height, lm + width + rm, bm);
+
+		// padding
+		style.color = s.Color.rgb(0.75, 0.75, 0.25);
+		ctx.fillRectangle(left.position, top.position, lp, height);
+		ctx.fillRectangle(left.position + lp, top.position, width - lp - rp, tp);
+		ctx.fillRectangle(left.position + width - rp, top.position, rp, height);
+		ctx.fillRectangle(left.position + lp, top.position + height - bp, width - lp - rp, bp);
+
+		// content
+		style.color = s.Color.rgb(0.25, 0.75, 0.75);
+		ctx.fillRectangle(left.position + lp, top.position + tp, width - lp - rp, height - tp - bp);
+
+		// labels
+		style.color = s.Color.rgb(1.0, 1.0, 1.0);
+		style.opacity = 1.0;
+		final fs = style.font.pixelSize + 5;
+
+		// labels - titles
+		if (tm >= fs)
+			ctx.drawString("margins", left.position - lm + 5, top.position - tm + 5);
+		if (tp >= fs)
+			ctx.drawString("padding", left.position + 5, top.position + 5);
+		if (height >= fs)
+			ctx.drawString("content", left.position + lp + 5, top.position + tp + 5);
+
+		// labels - values
+		style.font.pixelSize = 14;
+
+		// margins
+		var i = 0;
+		for (m in [lm, tm, rm, bm]) {
+			final str = '${Std.int(m)}px';
+			final strWidth = style.font.widthOfCharacters(str.toCharArray(), 0, str.length);
+			final strheight = style.font.pixelSize;
+			if (m >= strWidth) {
+				if (i == 0)
+					ctx.drawString(str, left.position - (m + strWidth) / 2, top.position + height / 2);
+				else if (i == 2)
+					ctx.drawString(str, left.position + width + (m - strWidth) / 2, top.position + height / 2);
+			}
+			if (m >= strheight) {
+				if (i == 1)
+					ctx.drawString(str, left.position + width / 2, top.position - (m + strheight) / 2);
+				else if (i == 3)
+					ctx.drawString(str, left.position + width / 2, top.position + height + (m - strheight) / 2);
+			}
+			++i;
+		}
+
+		// padding
+		var i = 0;
+		for (p in [lp, tp, rp, bp]) {
+			final str = '${Std.int(p)}px';
+			final strWidth = style.font.widthOfCharacters(str.toCharArray(), 0, str.length);
+			final strheight = style.font.pixelSize;
+			if (p >= strWidth) {
+				if (i == 0)
+					ctx.drawString(str, left.position + (p - strWidth) / 2, top.position + height / 2);
+				else if (i == 2)
+					ctx.drawString(str, left.position + width - (p + strWidth) / 2, top.position + height / 2);
+			}
+			if (p >= strheight) {
+				if (i == 1)
+					ctx.drawString(str, left.position + width / 2, top.position + (p - strheight) / 2);
+				else if (i == 3)
+					ctx.drawString(str, left.position + width / 2, top.position + height - (p + strheight) / 2);
+			}
+			++i;
+		}
+
+		style.font.pixelSize = 22;
+		final name = toString();
+		ctx.drawString(name, App.input.mouse.x - style.font.widthOfCharacters(name.toCharArray(), 0, name.length), App.input.mouse.y - style.font.pixelSize);
+
+		style.font.pixelSize = 16;
+		final rect = '${Std.int(width)} × ${Std.int(height)} at (${Std.int(left.position)}, ${Std.int(top.position)})';
+		ctx.drawString(rect, App.input.mouse.x - style.font.widthOfCharacters(rect.toCharArray(), 0, rect.length), App.input.mouse.y);
 	}
+	#end
 
 	function set_x(value:Float):Float {
 		if (!isHorizontallyAnchored())
@@ -330,13 +428,13 @@ class Element extends Object2D<Element> {
 	}
 
 	function set_width(value:Float):Float {
-		if (!isHorizontallyBinded())
+		if (!isHorizontallyLocked())
 			width = value;
 		return width;
 	}
 
 	function set_height(value:Float):Float {
-		if (!isVerticallyBinded())
+		if (!isVerticallyLocked())
 			height = value;
 		return height;
 	}
@@ -351,27 +449,17 @@ class Element extends Object2D<Element> {
 		return value;
 	}
 
-	function isHorizontallyAnchored() {
+	inline function isHorizontallyAnchored()
 		return anchors.left != null || anchors.hCenter != null || anchors.right != null;
-	}
 
-	function isVerticallyAnchored() {
+	inline function isVerticallyAnchored()
 		return anchors.top != null || anchors.vCenter != null || anchors.bottom != null;
-	}
 
-	function isHorizontallyBinded() {
+	inline function isHorizontallyLocked()
 		return (anchors.left != null && anchors.hCenter != null || anchors.left != null && anchors.right != null || anchors.hCenter != null
 			&& anchors.right != null);
-	}
 
-	function isVerticallyBinded() {
+	inline function isVerticallyLocked()
 		return (anchors.top != null && anchors.vCenter != null || anchors.top != null && anchors.bottom != null || anchors.vCenter != null
 			&& anchors.bottom != null);
-	}
-
-	function set_isDirty(value:Bool) {
-		if (value && parent != null && !parent.isDirty)
-			parent.isDirty = true;
-		return isDirty = value;
-	}
 }

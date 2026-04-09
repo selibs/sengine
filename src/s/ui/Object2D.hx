@@ -3,9 +3,8 @@ package s.ui;
 import s.math.Vec2;
 import s.math.Mat3;
 
-abstract class Object2D<This:Object2D<This>> extends s.Object<This> {
-	final transform:Mat3 = Mat3.identity();
-	var transformIsDirty:Bool = false;
+abstract class Object2D<T:Object2D<T>> extends s.Object<T> {
+	@:attr(transformLocal) final transform:Mat3 = new Mat3();
 
 	public var translationX(get, set):Float;
 	public var translationY(get, set):Float;
@@ -15,7 +14,7 @@ abstract class Object2D<This:Object2D<This>> extends s.Object<This> {
 	public var shearX(get, set):Float;
 	public var shearY(get, set):Float;
 
-	public var z(default, set):Float = 0;
+	@:attr(hierarchy) public var z:Float = 0.0;
 
 	extern overload public inline function setTranslation(x:Float, y:Float) {
 		translationX = x;
@@ -46,7 +45,7 @@ abstract class Object2D<This:Object2D<This>> extends s.Object<This> {
 
 	extern overload public inline function translate(x:Float, y:Float) {
 		transform *= Mat3.translation(x, y);
-		transformIsDirty = true;
+		transformDirty = true;
 	}
 
 	extern overload public inline function translate(value:Vec2)
@@ -57,7 +56,7 @@ abstract class Object2D<This:Object2D<This>> extends s.Object<This> {
 
 	extern overload public inline function scale(x:Float, y:Float) {
 		transform *= Mat3.scale(x, y);
-		transformIsDirty = true;
+		transformDirty = true;
 	}
 
 	extern overload public inline function scale(value:Vec2)
@@ -68,47 +67,43 @@ abstract class Object2D<This:Object2D<This>> extends s.Object<This> {
 
 	extern overload public inline function rotate(value:Float) {
 		transform *= Mat3.rotation(value);
-		transformIsDirty = true;
+		transformDirty = true;
 	}
 
 	extern overload public inline function shear(x:Float, y:Float) {
 		transform *= Mat3.shear(x, y);
-		transformIsDirty = true;
+		transformDirty = true;
 	}
 
 	extern overload public inline function shear(value:Vec2)
 		shear(value.x, value.y);
 
-	override function __childAdded__(child:This) {
-		insertChild(child);
-		super.__childAdded__(child);
+	function sync() {
+		if (zDirty)
+			parent?.insertChild(cast this);
 	}
 
-	function insertChild(child:This) {
-		var c = @:privateAccess children.list;
-		c.remove(child);
-		for (i in 0...c.length)
-			if (c[i].z > child.z) {
-				c.insert(i, child);
+	function insertChild(child:T) {
+		var list = @:privateAccess children.list;
+		var ind = list.indexOf(child);
+
+		list.remove(child);
+		for (i in 0...list.length)
+			if (list[i].z > child.z) {
+				list.insert(i, child);
 				return;
 			}
-		c.push(child);
-	}
+		list.push(child);
 
-	function set_z(value:Float):Float {
-		if (value != z) {
-			z = value;
-			if (parent != null)
-				parent.insertChild(cast this);
-		}
-		return z;
+		if (ind != list.indexOf(child))
+			children.dirty = true;
 	}
 
 	inline function get_translationX():Float
 		return transform._20;
 
 	inline function set_translationX(value:Float) {
-		transformIsDirty = true;
+		transformDirty = true;
 		return transform._20 = value;
 	}
 
@@ -116,7 +111,7 @@ abstract class Object2D<This:Object2D<This>> extends s.Object<This> {
 		return transform._21;
 
 	inline function set_translationY(value:Float) {
-		transformIsDirty = true;
+		transformDirty = true;
 		return transform._21 = value;
 	}
 
@@ -124,7 +119,7 @@ abstract class Object2D<This:Object2D<This>> extends s.Object<This> {
 		return local00(rotation);
 
 	inline function set_scaleX(value:Float) {
-		transformIsDirty = true;
+		transformDirty = true;
 		setLinear(rotation, value, scaleY, shearX, shearY);
 		return value;
 	}
@@ -133,7 +128,7 @@ abstract class Object2D<This:Object2D<This>> extends s.Object<This> {
 		return local11(rotation);
 
 	inline function set_scaleY(value:Float) {
-		transformIsDirty = true;
+		transformDirty = true;
 		setLinear(rotation, scaleX, value, shearX, shearY);
 		return value;
 	}
@@ -142,7 +137,7 @@ abstract class Object2D<This:Object2D<This>> extends s.Object<This> {
 		return Math.atan2(transform._10 - transform._01, transform._00 + transform._11);
 
 	inline function set_rotation(value:Float) {
-		transformIsDirty = true;
+		transformDirty = true;
 		setLinear(value, scaleX, scaleY, shearX, shearY);
 		return value;
 	}
@@ -151,7 +146,7 @@ abstract class Object2D<This:Object2D<This>> extends s.Object<This> {
 		return local10(rotation);
 
 	inline function set_shearX(value:Float) {
-		transformIsDirty = true;
+		transformDirty = true;
 		setLinear(rotation, scaleX, scaleY, value, shearY);
 		return value;
 	}
@@ -160,7 +155,7 @@ abstract class Object2D<This:Object2D<This>> extends s.Object<This> {
 		return local01(rotation);
 
 	inline function set_shearY(value:Float) {
-		transformIsDirty = true;
+		transformDirty = true;
 		setLinear(rotation, scaleX, scaleY, shearX, value);
 		return value;
 	}

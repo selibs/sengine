@@ -1,6 +1,6 @@
 package s.animation;
 
-import s.Time;
+import s.app.Time;
 
 @:access(s.animation.Action)
 abstract class Animation<T> implements s.shortcut.Shortcut {

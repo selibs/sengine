@@ -42,7 +42,6 @@ class MarkupMacro {
 		"canvas" => "s.ui.elements.Canvas",
 		"image" => "s.ui.elements.ImageElement",
 		// shapes
-		"circle" => "s.ui.elements.shapes.Circle",
 		"ellipse" => "s.ui.elements.shapes.Ellipse",
 		"triangle" => "s.ui.elements.shapes.Triangle",
 		"rectangle" => "s.ui.elements.shapes.Rectangle",
@@ -55,7 +54,7 @@ class MarkupMacro {
 		"flow" => "s.ui.elements.positioners.Flow",
 		"column" => "s.ui.elements.positioners.Column",
 		// layouts
-		"layout.box" => "s.ui.elements.layouts.BoxLayout",
+		"layout" => "s.ui.elements.layouts.Layout",
 		"layout.row" => "s.ui.elements.layouts.RowLayout",
 		"layout.flow" => "s.ui.elements.layouts.FlowLayout",
 		"layout.column" => "s.ui.elements.layouts.ColumnLayout",
@@ -81,8 +80,12 @@ class MarkupMacro {
 			return;
 		}
 
-		if (shortcuts.exists(name))
-			Context.warning('Shortcut `$name -> ${shortcuts.get(name)}` will be overwritten to `$type`', Context.currentPos());
+		if (shortcuts.exists(name)) {
+			var previous = shortcuts.get(name);
+			if (previous == type)
+				return;
+			Context.warning('Shortcut `$name -> $previous` will be overwritten to `$type`', Context.currentPos());
+		}
 		shortcuts.set(name, type);
 	}
 
@@ -126,6 +129,25 @@ class MarkupMacro {
 		return shortcuts.get(name) ?? name;
 	}
 
+	static function getClassPath(name:String):TypePath {
+		var elTypeName = getTypeName(name);
+		var path = elTypeName.split(".");
+		var typeName = path.pop();
+		var typePath:TypePath = {
+			pack: path,
+			name: typeName,
+			sub: null
+		}
+		if (typePath.pack.length > 0) {
+			var c = typePath.pack[typePath.pack.length - 1].charAt(0);
+			if (c == c.toUpperCase()) {
+				typePath.sub = typePath.name;
+				typePath.name = typePath.pack.pop();
+			}
+		}
+		return typePath;
+	}
+
 	static function buildMarkup(field:Field) {
 		var i = 0;
 		var stack:Array<Expr> = [macro parent];
@@ -138,22 +160,7 @@ class MarkupMacro {
 
 		function transform(expr:Expr) {
 			function addEl(meta:MetadataEntry, expr:Expr, pos:Position, ?varData:{name:String, type:Null<ComplexType>, isFinal:Bool}, ?assignRef:Expr) {
-				var elTypeName = getTypeName(meta.name);
-				var elCls:TypePath = {
-					pack: null,
-					name: null,
-					sub: null
-				}
-				elCls.pack = elTypeName.split(".");
-				elCls.name = elCls.pack.pop();
-				if (elCls.pack.length > 0) {
-					var c = elCls.pack[elCls.pack.length - 1].charAt(0);
-					if (c == c.toUpperCase()) {
-						elCls.sub = elCls.name;
-						elCls.name = elCls.pack.pop();
-					}
-				}
-
+				var elCls = getClassPath(meta.name);
 				var ctor = macro @:pos(pos) new $elCls($a{meta.params ?? []});
 				var elRef:Expr;
 				var elExprs = [];
@@ -291,8 +298,8 @@ class MarkupMacro {
 		if (expr != null)
 			field.kind = FFun({
 				args: args,
-				expr: block(transform(expr)),
-				ret: macro :Void
+				expr: block(transform(expr).concat([macro return parent])),
+				ret: macro :s.ui.elements.Element
 			});
 	}
 

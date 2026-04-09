@@ -24,9 +24,9 @@ abstract class Gradient extends DrawableElement {
 
 	public var start:Vec2 = new Vec2(0.5, 0.0);
 	public var end:Vec2 = new Vec2(0.5, 1.0);
-	@:attr public var stops:GradientStops;
-	@:attr public var resolution(default, set):Int = 256;
-	@:attr public var interpolation:Interpolation = Interpolation.Linear;
+	@:attr(gradient) public var stops:GradientStops;
+	@:attr(gradient) public var resolution(default, set):Int = 256;
+	@:attr(gradient) public var interpolation:Interpolation = Interpolation.Linear;
 
 	public function new() {
 		super();
@@ -36,8 +36,8 @@ abstract class Gradient extends DrawableElement {
 	override function sync() {
 		super.sync();
 
-		if (stopsIsDirty || resolutionIsDirty || interpolationIsDirty) {
-			if (resolutionIsDirty) {
+		if (gradientDirty) {
+			if (resolutionDirty) {
 				gradient.unload();
 				gradient = new RenderTarget(1, resolution);
 			}

@@ -9,6 +9,6 @@ class ImageShader extends TexturedShader {
 
 		ctx.setTexture(sourceTU, img);
 		setRect(ctx, dx, dy, dw, dh, sx, sy, sw, sh);
-		ctx.draw();
+		ctx.flush();
 	}
 }

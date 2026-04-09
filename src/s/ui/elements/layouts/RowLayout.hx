@@ -1,10 +1,12 @@
 package s.ui.elements.layouts;
 
+import s.ui.Direction;
+
 class RowLayout extends DirectionalLayout {
 	public function new(direction:Direction = LeftToRight) {
 		super(direction);
 	}
 
-	function syncFlow()
-		s.ui.macro.DirectionalLayoutMacro.syncLayoutFlow(true);
+	override function syncChildren()
+		Layout.syncHorizontalFlow(this);
 }

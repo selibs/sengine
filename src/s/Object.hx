@@ -16,9 +16,8 @@ import haxe.Json;
  *
  * It does not define transform, rendering, or update behavior on its own.
  */
+@:allow(s.ObjectList)
 abstract class Object<T:Object<T>> implements s.shortcut.Shortcut {
-	var _parent:T;
-
 	/**
 	 * Parent node or `null` if this node is detached.
 	 *
@@ -27,7 +26,7 @@ abstract class Object<T:Object<T>> implements s.shortcut.Shortcut {
 	 * [`addChild`](s.Object.addChild), or [`removeChild`](s.Object.removeChild)
 	 * instead of mutating internal storage directly.
 	 */
-	public var parent(get, set):T;
+	@:attr(hierarchy) public var parent(default, set):T;
 
 	/**
 	 * Direct child nodes.
@@ -35,26 +34,12 @@ abstract class Object<T:Object<T>> implements s.shortcut.Shortcut {
 	 * The list manages ownership: adding a node here updates its parent, and
 	 * removing it detaches it.
 	 */
-	public var children(default, null):ObjectList<T>;
-
-	/** Fired when the parent changes. */
-	@:signal public function parentChanged(previous:T):Void;
-
-	/** Fired when a direct child is added. */
-	@:signal public function childAdded(child:T):Void;
-
-	/** Fired when a direct child is removed. */
-	@:signal public function childRemoved(child:T):Void;
-
-	/** Fired when any descendant is added anywhere below this node. */
-	@:signal public function descendantAdded(descendant:T):Void;
-
-	/** Fired when any descendant is removed anywhere below this node. */
-	@:signal public function descendantRemoved(descendant:T):Void;
+	@:attr.attached public final children:ObjectList<T>;
 
 	/** Creates an empty node with no parent and no children. */
-	public function new()
+	public function new() {
 		children = new ObjectList(cast this);
+	}
 
 	/**
 	 * Sets the parent node.
@@ -112,37 +97,30 @@ abstract class Object<T:Object<T>> implements s.shortcut.Shortcut {
 	public function toString():String
 		return Type.getClassName(Type.getClass(this));
 
-	@:slot(childAdded, descendantAdded)
-	function __childAdded__(child:T)
-		parent?.descendantAdded(child);
-
-	@:slot(childRemoved, descendantRemoved)
-	function __childRemoved__(child:T)
-		parent?.descendantRemoved(child);
-
-	function get_parent():T
-		return _parent;
-
 	function set_parent(value:T):T {
 		if (value != null)
 			value.addChild(cast this);
-		else if (_parent != null)
-			_parent.removeChild(cast this);
+		else if (parent != null)
+			parent.removeChild(cast this);
 		return value;
+	}
+
+	function set_dirty(value:Bool) {
+		if (value && parent != null && !parent.dirty)
+			parent.dirty = true;
+		return dirty = value;
 	}
 }
 
-@:access(s.Object)
+@:allow(s.Object)
+@:forward()
 @:forward.new
-private extern abstract ObjectList<T:Object<T>>(ArrayData<T>) to ArrayData<T> {
-	var list(get, never):Array<T>;
-	var element(get, never):T;
+private extern abstract ObjectList<T:Object<T>>(ObjectListData<T>) to ObjectListData<T> {
+	private var dirty(get, set):Bool;
+	private var object(get, never):T;
+	private var list(get, never):Array<T>;
 
-	@:to
-	inline function toArray():Array<T>
-		return list.copy();
-
-	public var length(get, never):Int;
+	public var count(get, never):Int;
 
 	public inline function excluded(x:T)
 		return copy().remove(x);
@@ -154,20 +132,20 @@ private extern abstract ObjectList<T:Object<T>>(ArrayData<T>) to ArrayData<T> {
 		return list.join(sep);
 
 	public inline function pop():Null<T>
-		return inline rem(list.pop());
+		return setObjectParent(list.pop(), null);
 
 	public inline function add(x:T):T {
 		if (contains(x))
 			return null;
 		list.push(x);
-		return inline addEl(x);
+		return setObjectParent(x, object);
 	}
 
 	public inline function reverse():Void
 		list.reverse();
 
 	public inline function shift():Null<T>
-		return inline rem(list.shift());
+		return setObjectParent(list.shift(), null);
 
 	public inline function slice(pos:Int, ?end:Int):Array<T>
 		return list.slice(pos, end);
@@ -178,7 +156,7 @@ private extern abstract ObjectList<T:Object<T>>(ArrayData<T>) to ArrayData<T> {
 	public inline function splice(pos:Int, len:Int):Array<T> {
 		var els = list.splice(pos, len);
 		for (x in els)
-			inline rem(x);
+			setObjectParent(x, null);
 		return els;
 	}
 
@@ -189,25 +167,25 @@ private extern abstract ObjectList<T:Object<T>>(ArrayData<T>) to ArrayData<T> {
 		if (contains(x))
 			return null;
 		list.unshift(x);
-		return inline addEl(x);
+		return setObjectParent(x, object);
 	}
 
 	public inline function insert(pos:Int, x:T):T {
 		if (contains(x))
 			return null;
 		list.insert(pos, x);
-		return inline addEl(x);
+		return setObjectParent(x, object);
 	}
 
 	public inline function remove(x:T):Bool {
 		var r = list.remove(x);
 		if (r)
-			inline rem(x);
+			setObjectParent(x, null);
 		return r;
 	}
 
 	public inline function contains(x:T):Bool
-		return x?._parent == this.element;
+		return x?.parent == object;
 
 	public inline function indexOf(x:T, ?fromIndex:Int):Int
 		return list.indexOf(x, fromIndex);
@@ -215,6 +193,7 @@ private extern abstract ObjectList<T:Object<T>>(ArrayData<T>) to ArrayData<T> {
 	public inline function lastIndexOf(x:T, ?fromIndex:Int):Int
 		return list.lastIndexOf(x, fromIndex);
 
+	@:to
 	public inline function copy():Array<T>
 		return list.copy();
 
@@ -230,54 +209,54 @@ private extern abstract ObjectList<T:Object<T>>(ArrayData<T>) to ArrayData<T> {
 	public inline function filter(f:T->Bool):Array<T>
 		return list.filter(f);
 
+	public inline function clear() @:privateAccess {
+		if (count == 0)
+			return;
+
+		dirty = true;
+		while (count > 0) {
+			final x = list.pop();
+			x.parentDirty = true;
+			@:bypassAccessor x.parent = null;
+		}
+	}
+
 	@:op([])
-	inline function arrayRead(i:Int):T
+	private inline function arrayRead(i:Int):T
 		return list[i];
 
 	@:op([])
-	inline function arrayWrite(i:Int, x:T):T {
+	private inline function arrayWrite(i:Int, x:T):T {
 		if (!contains(x))
 			list[i] = x;
 		return x;
 	}
 
-	inline function addEl(x:T) {
-		if (x == null)
-			return null;
-		var prev = x._parent;
-		x._parent = this.element;
-		if (prev != null)
-			prev.childRemoved(x);
-		this.element.childAdded(x);
-		x.parentChanged(prev);
-		return x;
-	}
-
-	inline function get_length():Int
-		return list.length;
-
-	inline function rem(x:T) {
+	private inline function setObjectParent(x:T, p:T) @:privateAccess {
 		if (x != null) {
-			var prev = x._parent;
-			x._parent = null;
-			this.element.childRemoved(x);
-			x.parentChanged(prev);
+			dirty = true;
+			x.parentDirty = true;
+			@:bypassAccessor x.parent = p;
 		}
 		return x;
 	}
 
-	inline function get_list():Array<T>
-		return this.list;
+	private inline function get_dirty()
+		return @:privateAccess this.dirty;
 
-	inline function get_element():T
-		return this.element;
+	private inline function set_dirty(value:Bool)
+		return @:privateAccess this.dirty = value;
+
+	private inline function get_object()
+		return @:privateAccess this.object;
+
+	private inline function get_list()
+		return @:privateAccess this.list;
+
+	private inline function get_count():Int
+		return list.length;
 }
 
-private class ArrayData<T:Object<T>> {
-	public var element:T;
-	public var list:Array<T> = [];
-
-	public function new(element:T) {
-		this.element = element;
-	}
+private class ObjectListData<T:Object<T>> extends s.shortcut.AttachedAttribute<T> {
+	var list:Array<T> = [];
 }

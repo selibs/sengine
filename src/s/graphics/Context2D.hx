@@ -42,13 +42,13 @@ class Context2D implements s.shortcut.Shortcut {
 	}
 
 	public inline function begin()
-		context.begin();
+		context.reset();
 
 	public inline function clear(color:Color)
 		context.clear(color);
 
 	public inline function end()
-		context.end();
+		context.execute();
 
 	public inline function scissor(x:Int, y:Int, width:Int, height:Int)
 		context.scissor(x, y, width, height);

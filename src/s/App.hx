@@ -3,10 +3,11 @@ package s;
 import kha.System;
 import kha.Framebuffer;
 import aura.Aura;
-import s.Window;
-import s.input.Mouse;
-import s.input.Keyboard;
 import s.Assets;
+import s.app.Time;
+import s.app.Window;
+import s.app.input.Mouse;
+import s.app.input.Keyboard;
 import s.graphics.shaders.Shader;
 
 /**
@@ -211,7 +212,9 @@ enum AppState {
 @:autoBuild(s.macro.AppMacro.build())
 class App implements s.shortcut.Shortcut {
 	static final logger:Log.Logger = new Log.Logger("APP");
-	static var windows(default, null):Array<Window> = [];
+	static final windows:Array<Window> = [];
+
+	@:readonly @:alias public static var language:String = System.language;
 
 	/**
 	 * Current application lifecycle state.
@@ -229,7 +232,7 @@ class App implements s.shortcut.Shortcut {
 	 * This field is assigned during application initialization. Access it after
 	 * [`start`](s.App.start) has begun setup, not at module load time.
 	 */
-	public static var input(default, null):{mouse:Mouse, keyboard:Keyboard};
+	public static final input:{mouse:Mouse, keyboard:Keyboard} = {mouse: null, keyboard: null};
 
 	/**
 	 * Starts the application.
@@ -243,17 +246,44 @@ class App implements s.shortcut.Shortcut {
 	 * class metadata instead of calling this manually.
 	 *
 	 * The `setup` callback is the place to configure the initial
-	 * [`Window`](s.Window) and build scenes attached to it when a custom bootstrap
+	 * [`Window`](s.app.Window) and build scenes attached to it when a custom bootstrap
 	 * is needed.
 	 *
 	 * @param options Kha system options used to create the application.
 	 * @param setup Called once for the primary window before rendering starts.
 	 * @param started Called after initialization finishes and frame delivery has been registered.
-	 * @param progress Called with loading progress in the `0.0..1.0` range while boot assets are loading.
-	 * @param failed Called when asset loading fails.
+	 * @param loadProgress Called with loading progress in the `0.0..1.0` range while boot assets are loading.
+	 * @param loadFailed Called when asset loading fails.
 	 */
-	public static function start(options:SystemOptions, ?setup:Window->Void, ?started:Void->Void, ?progress:Float->Void, ?failed:AssetError->Void) {
-		System.start(options, w -> init(w, setup, started, progress, failed));
+	public static inline function start(options:SystemOptions, ?started:Window->Void, ?loadProgress:Float->Void, ?loadFailed:AssetError->Void) {
+		System.start(options, window -> {
+			logger.info("Starting");
+
+			input.mouse = new Mouse();
+			input.keyboard = new Keyboard();
+
+			System.notifyOnApplicationState(() -> state = Foreground, () -> state = Resume, () -> state = Pause, () -> state = Background,
+				() -> state = Shutdown);
+
+			Aura.init();
+			Shader.compileShaders();
+
+			Assets.loadShelf({
+				fonts: ["font_default" => "font_default"],
+				images: ["image_default" => "image_default"]
+			}, progress -> {
+				if (progress == 1.0) {
+					System.notifyOnFrames(render);
+
+					if (started != null)
+						started(new Window(window));
+
+					logger.debug("Started");
+				}
+				if (loadProgress != null)
+					loadProgress(progress);
+			}, loadFailed);
+		});
 	}
 
 	/**
@@ -261,10 +291,9 @@ class App implements s.shortcut.Shortcut {
 	 *
 	 * Whether the request can be honored depends on platform support.
 	 */
-	public static function exit() {
+	public static inline function exit()
 		if (!System.stop())
 			Log.warning("This application can't be stopped!");
-	}
 
 	// aliases
 
@@ -323,45 +352,18 @@ class App implements s.shortcut.Shortcut {
 	public static inline function onCutCopyPaste(cut:Void->String, copy:Void->String, paste:String->Void)
 		System.notifyOnCutCopyPaste(cut, copy, paste);
 
-	static function init(window:kha.Window, ?setup:Window->Void, ?start:Void->Void, loadProgress:Float->Void, loadFailed:AssetError->Void) {
-		logger.info("Starting");
-
-		input = {mouse: new Mouse(), keyboard: new Keyboard()}
-		System.notifyOnApplicationState(() -> state = Foreground, () -> state = Resume, () -> state = Pause, () -> state = Background, () -> state = Shutdown);
-		Assets.loadShelf({
-			fonts: ["font_default" => "font_default"],
-			images: ["image_default" => "image_default"]
-		}, progress -> {
-			if (progress == 1.0) {
-				Aura.init();
-				Shader.compileShaders();
-
-				if (setup != null)
-					setup(new Window(window));
-
-				System.notifyOnFrames(render);
-
-				if (start != null)
-					start();
-
-				logger.debug("Started");
-			}
-			if (loadProgress != null)
-				loadProgress(progress);
-		}, loadFailed);
-	}
-
 	static function render(frames:Array<Framebuffer>) {
 		Time.update(System.time);
 
-		for (i in 0...frames.length) {
-			final g2 = frames[i].g2;
-			final w = windows[i];
-
-			w.render(w.backBuffer);
-
+		for (frame in frames) {
+			final window = windows[@:privateAccess frame.window];
+			window.render();
+			
+			final g2 = frame.g2;
+			g2.imageScaleQuality = High;
+			g2.mipmapScaleQuality = High;
 			g2.begin();
-			g2.drawImage(w.backBuffer, 0, 0);
+			g2.drawImage(window.backbuffer, 0, 0);
 			g2.end();
 		}
 	}

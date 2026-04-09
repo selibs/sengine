@@ -45,8 +45,8 @@ class FontStyle implements s.shortcut.Shortcut {
 	public var underline:Bool = false; // TODO
 	public var snapToPixel:Bool = true;
 
-	@:attr public var wordSpacing:Float = 0.0;
-	@:attr public var letterSpacing:Float = 0.0;
+	@:attr(spacing) public var wordSpacing:Float = 0.0;
+	@:attr(spacing) public var letterSpacing:Float = 0.0;
 
 	@:inject(setSdfWeight) public var weight:FontWeight = Normal;
 	public var softness:Float = 0.0;
@@ -56,7 +56,7 @@ class FontStyle implements s.shortcut.Shortcut {
 	// public var backgroundColor:Color = Transparent; // TODO
 	// public var capitalization:FontCapitalization; // TODO
 	public var pointSize(get, set):Float;
-	@:attr public var pixelSize(default, set):Int = 18;
+	@:attr(metrics) public var pixelSize(default, set):Int = 18;
 
 	// public var preferShaping:Bool;
 	// public var preferTypoLineMetrics:Bool;
@@ -73,12 +73,12 @@ class FontStyle implements s.shortcut.Shortcut {
 	public inline function getAtlas()
 		return font.getAtlas(pixelSize);
 
-	public inline function getFontCharFromAtlas(atlas:s.assets.font.FontAtlas, scale:Float, char:Int):FontChar {
+	public inline function getFontCharFromAtlas(atlas:s.assets.internal.font.FontAtlas, scale:Float, char:Int):FontChar {
 		var g = atlas.getGlyph(char);
 		var atlasW:Float = g.x1 - g.x0;
 		var atlasH:Float = g.y1 - g.y0;
-		var w:Float = atlasW / s.assets.font.Font.sdfOversample * scale;
-		var h:Float = atlasH / s.assets.font.Font.sdfOversample * scale;
+		var w:Float = atlasW / s.assets.internal.font.Font.sdfOversample * scale;
+		var h:Float = atlasH / s.assets.internal.font.Font.sdfOversample * scale;
 		return {
 			xoff: g.xoff * scale,
 			yoff: g.yoff * scale,
@@ -146,10 +146,10 @@ class FontStyle implements s.shortcut.Shortcut {
 	}
 
 	inline function get_pointSize():Float
-		return pixelSize * 72.0 / s.Display.primary.pixelsPerInch;
+		return pixelSize * 72.0 / s.app.Display.primary.pixelsPerInch;
 
 	inline function set_pointSize(value:Float):Float {
-		pixelSize = Std.int(value * s.Display.primary.pixelsPerInch / 72.0);
+		pixelSize = Std.int(value * s.app.Display.primary.pixelsPerInch / 72.0);
 		return value;
 	}
 

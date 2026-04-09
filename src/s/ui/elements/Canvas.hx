@@ -16,8 +16,8 @@ class Canvas extends DrawableElement {
 
 	override function sync() {
 		super.sync();
-		
-		if (widthIsDirty || heightIsDirty) {
+
+		if (widthDirty || heightDirty) {
 			texture.unload();
 			texture = new RenderTarget(Std.int(width), Std.int(height));
 		}

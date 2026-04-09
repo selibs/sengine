@@ -10,10 +10,10 @@ abstract class ContainerElement extends Element {
 	override function sync() {
 		super.sync();
 
-		if (widthIsDirty || left.paddingIsDirty || right.paddingIsDirty)
+		if (widthDirty || left.paddingDirty || right.paddingDirty)
 			spaceH = width - left.padding - right.padding;
 
-		if (heightIsDirty || top.paddingIsDirty || bottom.paddingIsDirty)
+		if (heightDirty || top.paddingDirty || bottom.paddingDirty)
 			spaceV = height - top.padding - bottom.padding;
 	}
 }

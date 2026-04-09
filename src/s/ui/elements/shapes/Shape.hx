@@ -4,20 +4,19 @@ package s.ui.elements.shapes;
 abstract class Shape extends DrawableElement {
 	var realRadius:Float = 0.0;
 
-	@:attr public var radius:Float;
-	public var border = {width: 0.0, color: Color.Transparent};
+	@:attr.attached public final border:BorderAttribute;
+	@:attr @:clamp(0) public var radius:Float;
 
 	public function new(radius:Float = 5.0) {
 		super();
 		this.radius = radius;
+		border = new BorderAttribute(this);
 	}
 
 	override function sync() {
 		super.sync();
 
-		if (radiusIsDirty || widthIsDirty || heightIsDirty) {
-			realRadius = Math.max(0.0, radius);
+		if (radiusDirty || horizontalDirty || verticalDirty)
 			realRadius = Math.min(realRadius, Math.min(width, height) * 0.5);
-		}
 	}
 }

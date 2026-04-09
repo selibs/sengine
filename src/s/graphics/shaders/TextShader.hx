@@ -76,6 +76,6 @@ class TextShader extends TexturedShader {
 			]);
 		}
 
-		ctx.draw();
+		ctx.flush();
 	}
 }

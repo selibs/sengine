@@ -1,13 +1,12 @@
 package s.ui.graphics;
 
-import s.math.Mat3;
-import kha.graphics4.VertexData;
 import kha.graphics4.ConstantLocation;
 import s.graphics.RenderTarget;
 import s.graphics.shaders.Shader;
 import s.ui.elements.DrawableElement;
 
 @:allow(s.ui.elements.DrawableElement)
+@:access(s.ui.elements.DrawableElement)
 abstract class ElementDrawer<T:DrawableElement> extends Shader {
 	var mvpCL:ConstantLocation;
 	var rectCL:ConstantLocation;
@@ -41,9 +40,9 @@ abstract class ElementDrawer<T:DrawableElement> extends Shader {
 
 	function setUniforms(target:RenderTarget, element:T) {
 		final ctx = target.context3D;
-		ctx.setMat3(mvpCL, target.context2D.transform);
+		ctx.setMat3(mvpCL, element.globalTransform * target.context2D.transform);
 		ctx.setVec4(rectCL, element.left.position, element.top.position, element.width, element.height);
-		ctx.setVec4(colorCL, element.color.RGBA);
+		ctx.setVec4(colorCL, element.realColor);
 	}
 
 	function setBuffers(target:RenderTarget) {
@@ -53,6 +52,6 @@ abstract class ElementDrawer<T:DrawableElement> extends Shader {
 
 	function draw(target:RenderTarget, element:T):Void {
 		final ctx = target.context3D;
-		ctx.draw();
+		ctx.flush();
 	}
 }

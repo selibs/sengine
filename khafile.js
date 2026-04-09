@@ -112,7 +112,7 @@ const shaderInputDir = path.join(__dirname, "shaders");
 const shaderOutputDir = path.join(process.cwd(), "build", "shaders_assembled");
 assembleShaders(shaderInputDir, shaderOutputDir);
 
-let project = new Project("s2D");
+let project = new Project("s");
 project.addSources("src");
 project.addAssets("assets/**", {
     nameBaseDir: "assets",
@@ -123,22 +123,22 @@ project.addAssets("assets/**", {
 // asset types
 process.assetTypes = process.assetTypes ?? {}
 process.assetTypes["font"] = {
-    type: "s.assets.font.Font", 
+    type: "s.assets.internal.font.Font", 
     formats:{
-        "ttf": "s.assets.font.format.TTF"
+        "ttf": "s.assets.internal.font.format.TTF"
     }
 };
 process.assetTypes["image"] = {
-    type: "s.assets.image.Image", 
+    type: "s.assets.internal.image.Image", 
     formats:{
-        "bmp": "s.assets.image.format.BMP",
-        "exr": "s.assets.image.format.EXR",
-        "hdr": "s.assets.image.format.HDR",
-        "jpg": "s.assets.image.format.JPG",
-        "png": "s.assets.image.format.PNG",
-        "psd": "s.assets.image.format.PSD",
-        "tga": "s.assets.image.format.TGA",
-        "tif": "s.assets.image.format.TIF",
+        "bmp": "s.assets.internal.image.format.BMP",
+        "exr": "s.assets.internal.image.format.EXR",
+        "hdr": "s.assets.internal.image.format.HDR",
+        "jpg": "s.assets.internal.image.format.JPG",
+        "png": "s.assets.internal.image.format.PNG",
+        "psd": "s.assets.internal.image.format.PSD",
+        "tga": "s.assets.internal.image.format.TGA",
+        "tif": "s.assets.internal.image.format.TIF",
     }
 };
 

@@ -1,15 +1,13 @@
 package s.ui.elements;
 
-import s.math.Mat3;
-import s.math.SMath;
-import s.input.Mouse;
+import s.app.input.Mouse;
 import s.ui.FocusPolicy;
 
+@:allow(s.ui.Scene)
 class InteractiveElement extends Element {
-	@:attr public var enabled:Bool = true;
-	@:attr public var focused(default, null):Bool = false;
-
-	@:signal public var hovered:Bool = false;
+	@:attr(interaction) public var enabled:Bool = true;
+	@:attr(interaction) public var focused(default, set):Bool = false;
+	@:attr(interaction) public var hovered(default, null):Bool = false;
 
 	public var focusPolicy:FocusPolicy = ClickFocus | TabFocus;
 
@@ -21,9 +19,9 @@ class InteractiveElement extends Element {
 
 	@:signal public function mouseScrolled(m:MouseScrollEvent);
 
-	@:signal public function mousePressed(m:MouseButtonEvent);
+	@:signal public function mouseDown(m:MouseButtonEvent);
 
-	@:signal public function mouseReleased(m:MouseButtonEvent);
+	@:signal public function mouseUp(m:MouseButtonEvent);
 
 	@:signal public function mouseHold(m:MouseButtonEvent);
 
@@ -31,9 +29,9 @@ class InteractiveElement extends Element {
 
 	@:signal public function mouseDoubleClicked(m:MouseButtonEvent);
 
-	@:signal(button) public function mouseButtonPressed(button:MouseButton, m:MouseEvent);
+	@:signal(button) public function mouseButtonDown(button:MouseButton, m:MouseEvent);
 
-	@:signal(button) public function mouseButtonReleased(button:MouseButton, m:MouseEvent);
+	@:signal(button) public function mouseButtonUp(button:MouseButton, m:MouseEvent);
 
 	@:signal(button) public function mouseButtonHold(button:MouseButton, m:MouseEvent);
 
@@ -41,42 +39,13 @@ class InteractiveElement extends Element {
 
 	@:signal(button) public function mouseButtonDoubleClicked(button:MouseButton, m:MouseEvent);
 
-	override function render(target:s.graphics.RenderTarget) {
-		update(target.context2D.transform);
-		super.render(target);
-	}
+	@:slot(mouseDown)
+	function syncMouseDown(m:MouseButtonEvent)
+		mouseButtonDown(m.button, m);
 
-	function update(t:Mat3) {
-		var m = s.App.input.mouse;
-		var mx = m.x;
-		var my = m.y;
-
-		var p = inverse(t) * vec2(mx, my);
-		var containsMouse = left.position <= p.x && p.x <= right.position && top.position <= p.y && p.y <= bottom.position;
-
-		if (!hovered && containsMouse)
-			mouseEntered(mx, my);
-		else if (hovered && !containsMouse)
-			mouseExited(mx, my);
-	}
-
-	@:slot(mouseEntered)
-	function syncMouseEntered(x:Float, y:Float) {
-		hovered = true;
-	}
-
-	@:slot(mouseExited)
-	function syncMouseExited(x:Float, y:Float) {
-		hovered = false;
-	}
-
-	@:slot(mousePressed)
-	function syncMousePressed(m:MouseButtonEvent)
-		mouseButtonPressed(m.button, m);
-
-	@:slot(mouseReleased)
-	function syncMouseReleased(m:MouseButtonEvent)
-		mouseButtonReleased(m.button, m);
+	@:slot(mouseUp)
+	function syncMouseUp(m:MouseButtonEvent)
+		mouseButtonUp(m.button, m);
 
 	@:slot(mouseHold)
 	function syncMouseHold(m:MouseButtonEvent)
@@ -89,4 +58,16 @@ class InteractiveElement extends Element {
 	@:slot(mouseDoubleClicked)
 	function syncMouseDoubleClicked(m:MouseButtonEvent)
 		mouseButtonDoubleClicked(m.button, m);
+
+	override function sync() {
+		super.sync();
+		// if (scene.root.hierarchyDirty)
+		// 	scene.interactive.push(this);
+	}
+
+	function set_focused(value:Bool) {
+		if (value && scene != null)
+			scene.focus = this;
+		return focused = value;
+	}
 }

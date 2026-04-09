@@ -5,6 +5,6 @@ class RectangleShader extends Shader2D {
 		super.set(context);
 		final ctx = context.context;
 		setRect(ctx, x, y, width, height, 0.0, 0.0, 1.0, 1.0);
-		ctx.draw();
+		ctx.flush();
 	}
 }

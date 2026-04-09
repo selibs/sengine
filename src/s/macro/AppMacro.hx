@@ -64,6 +64,7 @@ class AppMacro {
 				}
 				break;
 			}
+			
 		if (mainFun == null) {
 			mainFun = {args: []};
 			fields.push({
@@ -77,7 +78,7 @@ class AppMacro {
 		if (mainFun.expr == null)
 			mainFun.expr = macro {};
 
-		mainFun.expr = macro @:pos(mainFun.expr.pos) s.App.start($options, (window:s.Window) -> ${mainFun.expr});
+		mainFun.expr = macro @:pos(mainFun.expr.pos) s.App.start($options, (window:s.app.Window) -> ${mainFun.expr});
 
 		return fields;
 	}
