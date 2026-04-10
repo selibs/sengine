@@ -15,7 +15,7 @@ abstract class DrawableElement extends Element {
 		if (visualDirty || globalOpacityDirty)
 			realColor = Color.rgba(color.r, color.g, color.b, color.a * globalOpacity);
 
-		if (globalVisible && scene.collectDrawables)
-			scene.drawableScratch.push(this);
+		if (globalVisible && scene.root.children.dirty)
+			scene.drawable.push(this);
 	}
 }

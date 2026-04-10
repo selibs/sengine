@@ -16,7 +16,7 @@ abstract class Shape extends DrawableElement {
 	override function sync() {
 		super.sync();
 
-		if (radiusDirty || horizontalDirty || verticalDirty)
-			realRadius = Math.min(realRadius, Math.min(width, height) * 0.5);
+		if (radiusDirty || widthDirty || heightDirty)
+			realRadius = Math.min(radius, Math.min(width, height) * 0.5);
 	}
 }

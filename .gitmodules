@@ -16,3 +16,6 @@
 [submodule "libs/snet"]
 	path = libs/snet
 	url = https://github.com/selibs/snet
+[submodule "libs/smacro"]
+	path = libs/smacro
+	url = https://github.com/selibs/smacro

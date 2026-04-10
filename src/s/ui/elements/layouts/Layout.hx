@@ -82,7 +82,7 @@ class Layout extends ContainerElement {
 
 		final children = layout.children;
 		final count = children.count;
-		final hierarchyDirty = children.dirty;
+		final childrenDirty = children.dirty;
 		final spacing = layout.spacing;
 		final crossSpace = horizontal ? layout.spaceV : layout.spaceH;
 		final crossSpaceDirty = horizontal ? layout.spaceVDirty : layout.spaceHDirty;
@@ -92,7 +92,7 @@ class Layout extends ContainerElement {
 		var wrapFillFactorSum = 0.0;
 		var wrapAllFactorSum = 0.0;
 		var wrapHasFill = false;
-		var wrapMetricsDirty = hierarchyDirty;
+		var wrapMetricsDirty = childrenDirty;
 		if (wrap) {
 			var metricBase = start;
 			var metricLineSize = 0.0;
@@ -185,7 +185,7 @@ class Layout extends ContainerElement {
 		}
 
 		var lineBase = crossForward ? crossStartPos : cEnd.position - cEnd.padding;
-		var offsetCarry = hierarchyDirty || layout.flowDirty || layout.flowLayoutDirty || boundsAreDirty || wrapMetricsDirty;
+		var offsetCarry = childrenDirty || layout.flowDirty || layout.flowLayoutDirty || boundsAreDirty || wrapMetricsDirty;
 		var i = 0;
 		while (i < count) {
 			var base = start;

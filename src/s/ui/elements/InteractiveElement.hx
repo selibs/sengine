@@ -61,7 +61,7 @@ class InteractiveElement extends Element {
 
 	override function sync() {
 		super.sync();
-		// if (scene.root.hierarchyDirty)
+		// if (scene.root.children.dirty)
 		// 	scene.interactive.push(this);
 	}
 

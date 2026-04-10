@@ -1,10 +1,7 @@
 package s.ui.graphics.shapes;
 
-import kha.graphics4.VertexData;
 import kha.graphics4.ConstantLocation;
 import s.graphics.RenderTarget;
-import s.math.Mat3;
-import s.graphics.shaders.Shader;
 
 @:allow(s.ui.elements.shapes.Shape)
 abstract class ShapeDrawer<T:s.ui.elements.shapes.Shape> extends ElementDrawer<T> {

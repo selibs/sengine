@@ -267,7 +267,7 @@ class Element extends Object2D<Element> {
 			syncChild(c);
 
 	function syncChild(child:Element)
-		if (scene?.collectDrawables || child.dirty || globalVisibleDirty || globalOpacityDirty || globalTransformDirty)
+		if (scene?.root.children.dirty || child.dirty || globalVisibleDirty || globalOpacityDirty || globalTransformDirty)
 			child.syncTree();
 
 	override function sync() {

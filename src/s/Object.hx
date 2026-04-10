@@ -17,7 +17,7 @@ import haxe.Json;
  * It does not define transform, rendering, or update behavior on its own.
  */
 @:allow(s.ObjectList)
-abstract class Object<T:Object<T>> implements s.shortcut.Shortcut {
+abstract class Object<T:Object<T>> implements s.shortcut.Shortcut implements s.shortcut.AttributeOwner {
 	/**
 	 * Parent node or `null` if this node is detached.
 	 *
@@ -40,6 +40,9 @@ abstract class Object<T:Object<T>> implements s.shortcut.Shortcut {
 	public function new() {
 		children = new ObjectList(cast this);
 	}
+
+	public function markDirty()
+		dirty = true;
 
 	/**
 	 * Sets the parent node.
@@ -107,156 +110,13 @@ abstract class Object<T:Object<T>> implements s.shortcut.Shortcut {
 
 	function set_dirty(value:Bool) {
 		if (value && parent != null && !parent.dirty)
-			parent.dirty = true;
+			parent.markDirty();
 		return dirty = value;
 	}
-}
 
-@:allow(s.Object)
-@:forward()
-@:forward.new
-private extern abstract ObjectList<T:Object<T>>(ObjectListData<T>) to ObjectListData<T> {
-	private var dirty(get, set):Bool;
-	private var object(get, never):T;
-	private var list(get, never):Array<T>;
-
-	public var count(get, never):Int;
-
-	public inline function excluded(x:T)
-		return copy().remove(x);
-
-	public inline function concat(a:Array<T>):Array<T>
-		return list.concat(a);
-
-	public inline function join(sep:String):String
-		return list.join(sep);
-
-	public inline function pop():Null<T>
-		return setObjectParent(list.pop(), null);
-
-	public inline function add(x:T):T {
-		if (contains(x))
-			return null;
-		list.push(x);
-		return setObjectParent(x, object);
+	function set_hierarchyDirty(value:Bool) {
+		if (value && parent != null && !parent.children.dirty)
+			parent.children.dirty = true;
+		return children.dirty = value;
 	}
-
-	public inline function reverse():Void
-		list.reverse();
-
-	public inline function shift():Null<T>
-		return setObjectParent(list.shift(), null);
-
-	public inline function slice(pos:Int, ?end:Int):Array<T>
-		return list.slice(pos, end);
-
-	public inline function sort(f:T->T->Int):Void
-		list.sort(f);
-
-	public inline function splice(pos:Int, len:Int):Array<T> {
-		var els = list.splice(pos, len);
-		for (x in els)
-			setObjectParent(x, null);
-		return els;
-	}
-
-	public inline function toString():String
-		return list.toString();
-
-	public inline function unshift(x:T):T {
-		if (contains(x))
-			return null;
-		list.unshift(x);
-		return setObjectParent(x, object);
-	}
-
-	public inline function insert(pos:Int, x:T):T {
-		if (contains(x))
-			return null;
-		list.insert(pos, x);
-		return setObjectParent(x, object);
-	}
-
-	public inline function remove(x:T):Bool {
-		var r = list.remove(x);
-		if (r)
-			setObjectParent(x, null);
-		return r;
-	}
-
-	public inline function contains(x:T):Bool
-		return x?.parent == object;
-
-	public inline function indexOf(x:T, ?fromIndex:Int):Int
-		return list.indexOf(x, fromIndex);
-
-	public inline function lastIndexOf(x:T, ?fromIndex:Int):Int
-		return list.lastIndexOf(x, fromIndex);
-
-	@:to
-	public inline function copy():Array<T>
-		return list.copy();
-
-	public inline function iterator():haxe.iterators.ArrayIterator<T>
-		return list.iterator();
-
-	public inline function keyValueIterator():haxe.iterators.ArrayKeyValueIterator<T>
-		return list.keyValueIterator();
-
-	public inline function map<S>(f:T->S):Array<S>
-		return list.map(f);
-
-	public inline function filter(f:T->Bool):Array<T>
-		return list.filter(f);
-
-	public inline function clear() @:privateAccess {
-		if (count == 0)
-			return;
-
-		dirty = true;
-		while (count > 0) {
-			final x = list.pop();
-			x.parentDirty = true;
-			@:bypassAccessor x.parent = null;
-		}
-	}
-
-	@:op([])
-	private inline function arrayRead(i:Int):T
-		return list[i];
-
-	@:op([])
-	private inline function arrayWrite(i:Int, x:T):T {
-		if (!contains(x))
-			list[i] = x;
-		return x;
-	}
-
-	private inline function setObjectParent(x:T, p:T) @:privateAccess {
-		if (x != null) {
-			dirty = true;
-			x.parentDirty = true;
-			@:bypassAccessor x.parent = p;
-		}
-		return x;
-	}
-
-	private inline function get_dirty()
-		return @:privateAccess this.dirty;
-
-	private inline function set_dirty(value:Bool)
-		return @:privateAccess this.dirty = value;
-
-	private inline function get_object()
-		return @:privateAccess this.object;
-
-	private inline function get_list()
-		return @:privateAccess this.list;
-
-	private inline function get_count():Int
-		return list.length;
-}
-
-private class ObjectListData<T:Object<T>> extends s.shortcut.AttachedAttribute<T> {
-	var list:Array<T> = [];
 }

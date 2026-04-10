@@ -358,10 +358,8 @@ class App implements s.shortcut.Shortcut {
 		for (frame in frames) {
 			final window = windows[@:privateAccess frame.window];
 			window.render();
-			
+
 			final g2 = frame.g2;
-			g2.imageScaleQuality = High;
-			g2.mipmapScaleQuality = High;
 			g2.begin();
 			g2.drawImage(window.backbuffer, 0, 0);
 			g2.end();

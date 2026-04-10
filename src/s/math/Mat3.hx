@@ -65,7 +65,7 @@ extern abstract Mat3(KhaMat3) from KhaMat3 to KhaMat3 {
 		this._22 = a22;
 	}
 
-	public inline function copyFrom(v:Mat3) {
+	public inline function setFrom(v:Mat3) {
 		this.setFrom(v);
 		return this;
 	}
@@ -186,35 +186,35 @@ extern abstract Mat3(KhaMat3) from KhaMat3 to KhaMat3 {
 
 	@:op(a *= b)
 	private inline function mulEq(b:Mat3):Mat3
-		return copyFrom(self * b);
+		return setFrom(self * b);
 
 	@:op(a *= b)
 	private inline function mulEqScalar(f:Float):Mat3
-		return copyFrom(mulScalar(f));
+		return setFrom(mulScalar(f));
 
 	@:op(a /= b)
 	private inline function divEq(b:Mat3):Mat3
-		return copyFrom(self / b);
+		return setFrom(self / b);
 
 	@:op(a /= b)
 	private inline function divEqScalar(f:Float):Mat3
-		return copyFrom(self / f);
+		return setFrom(self / f);
 
 	@:op(a += b)
 	private inline function addEq(b:Mat3):Mat3
-		return copyFrom(self + b);
+		return setFrom(self + b);
 
 	@:op(a += b)
 	private inline function addEqScalar(f:Float):Mat3
-		return copyFrom(self + f);
+		return setFrom(self + f);
 
 	@:op(a -= b)
 	private inline function subEq(b:Mat3):Mat3
-		return copyFrom(self - b);
+		return setFrom(self - b);
 
 	@:op(a -= b)
 	private inline function subEqScalar(f:Float):Mat3
-		return copyFrom(self - f);
+		return setFrom(self - f);
 
 	@:op(a + b)
 	private inline function add(n:Mat3):Mat3

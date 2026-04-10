@@ -13,15 +13,14 @@ import s.ui.elements.Element;
 import s.ui.elements.DrawableElement;
 import s.ui.elements.InteractiveElement;
 
+@:access(s.ObjectList)
 @:access(s.app.Window)
-@:allow(s.ui.elements.Element)
 @:access(s.ui.elements.Element)
+@:allow(s.ui.elements.Element)
 class Scene implements s.shortcut.Shortcut {
 	@:readonly @:alias var target:RenderTarget = window.backbuffer;
 
-	var drawable:Array<DrawableElement> = [];
-	var drawableScratch:Array<DrawableElement> = [];
-	var collectDrawables:Bool = false;
+	final drawable:Array<DrawableElement> = [];
 	final interactive:Array<InteractiveElement> = [];
 	final active:Array<InteractiveElement> = [];
 
@@ -59,23 +58,19 @@ class Scene implements s.shortcut.Shortcut {
 		root.width = width;
 		root.height = height;
 
+		final t = target.context2D.transform;
 		if (kha.Image.renderTargetsInvertedY())
-			target.context2D.transform = Mat3.orthogonalProjection(0.0, width, 0.0, height);
+			t.setFrom(Mat3.orthogonalProjection(0.0, width, 0.0, height));
 		else
-			target.context2D.transform = Mat3.orthogonalProjection(0.0, width, height, 0.0);
+			t.setFrom(Mat3.orthogonalProjection(0.0, width, height, 0.0));
 	}
 
 	@:access(s.app.Window)
 	function render() {
 		if (root.dirty) {
-			collectDrawables = true;
-			drawableScratch.resize(0);
+			if (root.children.dirty)
+				drawable.resize(0);
 			root.syncTree();
-			collectDrawables = false;
-
-			final rebuilt = drawableScratch;
-			drawableScratch = drawable;
-			drawable = rebuilt;
 		}
 
 		final ctx = target.context2D;
