@@ -1,5 +1,6 @@
 package s.assets.internal.font;
 
+import haxe.ds.IntMap;
 import haxe.ds.Vector;
 import kha.Blob;
 import kha.Kravur;
@@ -89,8 +90,15 @@ class Font extends Asset<kha.Font> {
 		return key;
 	}
 
+	static inline function makeGlyphSegmentKey(fontIndex:Int, bakedFontSize:Int, glyphIndex:Int):Int {
+		var key = fontIndex;
+		key = ((key * 397) ^ bakedFontSize) | 0;
+		key = ((key * 397) ^ glyphIndex) | 0;
+		return key;
+	}
+
 	static function bakeFontBitmap(data:Blob, offset:Int, pixel_height:Float, pixels:Blob, pw:Int, ph:Int, chars:Array<Int>,
-			chardata:Vector<Stbtt_bakedchar>):Int @:privateAccess {
+			chardata:Vector<Stbtt_bakedchar>, fontIndex:Int, bakedFontSize:Int, glyphSegments:IntMap<Array<GlyphSegment>>):Int @:privateAccess {
 		var scale:Float;
 		var x:Int, y:Int, bottom_y:Int;
 		var f:Stbtt_fontinfo = new Stbtt_fontinfo();
@@ -154,8 +162,11 @@ class Font extends Asset<kha.Font> {
 		for (index in chars) {
 			var g:Int = StbTruetype.stbtt_FindGlyphIndex(f, index);
 			ch = chardata[i];
-			if (ch.x1 > ch.x0 && ch.y1 > ch.y0)
-				buildGlyphSdf(f, g, scale, pixels, pw, ch);
+			if (ch.x1 > ch.x0 && ch.y1 > ch.y0) {
+				final segmentKey = makeGlyphSegmentKey(fontIndex, bakedFontSize, g);
+				final segments = getGlyphSegments(f, g, scale, ch, glyphSegments, segmentKey);
+				buildGlyphSdf(pixels, pw, ch, segments);
+			}
 			++i;
 		}
 		return bottom_y;
@@ -388,21 +399,30 @@ class Font extends Asset<kha.Font> {
 		return segments;
 	}
 
-	static function buildGlyphSdf(info:Stbtt_fontinfo, glyphIndex:Int, scale:Float, pixels:Blob, atlasWidth:Int, glyph:Stbtt_bakedchar) {
-		if (sdfFast) {
-			buildGlyphSdfFast(info, glyphIndex, scale, pixels, atlasWidth, glyph);
-			return;
-		}
-		buildGlyphSdfSlow(info, glyphIndex, scale, pixels, atlasWidth, glyph);
+	static function getGlyphSegments(info:Stbtt_fontinfo, glyphIndex:Int, scale:Float, glyph:Stbtt_bakedchar, glyphSegments:IntMap<Array<GlyphSegment>>,
+			cacheKey:Int):Array<GlyphSegment> {
+		final cached = glyphSegments.get(cacheKey);
+		if (cached != null)
+			return cached;
+
+		final segments = buildGlyphSegments(info, glyphIndex, scale, glyph);
+		glyphSegments.set(cacheKey, segments);
+		return segments;
 	}
 
-	static function buildGlyphSdfFast(info:Stbtt_fontinfo, glyphIndex:Int, scale:Float, pixels:Blob, atlasWidth:Int, glyph:Stbtt_bakedchar) {
+	static function buildGlyphSdf(pixels:Blob, atlasWidth:Int, glyph:Stbtt_bakedchar, segments:Array<GlyphSegment>) {
+		if (sdfFast) {
+			buildGlyphSdfFast(pixels, atlasWidth, glyph, segments);
+			return;
+		}
+		buildGlyphSdfSlow(pixels, atlasWidth, glyph, segments);
+	}
+
+	static function buildGlyphSdfFast(pixels:Blob, atlasWidth:Int, glyph:Stbtt_bakedchar, segments:Array<GlyphSegment>) {
 		final width = glyph.x1 - glyph.x0;
 		final height = glyph.y1 - glyph.y0;
 		if (width <= 0 || height <= 0)
 			return;
-
-		final segments = buildGlyphSegments(info, glyphIndex, scale, glyph);
 		if (segments.length == 0)
 			return;
 
@@ -445,13 +465,11 @@ class Font extends Asset<kha.Font> {
 		}
 	}
 
-	static function buildGlyphSdfSlow(info:Stbtt_fontinfo, glyphIndex:Int, scale:Float, pixels:Blob, atlasWidth:Int, glyph:Stbtt_bakedchar) {
+	static function buildGlyphSdfSlow(pixels:Blob, atlasWidth:Int, glyph:Stbtt_bakedchar, segments:Array<GlyphSegment>) {
 		final width = glyph.x1 - glyph.x0;
 		final height = glyph.y1 - glyph.y0;
 		if (width <= 0 || height <= 0)
 			return;
-
-		final segments = buildGlyphSegments(info, glyphIndex, scale, glyph);
 		if (segments.length == 0)
 			return;
 
@@ -578,6 +596,7 @@ class Font extends Asset<kha.Font> {
 	var oldGlyphHash:Int = 0;
 	var fontIndex:Int;
 	var atlases:Map<Int, FontAtlas> = [];
+	var glyphSegments:IntMap<Array<GlyphSegment>> = new IntMap();
 
 	public function getAtlas(size:Int) @:privateAccess {
 		final nominalSize = quantizeAtlasSize(size > 0 ? size : 1);
@@ -609,7 +628,7 @@ class Font extends Asset<kha.Font> {
 		var status:Int = -1;
 		while (status <= 0) {
 			pixels = Blob.alloc(width * height);
-			status = bakeFontBitmap(blob, offset, bakedFontSize, pixels, width, height, oldGlyphs, baked);
+			status = bakeFontBitmap(blob, offset, bakedFontSize, pixels, width, height, oldGlyphs, baked, fontIndex, bakedFontSize, glyphSegments);
 			if (status <= 0)
 				height < width ? height *= 2 : width *= 2;
 		}
@@ -654,6 +673,7 @@ class Font extends Asset<kha.Font> {
 		atlases = cast resource.images;
 		if (atlases == null)
 			atlases = [];
+		glyphSegments = new IntMap();
 	}
 
 	function toResource():kha.Font @:privateAccess {

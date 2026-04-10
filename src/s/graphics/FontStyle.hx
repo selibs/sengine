@@ -1,5 +1,6 @@
 package s.graphics;
 
+import haxe.ds.IntMap;
 import s.assets.Font;
 
 typedef FontChar = {
@@ -8,6 +9,18 @@ typedef FontChar = {
 	advance:Float,
 	pos:{x:Float, y:Float, width:Float, height:Float},
 	uv:{x:Float, y:Float, width:Float, height:Float}
+}
+
+private typedef FontCharTemplate = {
+	xoff:Float,
+	yoff:Float,
+	advance:Float,
+	width:Float,
+	height:Float,
+	uvX:Float,
+	uvY:Float,
+	uvWidth:Float,
+	uvHeight:Float
 }
 
 enum abstract FontWeight(Int) from Int to Int {
@@ -33,6 +46,11 @@ enum FontCapitalization {
 @:allow(s.graphics.shaders.TextShader)
 class FontStyle implements s.shortcut.Shortcut {
 	var font:Font = "font_default";
+	var cachedAtlas:s.assets.internal.font.FontAtlas = null;
+	var cachedPixelSize:Int = -1;
+	var cachedLetterSpacing:Float = Math.NaN;
+	var cachedWordSpacing:Float = Math.NaN;
+	var charTemplates:IntMap<FontCharTemplate> = new IntMap();
 
 	var italicSlant:Float = 0.0;
 	var sdfWeight:Float = 0.0;
@@ -73,35 +91,93 @@ class FontStyle implements s.shortcut.Shortcut {
 	public inline function getAtlas()
 		return font.getAtlas(pixelSize);
 
-	public inline function getFontCharFromAtlas(atlas:s.assets.internal.font.FontAtlas, scale:Float, char:Int):FontChar {
-		var g = atlas.getGlyph(char);
-		var atlasW:Float = g.x1 - g.x0;
-		var atlasH:Float = g.y1 - g.y0;
-		var w:Float = atlasW / s.assets.internal.font.Font.sdfOversample * scale;
-		var h:Float = atlasH / s.assets.internal.font.Font.sdfOversample * scale;
+	inline function invalidateCharTemplates() {
+		cachedAtlas = null;
+		cachedPixelSize = -1;
+		cachedLetterSpacing = Math.NaN;
+		cachedWordSpacing = Math.NaN;
+		charTemplates = new IntMap();
+	}
+
+	inline function getTemplateAtlas() {
+		final atlas = getAtlas();
+		if (atlas != cachedAtlas || cachedPixelSize != pixelSize || cachedLetterSpacing != letterSpacing || cachedWordSpacing != wordSpacing) {
+			cachedAtlas = atlas;
+			cachedPixelSize = pixelSize;
+			cachedLetterSpacing = letterSpacing;
+			cachedWordSpacing = wordSpacing;
+			charTemplates = new IntMap();
+		}
+		return atlas;
+	}
+
+	inline function buildFontCharTemplate(atlas:s.assets.internal.font.FontAtlas, scale:Float, char:Int):FontCharTemplate {
+		final g = atlas.getGlyph(char);
+		final atlasW:Float = g.x1 - g.x0;
+		final atlasH:Float = g.y1 - g.y0;
 		return {
 			xoff: g.xoff * scale,
 			yoff: g.yoff * scale,
 			advance: g.xadvance + getSpacing(char),
-			pos: {
-				x: 0.0,
-				y: 0.0,
-				width: w,
-				height: h
-			},
-			uv: {
-				x: g.x0 / atlas.width,
-				y: g.y0 / atlas.height,
-				width: atlasW / atlas.width,
-				height: atlasH / atlas.height
-			}
-		}
+			width: atlasW / s.assets.internal.font.Font.sdfOversample * scale,
+			height: atlasH / s.assets.internal.font.Font.sdfOversample * scale,
+			uvX: g.x0 / atlas.width,
+			uvY: g.y0 / atlas.height,
+			uvWidth: atlasW / atlas.width,
+			uvHeight: atlasH / atlas.height
+		};
+	}
+
+	inline function copyFontCharTemplate(template:FontCharTemplate, out:FontChar):FontChar {
+		if (out == null)
+			return {
+				xoff: template.xoff,
+				yoff: template.yoff,
+				advance: template.advance,
+				pos: {
+					x: 0.0,
+					y: 0.0,
+					width: template.width,
+					height: template.height
+				},
+				uv: {
+					x: template.uvX,
+					y: template.uvY,
+					width: template.uvWidth,
+					height: template.uvHeight
+				}
+			};
+
+		out.xoff = template.xoff;
+		out.yoff = template.yoff;
+		out.advance = template.advance;
+		out.pos.width = template.width;
+		out.pos.height = template.height;
+		out.uv.x = template.uvX;
+		out.uv.y = template.uvY;
+		out.uv.width = template.uvWidth;
+		out.uv.height = template.uvHeight;
+		return out;
+	}
+
+	public inline function getFontCharFromAtlas(atlas:s.assets.internal.font.FontAtlas, scale:Float, char:Int):FontChar {
+		return copyFontCharTemplate(buildFontCharTemplate(atlas, scale, char), null);
+	}
+
+	public function copyFontChar(char:Int, out:FontChar = null):FontChar {
+		final atlas = getTemplateAtlas();
+		final template = charTemplates.get(char);
+		if (template != null)
+			return copyFontCharTemplate(template, out);
+
+		final scale = pixelSize / atlas.size;
+		final built = buildFontCharTemplate(atlas, scale, char);
+		charTemplates.set(char, built);
+		return copyFontCharTemplate(built, out);
 	}
 
 	public function getFontChar(char:Int):FontChar {
-		var atlas = getAtlas();
-		var scale = pixelSize / atlas.size;
-		return getFontCharFromAtlas(atlas, scale, char);
+		return copyFontChar(char);
 	}
 
 	public function widthOfCharacters(chars:Array<Int>, start:Int, length:Int):Float {

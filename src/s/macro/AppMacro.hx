@@ -64,7 +64,7 @@ class AppMacro {
 				}
 				break;
 			}
-			
+
 		if (mainFun == null) {
 			mainFun = {args: []};
 			fields.push({

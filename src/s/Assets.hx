@@ -228,4 +228,4 @@ private function normalizeFilePath(value:String):String
 	return value.replace("\\", "/");
 
 private function cloneUri(uri:URI):URI
-	return new URI(uri.proto, uri.isSecure, uri.hasAuthority, uri.host, uri.user, uri.pass, uri.path, uri.query, uri.fragment);
+	return new URI(uri.proto, uri.secure, uri.hasAuthority, uri.host, uri.user, uri.pass, uri.path, uri.query, uri.fragment);

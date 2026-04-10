@@ -32,6 +32,21 @@ function copyDirectories(srcDir, destDir) {
     });
 }
 
+function ensureUnsafeEvalHtml5(buildDir) {
+    const indexPath = path.join(buildDir, "index.html");
+    if (!fs.existsSync(indexPath)) return;
+    let html = fs.readFileSync(indexPath, "utf8");
+    const cspRegex = /<meta\s+http-equiv="Content-Security-Policy"\s+content="([^"]*)">/i;
+    const match = html.match(cspRegex);
+    if (!match) return;
+    let content = match[1];
+    if (!content.includes("script-src")) return;
+    if (content.includes("'unsafe-eval'")) return;
+    content = content.replace(/script-src\s+'self'/i, "script-src 'self' 'unsafe-eval'");
+    html = html.replace(cspRegex, `<meta http-equiv="Content-Security-Policy" content="${content}">`);
+    fs.writeFileSync(indexPath, html);
+}
+
 function getAllShaders(dirPath) {
     let files = [];
 
@@ -178,6 +193,43 @@ project.localLibraryPath = "libs";
 project.addLibrary("slog");
 project.addLibrary("snet");
 project.addLibrary("sshortcut");
+project.addLibrary("sextensions");
+
+project.addDefine('analyzer-optimize');
+project.addParameter('-dce full');
+
+const hotloadEnabled = process.argv.includes("--watch") || process.argv.includes("--hotload");
+
+// hotload
+if (hotloadEnabled) { 
+    project.addDefine('HOTLOAD');
+    // allow eval in electron
+	project.targetOptions.html5.unsafeEval = true;
+    // to support constructors patching, optional
+	project.addDefine('js_classic'); 
+    // client code for code-patching
+	let libPath = project.addLibrary('shotload'); 
+    const buildDir = path.join(path.resolve('.'), 'build', platform);
+    callbacks.postBuild = () => ensureUnsafeEvalHtml5(buildDir);
+    callbacks.postHaxeCompilation = () => ensureUnsafeEvalHtml5(buildDir);
+    if (process.argv.includes("--watch")) {
+    	// start websocket server that will send type diffs to client
+    	const { Server } = require(`${libPath}/server.js`);
+    	// path to target build folder and main js file.
+    	const server = new Server(`${path.resolve('.')}/build/${platform}`, 'kha.js');
+        callbacks.onFailure = (error) => {
+            const message = error && error.stack ? error.stack : String(error);
+            server.reportError(message);
+        };
+        // parse js file every compilation
+    	callbacks.postHaxeRecompilation = () => {
+            ensureUnsafeEvalHtml5(buildDir);
+            server.reload();
+        };
+    	// for assets reloading
+    	callbacks.postAssetReexporting = (path) => server.reloadAsset(path);
+    }
+}
 
 // subprojects
 await project.addProject("libs/aura");

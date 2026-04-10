@@ -19,3 +19,9 @@
 [submodule "libs/smacro"]
 	path = libs/smacro
 	url = https://github.com/selibs/smacro
+[submodule "libs/shotload"]
+	path = libs/shotload
+	url = https://github.com/selibs/shotload
+[submodule "libs/sextensions"]
+	path = libs/sextensions
+	url = https://github.com/selibs/sextensions
