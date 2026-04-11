@@ -35,7 +35,8 @@ class Label extends DrawableElement {
 		if (text.length == 0 || !font.isLoaded || font.pixelSize == 0)
 			return;
 		var ctx = target.context2D;
-		ctx.style.font = font;
+		ctx.style.color = realColor;
+		ctx.style.font.copyFrom(font);
 		ctx.drawFontChars(chars);
 	}
 

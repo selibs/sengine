@@ -104,7 +104,7 @@ class AssetsMacro {
 				for (a in assetTypes.keyValueIterator())
 					{
 						name: a.key,
-						kind: FVar(macro :StringMap<String>),
+						kind: FVar(macro :haxe.ds.StringMap<String>),
 						meta: [{name: ":optional", pos: Context.currentPos()}],
 						pos: Context.currentPos()
 					}
@@ -123,7 +123,7 @@ class AssetsMacro {
 			])
 		};
 		var progressArg = {name: "onProgress", type: macro :Float->Void, opt: true};
-		var failedArg = {name: "onFailed", type: macro :s.Assets.AssetError->Void, opt: true};
+		var failedArg = {name: "onFailed", type: macro :s.assets.AssetError->Void, opt: true};
 
 		makeFunction("loadShelf", [shelfArg, progressArg, failedArg], v -> v.load, mapIter, mapCall, true);
 		makeFunction("reloadShelf", [shelfArg, progressArg, failedArg], v -> v.reload, mapIter, mapCall, false);
@@ -188,10 +188,10 @@ class AssetsMacro {
 				return @:privateAccess this.toResource();
 			}
 
-			public static inline function load(name:String, ?location:s.Assets.AssetLocation, ?failed:s.Assets.AssetError->Void):$abstractType
+			public static inline function load(name:String, ?location:s.assets.AssetLocation, ?failed:s.assets.AssetError->Void):$abstractType
 				return s.Assets.$loadName(name, location, failed);
 
-			public var location(get, set):s.Assets.AssetLocation;
+			public var location(get, set):s.assets.AssetLocation;
 
 			public inline function reload(?location):Void
 				s.Assets.$reloadName(this.location, location);
@@ -202,10 +202,10 @@ class AssetsMacro {
 				return false;
 			}
 
-			private inline function get_location():s.Assets.AssetLocation
+			private inline function get_location():s.assets.AssetLocation
 				return this.location;
 
-			private inline function set_location(value:s.Assets.AssetLocation):s.Assets.AssetLocation {
+			private inline function set_location(value:s.assets.AssetLocation):s.assets.AssetLocation {
 				reload(value);
 				return value;
 			}
@@ -221,14 +221,14 @@ class AssetsMacro {
 		// list
 		assetsFields.push({
 			name: listName,
-			access: [APublic, AStatic],
-			kind: FProp("default", "never", macro :s.Assets.AssetList<$abstractType>, macro new s.Assets.AssetList()),
+			access: [APublic, AStatic, AFinal],
+			kind: FVar(macro :s.assets.AssetList<$abstractType>, macro new s.assets.AssetList()),
 			pos: Context.currentPos()
 		});
 
 		var nameArg = {name: "name", type: macro :String};
-		var locationArg = {name: "location", type: macro :s.Assets.AssetLocation, opt: true};
-		var failedArg = {name: "failed", type: macro :s.Assets.AssetError->Void, opt: true};
+		var locationArg = {name: "location", type: macro :s.assets.AssetLocation, opt: true};
+		var failedArg = {name: "failed", type: macro :s.assets.AssetError->Void, opt: true};
 
 		#if (display || display_details == 1)
 		var loadExpr = macro {
@@ -264,7 +264,7 @@ class AssetsMacro {
 			if (asset == null) {
 				asset = new $abstractTypePath(name);
 				$i{listName}.add(name, asset);
-				location = location ?? (name : s.Assets.AssetLocation);
+				location = location ?? (name : s.assets.AssetLocation);
 				${loadBytes(resName, decode)};
 			}
 			return asset;
@@ -272,7 +272,7 @@ class AssetsMacro {
 		var reloadExpr = macro {
 			var asset = $i{listName}.get(name);
 			if (location == null)
-				location = asset != null ? asset.location : (name : s.Assets.AssetLocation);
+				location = asset != null ? asset.location : (name : s.assets.AssetLocation);
 			${loadBytes(resName, decode)};
 		}
 		#end
@@ -346,13 +346,13 @@ class AssetsMacro {
 		function load(l)
 			return macro data -> try {
 				$l;
-				(cast asset).location = location;
+				(asset: s.assets.internal.Asset<kha.$resName>).location = location;
 				asset.loaded();
 				logger.debug('Loaded asset "$location"');
 			} catch (e)
 				reporter({error: e.message});
 
-		resName = "load" + resName;
+		var resLoadName = "load" + resName;
 
 		return macro {
 			var reporter = err -> {
@@ -360,9 +360,9 @@ class AssetsMacro {
 					failed({location: location, message: err.error});
 				logger.error('Failed to load asset "$location": ${err.error}');
 			}
-			switch (location : AssetLocationType) {
+			switch (location : s.assets.AssetLocation.AssetLocationType) {
 				case Resource(name):
-					kha.Assets.$resName(name, ${load(macro asset.fromResource(data))}, reporter);
+					kha.Assets.$resLoadName(name, ${load(macro asset.fromResource(data))}, reporter);
 				case File(path):
 					kha.Assets.loadBlobFromPath(path, ${load(loadBlob)}, reporter);
 				case Web(url):

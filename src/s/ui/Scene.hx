@@ -67,13 +67,12 @@ class Scene implements s.shortcut.Shortcut {
 
 	@:access(s.app.Window)
 	function render() {
-		if (root.dirty) {
-			if (root.children.dirty) {
-				drawable.resize(0);
-				interactive.resize(0);
-			}
-			root.syncTree();
+		if (root.children.dirty) {
+			drawable.resize(0);
+			interactive.resize(0);
 		}
+		if (root.dirty || root.children.dirty)
+			root.syncTree();
 
 		final ctx = target.context2D;
 		ctx.begin();
@@ -97,6 +96,7 @@ class Scene implements s.shortcut.Shortcut {
 
 	#if S2D_DEBUG_FPS
 	function drawDebugInfo(ctx:Context2D) {
+		ctx.style.font.setDefault();
 		ctx.style.font.family = "font_default";
 		ctx.style.font.pixelSize = 14;
 

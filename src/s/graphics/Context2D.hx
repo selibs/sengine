@@ -14,11 +14,18 @@ class Context2DStyle implements s.shortcut.Shortcut {
 	final opacities:Array<Float> = [];
 
 	public var color:Color = Black;
-	public var font:FontStyle = new FontStyle();
+	public final font:FontStyle = new FontStyle();
 	@:alias public var opacity:Float = opacities[opacities.length - 1];
 
 	public inline function new()
 		opacities.push(1.0);
+
+	public function reset():Void {
+		color = Black;
+		font.setDefault();
+		opacities.resize(0);
+		opacities.push(1.0);
+	}
 
 	public inline function pushOpacity(value:Float)
 		opacities.push(opacity * value);
@@ -41,8 +48,10 @@ class Context2D implements s.shortcut.Shortcut {
 		transforms.push(Mat3.identity());
 	}
 
-	public inline function begin()
+	public inline function begin() {
+		style.reset();
 		context.reset();
+	}
 
 	public inline function clear(color:Color)
 		context.clear(color);

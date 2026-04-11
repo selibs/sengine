@@ -72,8 +72,10 @@ class Font extends Asset<kha.Font> {
 	}
 
 	static function quantizeAtlasSize(size:Int):Int {
-		if (size <= 32)
-			return Std.int(Math.max(1, Math.round(size / 2.0))) * 2;
+		if (size <= 24)
+			return size;
+		if (size <= 48)
+			return Std.int(Math.ceil(size / 2.0)) * 2;
 		if (size <= 64)
 			return Std.int(Math.ceil(size / 2.0)) * 2;
 		if (size <= 128)

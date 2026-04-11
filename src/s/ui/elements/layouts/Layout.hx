@@ -58,6 +58,9 @@ class Layout extends ContainerElement {
 		syncFlow(layout, false, true);
 
 	static inline function syncFlow(layout:DirectionalLayout, horizontal:Bool, wrap:Bool) {
+		if (layout.flowLayoutDirty)
+			layout.flowDirty = true;
+
 		final forward = horizontal ? (layout.direction & RightToLeft) == 0 : (layout.direction & BottomToTop) == 0;
 		final crossForward = !wrap || (horizontal ? (layout.direction & BottomToTop) == 0 : (layout.direction & RightToLeft) == 0);
 		final pStart = axisStart(layout, horizontal, true);

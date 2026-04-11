@@ -12,6 +12,8 @@ package s.app;
  */
 @:allow(s.App)
 class Time implements s.shortcut.Shortcut {
+	static var t:Float = 0.0;
+
 	/**
 	 * Scaled delta time of the last frame in seconds.
 	 *
@@ -33,7 +35,7 @@ class Time implements s.shortcut.Shortcut {
 	 *
 	 * Unlike [`time`](s.app.Time.time), this value is not affected by [`scale`](s.app.Time.scale).
 	 */
-	@:signal public static var realTime:Float = 0.0;
+	@:readonly @:alias public static var realTime:Float = kha.System.time;
 
 	/**
 	 * Scaled application time in seconds.
@@ -92,9 +94,9 @@ class Time implements s.shortcut.Shortcut {
 		return Time.realTime - start;
 	}
 
-	static function update(rt:Float) {
-		delta = (rt - realTime) * scale;
-		realTime = rt;
+	static function update() {
+		delta = (realTime - t) * scale;
+		t = realTime;
 		time += delta;
 		for (l in timeListeners)
 			if (time >= l.time) {

@@ -47,6 +47,26 @@ function ensureUnsafeEvalHtml5(buildDir) {
     fs.writeFileSync(indexPath, html);
 }
 
+function ensureElectronReloadBridge(buildDir) {
+    const electronPath = path.join(buildDir, "electron.js");
+    if (fs.existsSync(electronPath)) {
+        let electronJs = fs.readFileSync(electronPath, "utf8");
+        if (!electronJs.includes("reload-window")) {
+            electronJs += "\n\nelectron.ipcMain.on('reload-window', () => {\n\tif (mainWindow != null)\n\t\tmainWindow.webContents.reloadIgnoringCache();\n});\n";
+            fs.writeFileSync(electronPath, electronJs);
+        }
+    }
+
+    const preloadPath = path.join(buildDir, "preload.js");
+    if (fs.existsSync(preloadPath)) {
+        let preloadJs = fs.readFileSync(preloadPath, "utf8");
+        if (!preloadJs.includes("electronHotload")) {
+            preloadJs += "\n\nelectron.contextBridge.exposeInMainWorld(\n\t'electronHotload', {\n\t\treloadWindow: () => {\n\t\t\telectron.ipcRenderer.send('reload-window');\n\t\t}\n\t}\n);\n";
+            fs.writeFileSync(preloadPath, preloadJs);
+        }
+    }
+}
+
 function getAllShaders(dirPath) {
     let files = [];
 
@@ -195,9 +215,6 @@ project.addLibrary("snet");
 project.addLibrary("sshortcut");
 project.addLibrary("sextensions");
 
-project.addDefine('analyzer-optimize');
-project.addParameter('-dce full');
-
 const hotloadEnabled = process.argv.includes("--watch") || process.argv.includes("--hotload");
 
 // hotload
@@ -208,13 +225,18 @@ if (hotloadEnabled) {
     // to support constructors patching, optional
 	project.addDefine('js_classic'); 
     // client code for code-patching
-	let libPath = project.addLibrary('shotload'); 
     const buildDir = path.join(path.resolve('.'), 'build', platform);
-    callbacks.postBuild = () => ensureUnsafeEvalHtml5(buildDir);
-    callbacks.postHaxeCompilation = () => ensureUnsafeEvalHtml5(buildDir);
+    callbacks.postBuild = () => {
+        ensureUnsafeEvalHtml5(buildDir);
+        ensureElectronReloadBridge(buildDir);
+    };
+    callbacks.postHaxeCompilation = () => {
+        ensureUnsafeEvalHtml5(buildDir);
+        ensureElectronReloadBridge(buildDir);
+    };
     if (process.argv.includes("--watch")) {
     	// start websocket server that will send type diffs to client
-    	const { Server } = require(`${libPath}/server.js`);
+    	const { Server } = require("./server.js");
     	// path to target build folder and main js file.
     	const server = new Server(`${path.resolve('.')}/build/${platform}`, 'kha.js');
         callbacks.onFailure = (error) => {
@@ -222,8 +244,9 @@ if (hotloadEnabled) {
             server.reportError(message);
         };
         // parse js file every compilation
-    	callbacks.postHaxeRecompilation = () => {
+     	callbacks.postHaxeRecompilation = () => {
             ensureUnsafeEvalHtml5(buildDir);
+            ensureElectronReloadBridge(buildDir);
             server.reload();
         };
     	// for assets reloading

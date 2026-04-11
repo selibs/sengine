@@ -1,25 +1,27 @@
 package s.graphics;
 
-import kha.arrays.Int32Array;
 import kha.arrays.Float32Array;
+import kha.arrays.Int32Array;
+import kha.graphics4.ConstantLocation;
 import kha.graphics4.Graphics;
-import kha.graphics4.TextureUnit;
 import kha.graphics4.IndexBuffer;
 import kha.graphics4.PipelineState;
-import kha.graphics4.ConstantLocation;
-import s.math.Vec2;
-import s.math.Vec3;
-import s.math.Vec4;
-import s.math.Mat3;
-import s.math.Mat4;
-import s.math.Vec2I;
-import s.math.Vec3I;
-import s.math.Vec4I;
-import s.math.SMath;
+import kha.graphics4.TextureUnit;
 import s.assets.Image;
 import s.geometry.Mesh;
-import s.graphics.VertexBuffer;
-import s.graphics.RenderTarget;
+import s.graphics.RenderTarget.MipMapFilter;
+import s.graphics.RenderTarget.TextureAddressing;
+import s.graphics.RenderTarget.TextureFilter;
+import s.graphics.RenderTarget.TextureParameters;
+import s.math.Mat3;
+import s.math.Mat4;
+import s.math.SMath;
+import s.math.Vec2;
+import s.math.Vec2I;
+import s.math.Vec3;
+import s.math.Vec3I;
+import s.math.Vec4;
+import s.math.Vec4I;
 
 private final logger:Log.Logger = new Log.Logger("RENDER");
 
@@ -44,28 +46,34 @@ enum DrawCommand {
 	ConstantTextureParameters(unit:TextureUnit, parameters:TextureParameters);
 }
 
-typedef DrawState = {
-	pipeline:PipelineState,
-
-	?mesh:Mesh,
-	?indexBuffer:IndexBuffer,
-	?vertexBuffer:VertexBuffer,
-	?vertexBuffers:Array<VertexBuffer>,
-
-	steps:Array<{
-		start:Int,
-		count:Int,
-		?instanceCount:Int,
-		commands:Array<DrawCommand>
-	}>
+private typedef DrawStep = {
+	var pipeline:PipelineState;
+	var start:Int;
+	var count:Int;
+	var ?instanceCount:Int;
+	var commands:Array<DrawCommand>;
 }
 
-typedef DrawStateBuffer = {
-	stateId:Int,
-	stepId:Int,
-	commands:Array<DrawCommand>,
-	?pipeline:PipelineState,
-	?mesh:Mesh
+private typedef DrawState = {
+	var inputLayout:Array<VertexStructure>;
+	var usesExternalVertexBuffers:Bool;
+	var ?mesh:Mesh;
+	var meshPolygonCount:Int;
+	var meshIndexCount:Int;
+	var meshDirty:Bool;
+	var ?indexBuffer:IndexBuffer;
+	var ?vertexBuffer:VertexBuffer;
+	var ?vertexBuffers:Array<VertexBuffer>;
+	var steps:Array<DrawStep>;
+	var usedSteps:Int;
+}
+
+private typedef DrawStateBuffer = {
+	var stateId:Int;
+	var commands:Array<DrawCommand>;
+	var ?pipeline:PipelineState;
+	var ?mesh:Mesh;
+	var ?vertexBuffers:Array<VertexBuffer>;
 }
 
 @:allow(s.graphics.RenderTarget)
@@ -75,6 +83,7 @@ class Context3D {
 
 	var targets:Array<kha.Canvas>;
 	var buffer:DrawStateBuffer;
+	var fallbackQuadIndexBuffer:IndexBuffer;
 
 	#if S2D_DEBUG_FPS
 	public static var drawCalls(default, null):Int = 0;
@@ -97,7 +106,14 @@ class Context3D {
 		vsynced = graphics.vsynced();
 		refreshRate = graphics.refreshRate();
 		instancedRenderingAvailable = graphics.instancedRenderingAvailable();
+		buffer = emptyBuffer(0);
 	}
+
+	inline function emptyBuffer(stateId:Int):DrawStateBuffer
+		return {
+			stateId: stateId,
+			commands: []
+		};
 
 	inline function applyCommand(command:DrawCommand) {
 		switch command {
@@ -158,22 +174,54 @@ class Context3D {
 		}
 	}
 
-	inline function cloneMesh(mesh:Mesh):Mesh
-		return mesh == null ? null : [for (polygon in mesh) polygon];
+	function inputLayoutsEqual(a:Array<VertexStructure>, b:Array<VertexStructure>):Bool {
+		if (a == b)
+			return true;
+		if (a == null || b == null || a.length != b.length)
+			return false;
+		for (i in 0...a.length)
+			if (a[i] != b[i])
+				return false;
+		return true;
+	}
 
-	inline function appendMesh(target:Mesh, source:Mesh):Mesh {
-		if (source == null || source.length == 0)
-			return target;
-		if (target == null)
-			return cloneMesh(source);
-		for (polygon in source)
-			target.push(polygon);
-		return target;
+	function vertexBuffersEqual(a:Array<VertexBuffer>, b:Array<VertexBuffer>):Bool {
+		if (a == b)
+			return true;
+		if (a == null || b == null || a.length != b.length)
+			return false;
+		for (i in 0...a.length)
+			if (a[i] != b[i])
+				return false;
+		return true;
+	}
+
+	function verticesEqual(a:Vertex, b:Vertex):Bool {
+		if (a == b)
+			return true;
+		if (a == null || b == null || a.length != b.length)
+			return false;
+		for (i in 0...a.length)
+			if (a[i] != b[i])
+				return false;
+		return true;
+	}
+
+	function polygonsEqual(a:Polygon, b:Polygon):Bool {
+		if (a == b)
+			return true;
+		if (a == null || b == null || a.length != b.length)
+			return false;
+		for (i in 0...a.length)
+			if (!verticesEqual(a[i], b[i]))
+				return false;
+		return true;
 	}
 
 	inline function meshIndexCount(mesh:Mesh):Int {
 		if (mesh == null)
 			return 0;
+
 		var count = 0;
 		for (polygon in mesh)
 			if (polygon.length >= 3)
@@ -181,43 +229,303 @@ class Context3D {
 		return count;
 	}
 
+	inline function resetGeneratedBuffers(state:DrawState) {
+		state.vertexBuffer?.delete();
+		state.indexBuffer?.delete();
+		state.vertexBuffer = null;
+		state.indexBuffer = null;
+		state.meshDirty = true;
+	}
+
+	inline function ensureFallbackQuadIndexBuffer() {
+		if (fallbackQuadIndexBuffer != null)
+			return;
+
+		fallbackQuadIndexBuffer = new IndexBuffer(6, StaticUsage);
+		final data = fallbackQuadIndexBuffer.lock(0, 6);
+		data[0] = 0;
+		data[1] = 1;
+		data[2] = 2;
+		data[3] = 0;
+		data[4] = 2;
+		data[5] = 3;
+		fallbackQuadIndexBuffer.unlock(6);
+
+		#if S2D_DEBUG_FPS
+		++ibAllocations;
+		#end
+	}
+
+	inline function createState(inputLayout:Array<VertexStructure>, usesExternalVertexBuffers:Bool, vertexBuffers:Array<VertexBuffer>):DrawState
+		return {
+			inputLayout: inputLayout,
+			usesExternalVertexBuffers: usesExternalVertexBuffers,
+			mesh: usesExternalVertexBuffers ? null : [],
+			meshPolygonCount: 0,
+			meshIndexCount: 0,
+			meshDirty: true,
+			vertexBuffers: vertexBuffers,
+			steps: [],
+			usedSteps: 0
+		};
+
+	function stateCompatible(state:DrawState, inputLayout:Array<VertexStructure>, usesExternalVertexBuffers:Bool, vertexBuffers:Array<VertexBuffer>):Bool {
+		if (state == null)
+			return false;
+		if (state.usesExternalVertexBuffers != usesExternalVertexBuffers)
+			return false;
+		if (!inputLayoutsEqual(state.inputLayout, inputLayout))
+			return false;
+		return !usesExternalVertexBuffers || vertexBuffersEqual(state.vertexBuffers, vertexBuffers);
+	}
+
+	function openState(stateId:Int, inputLayout:Array<VertexStructure>, usesExternalVertexBuffers:Bool, vertexBuffers:Array<VertexBuffer>):DrawState {
+		var state:DrawState;
+
+		if (stateId == states.length) {
+			state = createState(inputLayout, usesExternalVertexBuffers, vertexBuffers);
+			states.push(state);
+		} else {
+			state = states[stateId];
+			if (!stateCompatible(state, inputLayout, usesExternalVertexBuffers, vertexBuffers)) {
+				resetGeneratedBuffers(state);
+				state.inputLayout = inputLayout;
+				state.usesExternalVertexBuffers = usesExternalVertexBuffers;
+				state.vertexBuffers = vertexBuffers;
+				state.steps.resize(0);
+				if (usesExternalVertexBuffers)
+					state.mesh = null;
+				else if (state.mesh == null)
+					state.mesh = [];
+			} else
+				state.vertexBuffers = vertexBuffers;
+		}
+
+		state.usedSteps = 0;
+		state.meshPolygonCount = 0;
+		state.meshIndexCount = 0;
+		state.meshDirty = false;
+
+		if (!usesExternalVertexBuffers && state.mesh == null)
+			state.mesh = [];
+
+		return state;
+	}
+
+	function appendMeshChunk(state:DrawState, mesh:Mesh) {
+		if (mesh == null || mesh.length == 0)
+			return;
+
+		final target = state.mesh;
+		for (polygon in mesh) {
+			final index = state.meshPolygonCount++;
+			if (index < target.length) {
+				if (!polygonsEqual(target[index], polygon)) {
+					target[index] = polygon;
+					state.meshDirty = true;
+				}
+			} else {
+				target.push(polygon);
+				state.meshDirty = true;
+			}
+
+			if (polygon.length >= 3)
+				state.meshIndexCount += (polygon.length - 2) * 3;
+		}
+	}
+
+	function finalizeState(state:DrawState) {
+		if (state == null)
+			return;
+
+		if (state.steps.length != state.usedSteps)
+			state.steps.resize(state.usedSteps);
+
+		if (!state.usesExternalVertexBuffers && state.mesh != null && state.mesh.length != state.meshPolygonCount) {
+			state.mesh.resize(state.meshPolygonCount);
+			state.meshDirty = true;
+		}
+	}
+
+	function bakeState(state:DrawState) {
+		if (state == null || state.usesExternalVertexBuffers)
+			return;
+
+		if (state.inputLayout == null || state.inputLayout.length == 0 || state.mesh == null || state.mesh.length == 0) {
+			resetGeneratedBuffers(state);
+			return;
+		}
+
+		if (!state.meshDirty && state.vertexBuffer != null && state.indexBuffer != null)
+			return;
+
+		final structure = state.inputLayout[0];
+
+		var indexCount = 0;
+		var vertexCount = 0;
+		for (polygon in state.mesh) {
+			vertexCount += polygon.length;
+			if (polygon.length >= 3)
+				indexCount += (polygon.length - 2) * 3;
+		}
+
+		if (vertexCount == 0 || indexCount == 0) {
+			resetGeneratedBuffers(state);
+			return;
+		}
+
+		if (state.vertexBuffer == null || vertexCount > state.vertexBuffer.count()) {
+			state.vertexBuffer?.delete();
+			state.vertexBuffer = new VertexBuffer(vertexCount, structure, StaticUsage);
+
+			#if S2D_DEBUG_FPS
+			++vbAllocations;
+			#end
+		}
+
+		if (state.indexBuffer == null || indexCount > state.indexBuffer.count()) {
+			state.indexBuffer?.delete();
+			state.indexBuffer = new IndexBuffer(indexCount, StaticUsage);
+
+			#if S2D_DEBUG_FPS
+			++ibAllocations;
+			#end
+		}
+
+		final indices = state.indexBuffer.lock(0, indexCount);
+		final vertices = state.vertexBuffer.lock(0, vertexCount);
+
+		var indexOffset = 0;
+		var vertexOffset = 0;
+		var baseVertex = 0;
+
+		for (polygon in state.mesh) {
+			if (polygon.length >= 3)
+				for (i in 1...polygon.length - 1) {
+					indices[indexOffset++] = baseVertex;
+					indices[indexOffset++] = baseVertex + i;
+					indices[indexOffset++] = baseVertex + i + 1;
+				}
+
+			baseVertex += polygon.length;
+
+			for (vertex in polygon)
+				for (value in vertex)
+					vertices[vertexOffset++] = value;
+		}
+
+		state.indexBuffer.unlock(indexCount);
+		state.vertexBuffer.unlock(vertexCount);
+		state.meshDirty = false;
+	}
+
+	inline function resolveDrawCount(mesh:Mesh, start:Int, count:Int):Int {
+		if (count >= 0)
+			return count;
+		if (mesh != null)
+			return Std.int(Math.max(0, meshIndexCount(mesh) - start));
+		return Std.int(Math.max(0, 6 - start));
+	}
+
+	function appendStep(state:DrawState, pipeline:PipelineState, start:Int, count:Int, instanceCount:Null<Int>, commands:Array<DrawCommand>) {
+		final stepIndex = state.usedSteps++;
+		final step:DrawStep = {
+			pipeline: pipeline,
+			start: start,
+			count: count,
+			instanceCount: instanceCount,
+			commands: commands
+		};
+
+		if (stepIndex == state.steps.length)
+			state.steps.push(step);
+		else
+			state.steps[stepIndex] = step;
+	}
+
+	function commit(instanceCount:Null<Int>, start:Int, count:Int) {
+		if (buffer.pipeline == null)
+			return;
+
+		final inputLayout = buffer.pipeline.inputLayout;
+		if (inputLayout == null || inputLayout.length == 0)
+			return;
+
+		final usesExternalVertexBuffers = buffer.vertexBuffers != null;
+		var stateId = buffer.stateId;
+		var state = stateId > 0 ? states[stateId - 1] : null;
+
+		if (!stateCompatible(state, inputLayout, usesExternalVertexBuffers, buffer.vertexBuffers)) {
+			state = openState(stateId, inputLayout, usesExternalVertexBuffers, buffer.vertexBuffers);
+			stateId++;
+		}
+
+		var drawStart = start;
+		if (!usesExternalVertexBuffers) {
+			drawStart += state.meshIndexCount;
+			appendMeshChunk(state, buffer.mesh);
+		}
+
+		appendStep(state, buffer.pipeline, drawStart, resolveDrawCount(buffer.mesh, start, count), instanceCount, buffer.commands);
+		buffer = emptyBuffer(stateId);
+	}
+
 	public inline function reset(?mrt:Array<kha.Canvas>) {
 		targets = mrt;
-		buffer = {stateId: 0, stepId: 0, commands: []}
+		buffer = emptyBuffer(0);
+	}
+
+	public inline function begin(?mrt:Array<kha.Canvas>)
+		reset(mrt);
+
+	function executePendingCommands() {
+		if (buffer.commands == null || buffer.commands.length == 0 || buffer.pipeline != null || buffer.mesh != null || buffer.vertexBuffers != null)
+			return;
+
+		for (command in buffer.commands)
+			applyCommand(command);
 	}
 
 	public inline function execute() {
 		try {
+			for (i in 0...buffer.stateId)
+				finalizeState(states[i]);
+
 			graphics.begin(targets);
+			executePendingCommands();
 
 			for (i in 0...buffer.stateId) {
-				var state = states[i];
-				if (state == null || state.pipeline == null)
+				final state = states[i];
+				if (state == null)
 					continue;
 
-				bakeState(state);
-				if (state.indexBuffer == null)
-					continue;
-
-				graphics.setPipeline(state.pipeline);
-				graphics.setIndexBuffer(state.indexBuffer);
-				if (state.vertexBuffers != null)
-					graphics.setVertexBuffers(state.vertexBuffers);
-				else if (state.vertexBuffer != null)
-					graphics.setVertexBuffer(state.vertexBuffer);
-				else
-					continue;
-
-				for (step in state.steps) {
-					if (step == null)
+				if (state.usesExternalVertexBuffers) {
+					if (state.vertexBuffers == null || state.vertexBuffers.length == 0)
 						continue;
+					ensureFallbackQuadIndexBuffer();
+					graphics.setIndexBuffer(fallbackQuadIndexBuffer);
+					graphics.setVertexBuffers(state.vertexBuffers);
+				} else {
+					bakeState(state);
+					if (state.indexBuffer == null || state.vertexBuffer == null)
+						continue;
+					graphics.setIndexBuffer(state.indexBuffer);
+					graphics.setVertexBuffer(state.vertexBuffer);
+				}
+
+				var currentPipeline:PipelineState = null;
+				for (step in state.steps) {
+					if (step == null || step.count <= 0 || step.pipeline == null)
+						continue;
+
+					if (currentPipeline != step.pipeline) {
+						graphics.setPipeline(step.pipeline);
+						currentPipeline = step.pipeline;
+					}
 
 					if (step.commands != null)
 						for (command in step.commands)
 							applyCommand(command);
-
-					if (step.count <= 0)
-						continue;
 
 					if (step.instanceCount != null)
 						graphics.drawIndexedVerticesInstanced(step.instanceCount, step.start, step.count);
@@ -235,143 +543,36 @@ class Context3D {
 			logger.error("Failed: " + e.message);
 	}
 
-	inline function bakeState(state:DrawState) {
-		if (state == null)
-			return;
+	public inline function end()
+		execute();
 
-		if (state.pipeline == null || state.mesh == null || state.mesh.length == 0) {
-			state.vertexBuffer?.delete();
-			state.indexBuffer?.delete();
-			state.vertexBuffer = null;
-			state.indexBuffer = null;
-			return;
-		}
+	public inline function flush(?instanceCount:Int, start:Int = 0, count:Int = -1)
+		commit(instanceCount, start, count);
 
-		final struct = state.pipeline.inputLayout[0];
-		final structSize = struct.byteSize() >> 2;
+	public inline function draw(start:Int = 0, count:Int = -1)
+		commit(null, start, count);
 
-		var indCount = 0, vertCount = 0;
-		for (p in state.mesh) {
-			vertCount += p.length;
-			if (p.length >= 3)
-				indCount += (p.length - 2) * 3;
-		}
-
-		if (state.vertexBuffer == null || vertCount > state.vertexBuffer.count()) {
-			state.vertexBuffer?.delete();
-			state.vertexBuffer = new VertexBuffer(vertCount, struct, StaticUsage);
-
-			#if S2D_DEBUG_FPS
-			++ vbAllocations;
-			#end
-		}
-
-		if (state.indexBuffer == null || indCount > state.indexBuffer.count()) {
-			state.indexBuffer?.delete();
-			state.indexBuffer = new IndexBuffer(indCount, StaticUsage);
-
-			#if S2D_DEBUG_FPS
-			++ ibAllocations;
-			#end
-		}
-
-		final ind = state.indexBuffer.lock(0, indCount);
-		final vert = state.vertexBuffer.lock(0, vertCount);
-
-		var i = 0, v = 0, offset = 0;
-
-		for (p in state.mesh) {
-			if (p.length >= 3)
-				for (j in 1...p.length - 1) {
-					ind[i++] = offset;
-					ind[i++] = offset + j;
-					ind[i++] = offset + j + 1;
-				}
-			offset += p.length;
-
-			for (vertex in p)
-				for (value in vertex)
-					vert[v++] = value;
-		}
-
-		state.indexBuffer.unlock(indCount);
-		state.vertexBuffer.unlock(vertCount);
-	}
-
-	public inline function flush(?instanceCount:Int, start:Int = 0, count:Int = -1) {
-		if (buffer.pipeline == null)
-			return;
-
-		var mesh = buffer.mesh;
-		var drawCount = count;
-		if (drawCount == -1)
-			drawCount = meshIndexCount(mesh) - start;
-		if (drawCount < 0)
-			drawCount = 0;
-
-		var nextStateId = buffer.stateId;
-		var stateId = nextStateId - 1;
-		var state = stateId >= 0 ? states[stateId] : null;
-
-		if (state != null && state.pipeline == buffer.pipeline) {
-			var drawStart = meshIndexCount(state.mesh) + start;
-			state.mesh = appendMesh(state.mesh, mesh);
-
-			var stepId = buffer.stepId;
-			var step = {
-				start: drawStart,
-				count: drawCount,
-				instanceCount: instanceCount,
-				commands: buffer.commands
-			};
-
-			if (stepId == state.steps.length)
-				state.steps.push(step);
-			else
-				state.steps[stepId] = step;
-
-			buffer = {
-				stateId: nextStateId,
-				stepId: stepId + 1,
-				commands: []
-			};
-		} else {
-			state = {
-				pipeline: buffer.pipeline,
-				mesh: cloneMesh(mesh),
-				steps: [
-					{
-						start: start,
-						count: drawCount,
-						instanceCount: instanceCount,
-						commands: buffer.commands
-					}
-				]
-			};
-
-			if (nextStateId == states.length)
-				states.push(state);
-			else
-				states[nextStateId] = state;
-
-			buffer = {
-				stateId: nextStateId + 1,
-				stepId: 1,
-				commands: []
-			};
-		}
-	}
+	public inline function drawInstanced(instanceCount:Int, start:Int = 0, count:Int = -1)
+		commit(instanceCount, start, count);
 
 	public inline function setPipeline(pipeline:PipelineState)
 		buffer.pipeline = pipeline;
 
-	public inline function setMesh(mesh:Mesh)
+	public inline function setMesh(mesh:Mesh) {
 		buffer.mesh = mesh;
+		buffer.vertexBuffers = null;
+	}
+
+	public inline function setVertexBuffers(vertexBuffers:Array<VertexBuffer>) {
+		buffer.vertexBuffers = vertexBuffers;
+		buffer.mesh = null;
+	}
 
 	public inline function addPolygon(p:Polygon) {
 		if (buffer.mesh == null)
 			buffer.mesh = [];
 		buffer.mesh.push(p);
+		buffer.vertexBuffers = null;
 	}
 
 	public inline function addVertex(vertex:Vertex) {
@@ -379,6 +580,7 @@ class Context3D {
 			buffer.mesh = [[vertex]];
 		else
 			buffer.mesh[buffer.mesh.length - 1].push(vertex);
+		buffer.vertexBuffers = null;
 	}
 
 	public inline function addCommand(command:DrawCommand)

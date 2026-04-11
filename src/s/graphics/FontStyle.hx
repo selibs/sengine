@@ -55,7 +55,7 @@ class FontStyle implements s.shortcut.Shortcut {
 	var italicSlant:Float = 0.0;
 	var sdfWeight:Float = 0.0;
 
-	public var family:String = "font_default";
+	public var family(default, set):String = "font_default";
 
 	@:inject(setSdfWeight) public var bold:Bool = false;
 	public var italic(default, set):Bool = false;
@@ -87,6 +87,43 @@ class FontStyle implements s.shortcut.Shortcut {
 	@:readonly @:alias public var isLoaded:Bool = font.isLoaded;
 
 	public function new() {}
+
+	public function copyFrom(value:FontStyle):FontStyle {
+		if (value == null)
+			return this;
+
+		family = value.family;
+		bold = value.bold;
+		italic = value.italic;
+		strikeout = value.strikeout;
+		underline = value.underline;
+		snapToPixel = value.snapToPixel;
+		wordSpacing = value.wordSpacing;
+		letterSpacing = value.letterSpacing;
+		weight = value.weight;
+		softness = value.softness;
+		outlineColor = value.outlineColor;
+		outlineWidth = value.outlineWidth;
+		pixelSize = value.pixelSize;
+		return this;
+	}
+
+	public function setDefault():FontStyle {
+		family = "font_default";
+		bold = false;
+		italic = false;
+		strikeout = false;
+		underline = false;
+		snapToPixel = true;
+		wordSpacing = 0.0;
+		letterSpacing = 0.0;
+		weight = Normal;
+		softness = 0.0;
+		outlineColor = Transparent;
+		outlineWidth = 0.0;
+		pixelSize = 18;
+		return this;
+	}
 
 	public inline function getAtlas()
 		return font.getAtlas(pixelSize);
@@ -193,7 +230,7 @@ class FontStyle implements s.shortcut.Shortcut {
 			var char = chars[i];
 			width += atlas.getGlyph(char).xadvance * scale;
 			if (i < end - 1)
-				width + getSpacing(char);
+				width += getSpacing(char);
 		}
 
 		return width;
@@ -227,6 +264,17 @@ class FontStyle implements s.shortcut.Shortcut {
 	inline function set_pointSize(value:Float):Float {
 		pixelSize = Std.int(value * s.app.Display.primary.pixelsPerInch / 72.0);
 		return value;
+	}
+
+	inline function set_family(value:String):String {
+		if (value == null || value == "")
+			value = "font_default";
+		if (family == value)
+			return family;
+
+		font = value;
+		invalidateCharTemplates();
+		return family = value;
 	}
 
 	inline function setSdfWeight()

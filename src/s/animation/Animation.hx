@@ -1,6 +1,7 @@
 package s.animation;
 
 import s.app.Time;
+import s.math.Interpolation;
 
 @:access(s.animation.Action)
 abstract class Animation<T> implements s.shortcut.Shortcut {
@@ -12,7 +13,7 @@ abstract class Animation<T> implements s.shortcut.Shortcut {
 	var duration:Float;
 
 	var tick:T->Void;
-	var interpolation:Float->Float = Interpolation.Linear;
+	var interpolation:Interpolation = Interpolation.Linear;
 
 	var started:Void->Void = () -> {};
 	var stopped:Void->Void = () -> {};
@@ -20,11 +21,8 @@ abstract class Animation<T> implements s.shortcut.Shortcut {
 	var resumed:Void->Void = () -> {};
 	var completed:Void->Void = () -> {};
 
-	var _active:Bool = false;
-	var _running:Bool = false;
-
-	public var active(get, set):Bool;
-	public var running(get, set):Bool;
+	public var active(default, set):Bool = false;
+	public var running(default, set):Bool = false;
 
 	public function new(duration:Float, tick:T->Void) {
 		this.duration = duration;
@@ -40,8 +38,8 @@ abstract class Animation<T> implements s.shortcut.Shortcut {
 		this.time = Time.time;
 		Time.onTimeChanged(adjust);
 
-		_active = true;
-		_running = true;
+		@:bypassAccessor active = true;
+		@:bypassAccessor running = true;
 		started();
 		if (running)
 			update(0.0);
@@ -53,8 +51,8 @@ abstract class Animation<T> implements s.shortcut.Shortcut {
 		if (!active)
 			return this;
 		Time.offTimeChanged(adjust);
-		_active = false;
-		_running = false;
+		@:bypassAccessor active = false;
+		@:bypassAccessor running = false;
 		stopped();
 		return this;
 	}
@@ -64,7 +62,7 @@ abstract class Animation<T> implements s.shortcut.Shortcut {
 			return this;
 		deltaTime = Time.time - this.time;
 		Time.offTimeChanged(adjust);
-		_running = false;
+		@:bypassAccessor running = false;
 		paused();
 		return this;
 	}
@@ -74,7 +72,7 @@ abstract class Animation<T> implements s.shortcut.Shortcut {
 			return this;
 		this.time = Time.time - deltaTime;
 		Time.onTimeChanged(adjust);
-		_running = true;
+		@:bypassAccessor running = true;
 		resumed();
 		return this;
 	}
@@ -83,8 +81,8 @@ abstract class Animation<T> implements s.shortcut.Shortcut {
 		this.time = Time.time;
 		if (!running)
 			Time.onTimeChanged(adjust);
-		_active = true;
-		_running = true;
+		@:bypassAccessor active = true;
+		@:bypassAccessor running = true;
 		started();
 		if (running)
 			update(0.0);
@@ -96,8 +94,8 @@ abstract class Animation<T> implements s.shortcut.Shortcut {
 			return this;
 		if (running)
 			Time.offTimeChanged(adjust);
-		_active = false;
-		_running = false;
+		@:bypassAccessor active = false;
+		@:bypassAccessor running = false;
 		update(1.0);
 		completed();
 		return this;
@@ -149,9 +147,6 @@ abstract class Animation<T> implements s.shortcut.Shortcut {
 
 	abstract function mix(t:Float):T;
 
-	inline function get_active()
-		return _active;
-
 	function set_active(value:Bool) {
 		if (!active && value)
 			start(from, to);
@@ -159,9 +154,6 @@ abstract class Animation<T> implements s.shortcut.Shortcut {
 			stop();
 		return value;
 	}
-
-	inline function get_running()
-		return _running;
 
 	function set_running(value:Bool) {
 		if (!running && value)

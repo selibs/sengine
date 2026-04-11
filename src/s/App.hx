@@ -4,6 +4,7 @@ import kha.System;
 import kha.Framebuffer;
 import aura.Aura;
 import s.Assets;
+import s.assets.AssetError;
 import s.app.Time;
 import s.app.Window;
 import s.app.input.Mouse;
@@ -355,7 +356,7 @@ class App implements s.shortcut.Shortcut {
 		System.notifyOnCutCopyPaste(cut, copy, paste);
 
 	static function render(frames:Array<Framebuffer>) {
-		Time.update(System.time);
+		Time.update();
 
 		for (frame in frames) {
 			final window = windows[@:privateAccess frame.window];

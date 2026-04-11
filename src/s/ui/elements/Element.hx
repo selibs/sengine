@@ -314,6 +314,7 @@ class Element extends Object2D<Element> {
 		final style = ctx.style;
 
 		style.opacity = 0.5;
+		style.font.setDefault();
 		style.font.family = "font_default";
 		style.font.pixelSize = 16;
 

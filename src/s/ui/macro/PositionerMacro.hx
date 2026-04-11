@@ -11,10 +11,13 @@ class PositionerMacro {
 		var ld = (s == "left" || s == "right" ? "width" : "height") + "Dirty";
 
 		return macro {
+			if (flowLayoutDirty)
+				flowDirty = true;
+
 			final forward = direction & $de == 0;
 
 			var boundsAreDirty = $sRef.offsetDirty || $eRef.offsetDirty;
-			var offsetDirty = flowDirty || flowLayoutDirty || boundsAreDirty;
+			var offsetDirty = children.dirty || flowDirty || flowLayoutDirty || boundsAreDirty;
 			var base = forward ? $sRef.position + $sRef.padding : $eRef.position - $eRef.padding;
 
 			for (c in children) {

@@ -12,4 +12,12 @@ abstract class Positioner extends ContainerElement {
 		super();
 		this.direction = direction;
 	}
+
+	override function syncChildren() {
+		final syncFlow = Reflect.field(this, "syncFlow");
+		if (syncFlow != null)
+			Reflect.callMethod(this, syncFlow, []);
+		else
+			super.syncChildren();
+	}
 }
