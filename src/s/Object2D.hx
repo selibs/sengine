@@ -1,9 +1,9 @@
-package s.ui;
+package s;
 
 import s.math.Vec2;
 import s.math.Mat3;
 
-abstract class Object2D<T:Object2D<T>> extends s.Object<T> {
+abstract class Object2D<T:Object2D<T>> extends Object<T> {
 	@:attr(transformLocal) final transform:Mat3 = new Mat3();
 
 	public var translationX(get, set):Float;

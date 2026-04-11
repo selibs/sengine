@@ -4,7 +4,6 @@ package s.macro;
 import haxe.ds.StringMap;
 import haxe.macro.Expr;
 import haxe.macro.Context;
-import haxe.macro.Compiler;
 
 using haxe.macro.ExprTools;
 using haxe.macro.TypeTools;
@@ -361,7 +360,6 @@ class AssetsMacro {
 					failed({location: location, message: err.error});
 				logger.error('Failed to load asset "$location": ${err.error}');
 			}
-			logger.info('Loading asset "$location"');
 			switch (location : AssetLocationType) {
 				case Resource(name):
 					kha.Assets.$resName(name, ${load(macro asset.fromResource(data))}, reporter);

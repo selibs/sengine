@@ -2,7 +2,6 @@ package s.graphics.shaders;
 
 import kha.Shaders;
 import kha.graphics4.VertexData;
-import kha.graphics4.IndexBuffer;
 import kha.graphics4.PipelineState;
 import kha.graphics4.CullMode;
 import kha.graphics4.CompareMode;
@@ -27,10 +26,10 @@ abstract class Shader {
 
 	public static final structure2D:VertexStructure = ["vertPos" => Float32_2X, "vertUV" => Float32_2X];
 
-	public static function compileShaders() {
+	public static function compileShaders() 
 		for (shader in shaders)
 			shader.compile();
-	}
+	
 
 	function new(state:ShaderPipelineState) {
 		this.state = state;
@@ -39,7 +38,6 @@ abstract class Shader {
 
 	function compile() {
 		final name = Type.getClassName(Type.getClass(this));
-		logger.info('Compiling $name');
 		try {
 			pipeline = new PipelineState();
 

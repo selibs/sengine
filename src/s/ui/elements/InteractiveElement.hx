@@ -61,8 +61,9 @@ class InteractiveElement extends Element {
 
 	override function sync() {
 		super.sync();
-		// if (scene.root.children.dirty)
-		// 	scene.interactive.push(this);
+
+		if (globalVisible && scene.root.children.dirty)
+			scene.interactive.push(this);
 	}
 
 	function set_focused(value:Bool) {

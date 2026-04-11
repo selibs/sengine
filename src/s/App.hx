@@ -261,8 +261,6 @@ class App implements s.shortcut.Shortcut {
 		#end
 
 		System.start(options, window -> {
-			logger.info("Starting");
-
 			input.mouse = new Mouse();
 			input.keyboard = new Keyboard();
 

@@ -68,8 +68,10 @@ class Scene implements s.shortcut.Shortcut {
 	@:access(s.app.Window)
 	function render() {
 		if (root.dirty) {
-			if (root.children.dirty)
+			if (root.children.dirty) {
 				drawable.resize(0);
+				interactive.resize(0);
+			}
 			root.syncTree();
 		}
 
