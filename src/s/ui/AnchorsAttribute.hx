@@ -12,72 +12,6 @@ class AnchorsAttribute extends s.shortcut.AttachedAttribute<Element> {
 	@:attr(vertical) public var vCenter:VerticalAnchor = null;
 	@:attr(vertical) public var bottom:VerticalAnchor = null;
 
-	function set_left(value:HorizontalAnchor):HorizontalAnchor {
-		if (left == value)
-			return left;
-		if (left != null)
-			left.removeDependent(object);
-		left = value;
-		if (left != null)
-			left.addDependent(object);
-		return left;
-	}
-
-	function set_hCenter(value:HorizontalAnchor):HorizontalAnchor {
-		if (hCenter == value)
-			return hCenter;
-		if (hCenter != null)
-			hCenter.removeDependent(object);
-		hCenter = value;
-		if (hCenter != null)
-			hCenter.addDependent(object);
-		return hCenter;
-	}
-
-	function set_right(value:HorizontalAnchor):HorizontalAnchor {
-		if (right == value)
-			return right;
-		if (right != null)
-			right.removeDependent(object);
-		right = value;
-		if (right != null)
-			right.addDependent(object);
-		return right;
-	}
-
-	function set_top(value:VerticalAnchor):VerticalAnchor {
-		if (top == value)
-			return top;
-		if (top != null)
-			top.removeDependent(object);
-		top = value;
-		if (top != null)
-			top.addDependent(object);
-		return top;
-	}
-
-	function set_vCenter(value:VerticalAnchor):VerticalAnchor {
-		if (vCenter == value)
-			return vCenter;
-		if (vCenter != null)
-			vCenter.removeDependent(object);
-		vCenter = value;
-		if (vCenter != null)
-			vCenter.addDependent(object);
-		return vCenter;
-	}
-
-	function set_bottom(value:VerticalAnchor):VerticalAnchor {
-		if (bottom == value)
-			return bottom;
-		if (bottom != null)
-			bottom.removeDependent(object);
-		bottom = value;
-		if (bottom != null)
-			bottom.addDependent(object);
-		return bottom;
-	}
-
 	public function clear() {
 		clearH();
 		clearV();
@@ -165,4 +99,70 @@ class AnchorsAttribute extends s.shortcut.AttachedAttribute<Element> {
 
 	overload extern public inline function centerIn(element:Element)
 		centerIn(element.hCenter, element.vCenter);
+
+	function set_left(value:HorizontalAnchor):HorizontalAnchor {
+		if (left == value)
+			return left;
+		if (left != null)
+			left.removeDependent(object);
+		left = value;
+		if (left != null)
+			left.addDependent(object);
+		return left;
+	}
+
+	function set_hCenter(value:HorizontalAnchor):HorizontalAnchor {
+		if (hCenter == value)
+			return hCenter;
+		if (hCenter != null)
+			hCenter.removeDependent(object);
+		hCenter = value;
+		if (hCenter != null)
+			hCenter.addDependent(object);
+		return hCenter;
+	}
+
+	function set_right(value:HorizontalAnchor):HorizontalAnchor {
+		if (right == value)
+			return right;
+		if (right != null)
+			right.removeDependent(object);
+		right = value;
+		if (right != null)
+			right.addDependent(object);
+		return right;
+	}
+
+	function set_top(value:VerticalAnchor):VerticalAnchor {
+		if (top == value)
+			return top;
+		if (top != null)
+			top.removeDependent(object);
+		top = value;
+		if (top != null)
+			top.addDependent(object);
+		return top;
+	}
+
+	function set_vCenter(value:VerticalAnchor):VerticalAnchor {
+		if (vCenter == value)
+			return vCenter;
+		if (vCenter != null)
+			vCenter.removeDependent(object);
+		vCenter = value;
+		if (vCenter != null)
+			vCenter.addDependent(object);
+		return vCenter;
+	}
+
+	function set_bottom(value:VerticalAnchor):VerticalAnchor {
+		if (bottom == value)
+			return bottom;
+		if (bottom != null)
+			bottom.removeDependent(object);
+		bottom = value;
+		if (bottom != null)
+			bottom.addDependent(object);
+		return bottom;
+	}
 }

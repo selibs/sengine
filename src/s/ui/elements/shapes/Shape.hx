@@ -13,10 +13,8 @@ abstract class Shape extends DrawableElement {
 		border = new BorderAttribute(this);
 	}
 
-	override function sync() {
-		super.sync();
-
+	@:slot(sync)
+	function syncRealRadius(_)
 		if (radiusDirty || widthDirty || heightDirty)
 			realRadius = Math.min(radius, Math.min(width, height) * 0.5);
-	}
 }

@@ -17,7 +17,7 @@ class Stack extends Element {
 	}
 
 	override function syncChildren() {
-		sync();
+		sync(this);
 		final c = current;
 		if (c != null)
 			syncChild(c);

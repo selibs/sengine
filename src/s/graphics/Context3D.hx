@@ -51,7 +51,8 @@ private typedef DrawStep = {
 	var start:Int;
 	var count:Int;
 	var ?instanceCount:Int;
-	var commands:Array<DrawCommand>;
+	var commandStart:Int;
+	var commandCount:Int;
 }
 
 private typedef DrawState = {
@@ -66,11 +67,14 @@ private typedef DrawState = {
 	var ?vertexBuffers:Array<VertexBuffer>;
 	var steps:Array<DrawStep>;
 	var usedSteps:Int;
+	var commands:Array<DrawCommand>;
+	var usedCommands:Int;
 }
 
 private typedef DrawStateBuffer = {
 	var stateId:Int;
 	var commands:Array<DrawCommand>;
+	var meshIndexCount:Int;
 	var ?pipeline:PipelineState;
 	var ?mesh:Mesh;
 	var ?vertexBuffers:Array<VertexBuffer>;
@@ -85,7 +89,7 @@ class Context3D {
 	var buffer:DrawStateBuffer;
 	var fallbackQuadIndexBuffer:IndexBuffer;
 
-	#if S2D_DEBUG_FPS
+	#if debug
 	public static var drawCalls(default, null):Int = 0;
 	public static var ibAllocations(default, null):Int = 0;
 	public static var vbAllocations(default, null):Int = 0;
@@ -112,6 +116,7 @@ class Context3D {
 	inline function emptyBuffer(stateId:Int):DrawStateBuffer
 		return {
 			stateId: stateId,
+			meshIndexCount: 0,
 			commands: []
 		};
 
@@ -174,7 +179,7 @@ class Context3D {
 		}
 	}
 
-	function inputLayoutsEqual(a:Array<VertexStructure>, b:Array<VertexStructure>):Bool {
+	function sameRefs<T>(a:Array<T>, b:Array<T>):Bool {
 		if (a == b)
 			return true;
 		if (a == null || b == null || a.length != b.length)
@@ -185,38 +190,11 @@ class Context3D {
 		return true;
 	}
 
-	function vertexBuffersEqual(a:Array<VertexBuffer>, b:Array<VertexBuffer>):Bool {
-		if (a == b)
-			return true;
-		if (a == null || b == null || a.length != b.length)
-			return false;
-		for (i in 0...a.length)
-			if (a[i] != b[i])
-				return false;
-		return true;
-	}
+	inline function inputLayoutsEqual(a:Array<VertexStructure>, b:Array<VertexStructure>):Bool
+		return sameRefs(a, b);
 
-	function verticesEqual(a:Vertex, b:Vertex):Bool {
-		if (a == b)
-			return true;
-		if (a == null || b == null || a.length != b.length)
-			return false;
-		for (i in 0...a.length)
-			if (a[i] != b[i])
-				return false;
-		return true;
-	}
-
-	function polygonsEqual(a:Polygon, b:Polygon):Bool {
-		if (a == b)
-			return true;
-		if (a == null || b == null || a.length != b.length)
-			return false;
-		for (i in 0...a.length)
-			if (!verticesEqual(a[i], b[i]))
-				return false;
-		return true;
-	}
+	inline function vertexBuffersEqual(a:Array<VertexBuffer>, b:Array<VertexBuffer>):Bool
+		return sameRefs(a, b);
 
 	inline function meshIndexCount(mesh:Mesh):Int {
 		if (mesh == null)
@@ -251,8 +229,8 @@ class Context3D {
 		data[5] = 3;
 		fallbackQuadIndexBuffer.unlock(6);
 
-		#if S2D_DEBUG_FPS
-		++ibAllocations;
+		#if debug
+		++ ibAllocations;
 		#end
 	}
 
@@ -266,7 +244,9 @@ class Context3D {
 			meshDirty: true,
 			vertexBuffers: vertexBuffers,
 			steps: [],
-			usedSteps: 0
+			usedSteps: 0,
+			commands: [],
+			usedCommands: 0
 		};
 
 	function stateCompatible(state:DrawState, inputLayout:Array<VertexStructure>, usesExternalVertexBuffers:Bool, vertexBuffers:Array<VertexBuffer>):Bool {
@@ -302,11 +282,13 @@ class Context3D {
 		}
 
 		state.usedSteps = 0;
+		state.usedCommands = 0;
 		state.meshPolygonCount = 0;
 		state.meshIndexCount = 0;
 		state.meshDirty = false;
-
-		if (!usesExternalVertexBuffers && state.mesh == null)
+		if (usesExternalVertexBuffers)
+			state.mesh = null;
+		else if (state.mesh == null)
 			state.mesh = [];
 
 		return state;
@@ -320,7 +302,7 @@ class Context3D {
 		for (polygon in mesh) {
 			final index = state.meshPolygonCount++;
 			if (index < target.length) {
-				if (!polygonsEqual(target[index], polygon)) {
+				if (target[index] != polygon) {
 					target[index] = polygon;
 					state.meshDirty = true;
 				}
@@ -334,12 +316,21 @@ class Context3D {
 		}
 	}
 
+	function findBinding<T:{unit:TextureUnit}>(entries:Array<T>, unit:TextureUnit):T {
+		for (entry in entries)
+			if (entry.unit == unit)
+				return entry;
+		return null;
+	}
+
 	function finalizeState(state:DrawState) {
 		if (state == null)
 			return;
 
 		if (state.steps.length != state.usedSteps)
 			state.steps.resize(state.usedSteps);
+		if (state.commands.length != state.usedCommands)
+			state.commands.resize(state.usedCommands);
 
 		if (!state.usesExternalVertexBuffers && state.mesh != null && state.mesh.length != state.meshPolygonCount) {
 			state.mesh.resize(state.meshPolygonCount);
@@ -378,8 +369,8 @@ class Context3D {
 			state.vertexBuffer?.delete();
 			state.vertexBuffer = new VertexBuffer(vertexCount, structure, StaticUsage);
 
-			#if S2D_DEBUG_FPS
-			++vbAllocations;
+			#if debug
+			++ vbAllocations;
 			#end
 		}
 
@@ -387,8 +378,8 @@ class Context3D {
 			state.indexBuffer?.delete();
 			state.indexBuffer = new IndexBuffer(indexCount, StaticUsage);
 
-			#if S2D_DEBUG_FPS
-			++ibAllocations;
+			#if debug
+			++ ibAllocations;
 			#end
 		}
 
@@ -419,22 +410,39 @@ class Context3D {
 		state.meshDirty = false;
 	}
 
-	inline function resolveDrawCount(mesh:Mesh, start:Int, count:Int):Int {
+	inline function resolveDrawCount(meshIndexCount:Int, start:Int, count:Int):Int {
 		if (count >= 0)
 			return count;
-		if (mesh != null)
-			return Std.int(Math.max(0, meshIndexCount(mesh) - start));
+		if (meshIndexCount > 0)
+			return Std.int(Math.max(0, meshIndexCount - start));
 		return Std.int(Math.max(0, 6 - start));
+	}
+
+	function appendCommands(state:DrawState, commands:Array<DrawCommand>):{start:Int, count:Int} {
+		if (commands == null || commands.length == 0)
+			return {start: state.usedCommands, count: 0};
+
+		final start = state.usedCommands;
+		for (command in commands)
+			if (state.usedCommands == state.commands.length) {
+				state.commands.push(command);
+				state.usedCommands++;
+			} else
+				state.commands[state.usedCommands++] = command;
+
+		return {start: start, count: commands.length};
 	}
 
 	function appendStep(state:DrawState, pipeline:PipelineState, start:Int, count:Int, instanceCount:Null<Int>, commands:Array<DrawCommand>) {
 		final stepIndex = state.usedSteps++;
+		final commandRange = appendCommands(state, commands);
 		final step:DrawStep = {
 			pipeline: pipeline,
 			start: start,
 			count: count,
 			instanceCount: instanceCount,
-			commands: commands
+			commandStart: commandRange.start,
+			commandCount: commandRange.count
 		};
 
 		if (stepIndex == state.steps.length)
@@ -466,7 +474,7 @@ class Context3D {
 			appendMeshChunk(state, buffer.mesh);
 		}
 
-		appendStep(state, buffer.pipeline, drawStart, resolveDrawCount(buffer.mesh, start, count), instanceCount, buffer.commands);
+		appendStep(state, buffer.pipeline, drawStart, resolveDrawCount(buffer.meshIndexCount, start, count), instanceCount, buffer.commands);
 		buffer = emptyBuffer(stateId);
 	}
 
@@ -494,6 +502,8 @@ class Context3D {
 			graphics.begin(targets);
 			executePendingCommands();
 
+			var boundTextures:Array<{unit:TextureUnit, image:Image}> = [];
+			var boundTextureParams:Array<{unit:TextureUnit, parameters:TextureParameters}> = [];
 			for (i in 0...buffer.stateId) {
 				final state = states[i];
 				if (state == null)
@@ -523,16 +533,45 @@ class Context3D {
 						currentPipeline = step.pipeline;
 					}
 
-					if (step.commands != null)
-						for (command in step.commands)
-							applyCommand(command);
+					if (step.commandCount > 0)
+						for (j in step.commandStart...step.commandStart + step.commandCount) {
+							final command = state.commands[j];
+							switch command {
+								case ConstantTexture(unit, image):
+									var entry = findBinding(boundTextures, unit);
+									if (entry == null) {
+										entry = {unit: unit, image: image};
+										boundTextures.push(entry);
+										graphics.setTexture(unit, image);
+									} else if (entry.image != image) {
+										entry.image = image;
+										graphics.setTexture(unit, image);
+									}
+
+								case ConstantTextureParameters(unit, parameters):
+									var entry = findBinding(boundTextureParams, unit);
+									if (entry == null) {
+										entry = {unit: unit, parameters: parameters};
+										boundTextureParams.push(entry);
+										graphics.setTextureParameters(unit, parameters.uAddressing, parameters.vAddressing, parameters.minificationFilter,
+											parameters.magnificationFilter, parameters.mipmapFilter);
+									} else if (entry.parameters != parameters) {
+										entry.parameters = parameters;
+										graphics.setTextureParameters(unit, parameters.uAddressing, parameters.vAddressing, parameters.minificationFilter,
+											parameters.magnificationFilter, parameters.mipmapFilter);
+									}
+
+								case _:
+									applyCommand(command);
+							}
+						}
 
 					if (step.instanceCount != null)
 						graphics.drawIndexedVerticesInstanced(step.instanceCount, step.start, step.count);
 					else
 						graphics.drawIndexedVertices(step.start, step.count);
 
-					#if S2D_DEBUG_FPS
+					#if debug
 					drawCalls++;
 					#end
 				}
@@ -560,27 +599,38 @@ class Context3D {
 
 	public inline function setMesh(mesh:Mesh) {
 		buffer.mesh = mesh;
+		buffer.meshIndexCount = meshIndexCount(mesh);
 		buffer.vertexBuffers = null;
 	}
 
 	public inline function setVertexBuffers(vertexBuffers:Array<VertexBuffer>) {
 		buffer.vertexBuffers = vertexBuffers;
 		buffer.mesh = null;
+		buffer.meshIndexCount = 0;
+	}
+
+	inline function ensureBufferMesh() {
+		if (buffer.mesh == null)
+			buffer.mesh = [];
+		buffer.vertexBuffers = null;
 	}
 
 	public inline function addPolygon(p:Polygon) {
-		if (buffer.mesh == null)
-			buffer.mesh = [];
+		ensureBufferMesh();
 		buffer.mesh.push(p);
-		buffer.vertexBuffers = null;
+		if (p != null && p.length >= 3)
+			buffer.meshIndexCount += (p.length - 2) * 3;
 	}
 
 	public inline function addVertex(vertex:Vertex) {
+		ensureBufferMesh();
 		if (buffer.mesh == null || buffer.mesh.length == 0)
 			buffer.mesh = [[vertex]];
-		else
+		else {
 			buffer.mesh[buffer.mesh.length - 1].push(vertex);
-		buffer.vertexBuffers = null;
+			if (buffer.mesh[buffer.mesh.length - 1].length >= 3)
+				buffer.meshIndexCount += 3;
+		}
 	}
 
 	public inline function addCommand(command:DrawCommand)

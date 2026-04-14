@@ -257,7 +257,7 @@ class App implements s.shortcut.Shortcut {
 	 * @param loadFailed Called when asset loading fails.
 	 */
 	public static inline function start(options:SystemOptions, ?started:Window->Void, ?loadProgress:Float->Void, ?loadFailed:AssetError->Void) {
-		#if HOTLOAD
+		#if hotload
 		s.Hotload.start();
 		#end
 

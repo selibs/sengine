@@ -14,14 +14,12 @@ class Canvas extends DrawableElement {
 	public inline function paint(f:Context2D->Void):Void
 		texture.context2D.render(true, color, f);
 
-	override function sync() {
-		super.sync();
-
+	@:slot(sync)
+	function syncTexture(_)
 		if (widthDirty || heightDirty) {
 			texture.unload();
 			texture = new RenderTarget(Std.int(width), Std.int(height));
 		}
-	}
 
 	function draw(target:RenderTarget)
 		target.context2D.drawImage(texture, left.position, top.position);

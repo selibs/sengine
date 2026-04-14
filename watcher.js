@@ -298,7 +298,7 @@ function build(mode) {
 	output = "";
 	console.log("Haxe compilation...");
 	const changed = lastChanged ? path.relative(workspace, lastChanged).replace(/\\/g, "/") : "<initial>";
-	console.log(`HOTLOAD build mode: ${mode} (${changed})`);
+	console.log(`hotload build mode: ${mode} (${changed})`);
 
 	return new Promise((resolve) => {
 		const runBuild = mode === BUILD_FULL

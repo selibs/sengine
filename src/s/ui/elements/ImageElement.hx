@@ -228,28 +228,27 @@ class ImageElement extends DrawableElement {
 	 *
 	 * @param source Asset key or path used to resolve the image asset.
 	 */
-	public function new(source:String) {
+	public function new(?source:String) {
 		super();
 		this.source = source;
 		this.source.onLoaded(() -> sourceDirty = true);
 	}
 
-	override function sync() {
-		super.sync();
-
-		if (!isLoaded)
-			return;
-
-		if (sourceAssetDirty || samplingDirty)
+	@:slot(sync)
+	function syncSource(_)
+		if (isLoaded && (sourceAssetDirty || samplingDirty))
 			if (mipmap)
 				source.generateMipmaps(1);
 			else
 				source.setMipmaps([]);
 
+	@:slot(sync)
+	function syncClipRect(_) {
 		final hBoundsDirty = left.positionDirty || right.positionDirty;
 		final vBoundsDirty = top.positionDirty || bottom.positionDirty;
 
-		if (!(sourceAssetDirty || sourceRegionDirty || imageLayoutDirty || widthDirty || heightDirty || hBoundsDirty || vBoundsDirty))
+		if (!isLoaded
+			&& !(sourceAssetDirty || sourceRegionDirty || imageLayoutDirty || widthDirty || heightDirty || hBoundsDirty || vBoundsDirty))
 			return;
 
 		final imageWidth = source.width;

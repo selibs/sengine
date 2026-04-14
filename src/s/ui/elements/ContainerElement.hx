@@ -7,12 +7,10 @@ abstract class ContainerElement extends Element {
 	@:readonly @:alias public var freeWidth:Float = spaceH;
 	@:readonly @:alias public var freeHeight:Float = spaceV;
 
-	override function sync() {
-		super.sync();
-
+	@:slot(sync)
+	function syncSpace(_) {
 		if (widthDirty || left.paddingDirty || right.paddingDirty)
 			spaceH = width - left.padding - right.padding;
-
 		if (heightDirty || top.paddingDirty || bottom.paddingDirty)
 			spaceV = height - top.padding - bottom.padding;
 	}

@@ -1,9 +1,10 @@
 package s.ui.elements;
 
-import s.app.input.Mouse;
 import s.ui.FocusPolicy;
+import s.app.input.Mouse;
+import s.app.input.Keyboard;
 
-@:allow(s.ui.Scene)
+@:allow(s.app.Window)
 class InteractiveElement extends Element {
 	@:attr(interaction) public var enabled:Bool = true;
 	@:attr(interaction) public var focused(default, set):Bool = false;
@@ -39,6 +40,24 @@ class InteractiveElement extends Element {
 
 	@:signal(button) public function mouseButtonDoubleClicked(button:MouseButton, m:MouseEvent);
 
+	@:signal public function keyboardDown(key:KeyCode);
+
+	@:signal public function keyboardUp(key:KeyCode);
+
+	@:signal public function keyboardHold(key:KeyCode);
+
+	@:signal public function keyboardPressed(char:String);
+
+	@:signal public function keyboardHotkey(hotkey:Array<KeyCode>);
+
+	@:signal(key) public function keyboardKeyDown(key:KeyCode);
+
+	@:signal(key) public function keyboardKeyUp(key:KeyCode);
+
+	@:signal(key) public function keyboardKeyHold(key:KeyCode);
+
+	@:signal(char) public function keyboardCharPressed(char:String);
+
 	@:slot(mouseDown)
 	function syncMouseDown(m:MouseButtonEvent)
 		mouseButtonDown(m.button, m);
@@ -59,12 +78,26 @@ class InteractiveElement extends Element {
 	function syncMouseDoubleClicked(m:MouseButtonEvent)
 		mouseButtonDoubleClicked(m.button, m);
 
-	override function sync() {
-		super.sync();
+	@:slot(keyboardDown)
+	function syncKeyboardDown(key:KeyCode)
+		keyboardKeyDown(key);
 
+	@:slot(keyboardUp)
+	function syncKeyboardUp(key:KeyCode)
+		keyboardKeyUp(key);
+
+	@:slot(keyboardHold)
+	function syncKeyboardHold(key:KeyCode)
+		keyboardKeyHold(key);
+
+	@:slot(keyboardPressed)
+	function syncKeyboardPressed(char:String)
+		keyboardCharPressed(char);
+
+	@:slot(sync)
+	function syncOrder(_)
 		if (globalVisible && scene.root.children.dirty)
 			scene.interactive.push(this);
-	}
 
 	function set_focused(value:Bool) {
 		if (value && scene != null)

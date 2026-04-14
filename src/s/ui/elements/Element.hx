@@ -2,18 +2,20 @@ package s.ui.elements;
 
 import s.math.Mat3;
 import s.math.SMath;
+import s.app.Window;
 import s.geometry.Size;
 import s.geometry.Position;
 import s.ui.Style;
 import s.ui.AnchorsAttribute;
 import s.ui.AnchorLineAttribute;
-#if S2D_UI_DEBUG_ELEMENT_BOUNDS
+#if debug_element_bounds
 import s.graphics.Context2D;
 
 using s.extensions.StringExt;
 #end
 
 @:allow(s.AttachedAttribute)
+@:autoBuild(s.ui.macro.ElementMacro.build())
 class Element extends Object2D<Element> {
 	overload extern public static inline function mapToElement(element:Element, x:Float, y:Float):Position
 		return element.mapFromGlobal(x, y);
@@ -45,7 +47,7 @@ class Element extends Object2D<Element> {
 	@:attr(globalOrigin) var globalOriginX:Float = 0.0;
 	@:attr(globalOrigin) var globalOriginY:Float = 0.0;
 
-	public var scene(default, null):Scene;
+	public var scene(default, null):Window;
 
 	/**
 	 * Optional application-defined tag used for lookup.
@@ -239,25 +241,29 @@ class Element extends Object2D<Element> {
 		return null;
 	}
 
-	public function useStylesheet(stylesheet:Stylesheet)
-		for (s in stylesheet)
-			useStyle(s);
+	public function addStyle(style:Style) {
+		sync.connect(style.apply);
+		dirty = true;
+	}
 
-	public function removeStylesheet(stylesheet:Stylesheet)
-		for (s in stylesheet)
-			removeStyle(s);
+	public function removeStyle(style:Style) {
+		sync.disconnect(style.apply);
+		dirty = true;
+	}
 
-	public inline function useStyle(style:Style)
-		style.apply(this);
+	public inline function addStylesheet(stylesheet:Stylesheet)
+		for (style in stylesheet)
+			addStyle(style);
 
-	public inline function removeStyle(style:Style)
-		return style.remove(this);
+	public inline function removeStylesheet(stylesheet:Stylesheet)
+		for (style in stylesheet)
+			removeStyle(style);
 
 	override function toString():String
 		return super.toString() + (tag != null ? '#$tag' : "");
 
 	function syncTree() {
-		sync();
+		sync(this);
 		syncChildren();
 		flush();
 	}
@@ -270,46 +276,50 @@ class Element extends Object2D<Element> {
 		if (scene?.root.children.dirty || child.dirty || globalVisibleDirty || globalOpacityDirty || globalTransformDirty)
 			child.syncTree();
 
-	override function sync() {
-		super.sync();
-
-		// parent
+	@:slot(sync)
+	function syncParent(_)
 		if (parentDirty)
 			scene = parent?.scene;
 
-		// bounds
+	@:slot(sync)
+	function syncBounds(_) {
 		s.ui.macro.ElementMacro.syncAxis("left", "hCenter", "right", "x", "width");
 		s.ui.macro.ElementMacro.syncAxis("top", "vCenter", "bottom", "y", "height");
+	}
 
-		// origin
+	@:slot(sync)
+	function syncOrigin(_) {
 		if (horizontalDirty || originDirty)
 			globalOriginX = left.position + (Math.isNaN(originX) ? width * 0.5 : originX);
 		if (verticalDirty || originDirty)
 			globalOriginY = top.position + (Math.isNaN(originY) ? height * 0.5 : originY);
+	}
 
-		// transform
+	@:slot(sync)
+	function syncTransform(_)
 		if (globalOriginDirty || transformDirty || parentDirty || parent?.globalTransformDirty) {
 			globalTransform = Mat3.translation(-globalOriginX, -globalOriginY) * transform * Mat3.translation(globalOriginX, globalOriginY);
 			if (parent != null)
 				globalTransform *= parent.globalTransform;
 		}
 
-		// opacity
+	@:slot(sync)
+	function syncOpacity(_)
 		if (visibilityDirty || parentDirty || parent?.globalOpacityDirty) {
 			globalOpacity = opacity;
 			if (parent != null)
 				globalOpacity = parent.globalOpacity * globalOpacity;
 		}
 
-		// visible
+	@:slot(sync)
+	function syncVisible(_)
 		if (visibilityDirty || parentDirty || parent?.globalVisibleDirty || globalOpacityDirty || widthDirty || heightDirty) {
 			globalVisible = visible && globalOpacity > 0.0 && width > 0.0 && height > 0.0;
 			if (parent != null)
 				globalVisible = parent.globalVisible && globalVisible;
 		}
-	}
 
-	#if S2D_UI_DEBUG_ELEMENT_BOUNDS
+	#if debug_element_bounds
 	function drawBounds(ctx:Context2D) {
 		final style = ctx.style;
 

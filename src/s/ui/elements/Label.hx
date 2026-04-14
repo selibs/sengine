@@ -1,7 +1,7 @@
 package s.ui.elements;
 
-import s.geometry.Rect;
 import s.ui.Alignment;
+import s.geometry.Rect;
 import s.graphics.FontStyle;
 
 using StringTools;
@@ -10,6 +10,9 @@ using StringTools;
 @:access(s.graphics.FontStyle)
 class Label extends DrawableElement {
 	var chars:Array<FontChar> = [];
+	var lineChars:Array<FontChar> = [];
+	var ellipsisChars:Array<FontChar> = [];
+	var lineWidth:Float = 0.0;
 
 	@:attr(textHorizontal) var textX:Float = 0.0;
 	@:attr(textVertical) var textY:Float = 0.0;
@@ -34,37 +37,26 @@ class Label extends DrawableElement {
 	function draw(target:s.graphics.RenderTarget) {
 		if (text.length == 0 || !font.isLoaded || font.pixelSize == 0)
 			return;
-		var ctx = target.context2D;
+		final ctx = target.context2D;
 		ctx.style.color = realColor;
 		ctx.style.font.copyFrom(font);
 		ctx.drawFontChars(chars);
 	}
 
-	override function sync() {
-		super.sync();
-
+	@:slot(sync)
+	function syncText(_):Void {
 		if (text.length == 0 || !font.isLoaded || font.pixelSize == 0)
 			return;
 
-		syncText();
-	}
-
-	function syncText():Void {
 		final hDirty = left.offsetDirty || right.offsetDirty;
 		final vDirty = top.offsetDirty || bottom.offsetDirty;
-		final charsAreDirty = textContentDirty || font.spacingDirty || font.metricsDirty || elideMode != ElideNone && hDirty;
+		final lineCharsDirty = textContentDirty || font.spacingDirty || font.metricsDirty;
+		final charsAreDirty = lineCharsDirty || elideMode != ElideNone && hDirty;
 
-		if (charsAreDirty) {
-			chars = [];
-			var lineChars = [];
-			var lineWidth = 0.0;
-			for (i in 0...text.length) {
-				var c = font.getFontChar(text.fastCodeAt(i));
-				lineChars.push(c);
-				lineWidth += c.advance;
-			}
-			textWidth = elideLineChars(lineChars, lineWidth);
-		}
+		if (lineCharsDirty)
+			rebuildLineChars();
+		if (charsAreDirty)
+			textWidth = elideLineChars();
 
 		if (textHorizontalDirty || font.metricsDirty || hDirty || vDirty || alignmentDirty) {
 			textX = alignLineX(textWidth);
@@ -77,12 +69,11 @@ class Label extends DrawableElement {
 			alignCharsY(textY);
 	}
 
-	function alignCharsX(offset:Float) {
+	function alignCharsX(offset:Float)
 		for (c in chars) {
 			c.pos.x = offset + c.xoff;
 			offset += c.advance;
 		}
-	}
 
 	function alignCharsY(offset:Float) {
 		final snap = font.snapToPixel;
@@ -90,133 +81,156 @@ class Label extends DrawableElement {
 			c.pos.y = offset + (snap ? Math.round(c.yoff) : c.yoff);
 	}
 
-	function alignLineX(width:Float) {
-		if (alignment & AlignRight != 0)
-			return right.position - right.padding - width;
-		else if (alignment & AlignHCenter != 0)
-			return hCenter.position - width * 0.5;
+	function alignLineX(width:Float)
+		return alignment & AlignRight != 0 ? right.position - right.padding - width : alignment & AlignHCenter != 0 ? hCenter.position
+			- width * 0.5 : left.position
+			+ left.padding;
+
+	function alignLineY(height:Float)
+		return alignment & AlignBottom != 0 ? bottom.position - bottom.padding - height : alignment & AlignVCenter != 0 ? vCenter.position
+			- height * 0.5 : top.position
+			+ top.padding;
+
+	inline function setDisplayChar(index:Int, char:FontChar)
+		if (index == chars.length)
+			chars.push(char);
 		else
-			return left.position + left.padding;
+			chars[index] = char;
+
+	inline function trimDisplayChars(length:Int)
+		if (chars.length != length)
+			chars.resize(length);
+
+	function rebuildLineChars() {
+		lineWidth = 0.0;
+		for (i in 0...text.length) {
+			final c = font.copyFontChar(text.fastCodeAt(i), i < lineChars.length ? lineChars[i] : null);
+			if (i == lineChars.length)
+				lineChars.push(c);
+			else
+				lineChars[i] = c;
+			lineWidth += c.advance;
+		}
+		if (lineChars.length != text.length)
+			lineChars.resize(text.length);
 	}
 
-	function alignLineY(height:Float) {
-		if (alignment & AlignBottom != 0)
-			return bottom.position - bottom.padding - height;
-		else if (alignment & AlignVCenter != 0)
-			return vCenter.position - height * 0.5;
-		else
-			return top.position + top.padding;
+	function syncEllipsisChars():Float {
+		var width = 0.0;
+		for (i in 0...3) {
+			final c = font.copyFontChar(".".code, i < ellipsisChars.length ? ellipsisChars[i] : null);
+			setOrPush(ellipsisChars, i, c);
+			width += c.advance;
+		}
+		return width;
 	}
 
-	function elideLineChars(lineChars:Array<FontChar>, lineWidth:Float):Float {
-		inline function copyChar(char:FontChar):FontChar
-			return {
-				xoff: char.xoff,
-				yoff: char.yoff,
-				advance: char.advance,
-				pos: {
-					x: char.pos.x,
-					y: char.pos.y,
-					width: char.pos.width,
-					height: char.pos.height
-				},
-				uv: {
-					x: char.uv.x,
-					y: char.uv.y,
-					width: char.uv.width,
-					height: char.uv.height
-				}
-			}
+	inline function setOrPush<T>(items:Array<T>, index:Int, value:T)
+		if (index == items.length)
+			items.push(value);
+		else
+			items[index] = value;
 
-		final ec = font.getFontChar(".".code);
-		final ew = ec.advance * 3;
+	inline function copyLineRange(from:Int, to:Int, outIndex:Int):Int {
+		for (i in from...to)
+			setDisplayChar(outIndex++, lineChars[i]);
+		return outIndex;
+	}
+
+	inline function copyEllipsis(outIndex:Int):Int {
+		for (i in 0...3)
+			setDisplayChar(outIndex++, ellipsisChars[i]);
+		return outIndex;
+	}
+
+	function elideLineChars():Float {
 		final availableWidth = Math.max(0.0, Math.abs(width) - left.padding - right.padding);
 
 		if (elideMode == ElideNone || lineWidth <= availableWidth) {
-			chars = lineChars;
+			trimDisplayChars(lineChars.length);
+			for (i in 0...lineChars.length)
+				chars[i] = lineChars[i];
 			return lineWidth;
 		}
 
-		var maxWidth = Math.max(0.0, availableWidth - ew);
+		final ew = syncEllipsisChars();
+		final maxWidth = Math.max(0.0, availableWidth - ew);
 
 		var w = 0.0;
 		var e = false;
+		var outIndex = 0;
 		if (elideMode == ElideLeft) {
-			for (i in 0...lineChars.length) {
-				var c = lineChars[lineChars.length - i - 1];
+			var keepStart = lineChars.length;
+			while (keepStart > 0) {
+				final c = lineChars[keepStart - 1];
 				if (w + c.advance > maxWidth) {
 					e = true;
 					break;
 				}
-				chars.unshift(c);
 				w += c.advance;
+				keepStart--;
 			}
-			// ellipsis
-			if (e) {
-				chars.unshift(copyChar(ec));
-				chars.unshift(copyChar(ec));
-				chars.unshift(copyChar(ec));
+
+			if (e)
+				outIndex = copyEllipsis(outIndex);
+			outIndex = copyLineRange(keepStart, lineChars.length, outIndex);
+			if (e)
 				w += ew;
-			}
 		} else if (elideMode == ElideMiddle) {
-			var r = [];
 			var leftIndex = 0;
 			var rightIndex = lineChars.length - 1;
+			var rightCount = 0;
 			while (leftIndex <= rightIndex) {
-				var leftChar = lineChars[leftIndex];
+				final leftChar = lineChars[leftIndex];
 				if (w + leftChar.advance > maxWidth) {
 					e = true;
 					break;
 				}
-				chars.push(leftChar);
 				w += leftChar.advance;
 				leftIndex++;
 
 				if (leftIndex > rightIndex)
 					break;
 
-				var rightChar = lineChars[rightIndex];
+				final rightChar = lineChars[rightIndex];
 				if (w + rightChar.advance > maxWidth) {
 					e = true;
 					break;
 				}
-				r.unshift(rightChar);
 				w += rightChar.advance;
 				rightIndex--;
+				rightCount++;
 			}
-			// ellipsis
+
+			outIndex = copyLineRange(0, leftIndex, outIndex);
 			if (e) {
-				chars.push(copyChar(ec));
-				chars.push(copyChar(ec));
-				chars.push(copyChar(ec));
+				outIndex = copyEllipsis(outIndex);
 				w += ew;
 			}
-			chars = chars.concat(r);
+			outIndex = copyLineRange(lineChars.length - rightCount, lineChars.length, outIndex);
 		} else if (elideMode == ElideRight) {
-			for (i in 0...lineChars.length) {
-				var c = lineChars[i];
+			var keepEnd = 0;
+			while (keepEnd < lineChars.length) {
+				final c = lineChars[keepEnd];
 				if (w + c.advance > maxWidth) {
 					e = true;
 					break;
 				}
-				chars.push(c);
 				w += c.advance;
+				keepEnd++;
 			}
-			// ellipsis
+
+			outIndex = copyLineRange(0, keepEnd, outIndex);
 			if (e) {
-				chars.push(copyChar(ec));
-				chars.push(copyChar(ec));
-				chars.push(copyChar(ec));
+				outIndex = copyEllipsis(outIndex);
 				w += ew;
 			}
 		} else {
-			for (i in 0...text.length) {
-				var c = font.getFontChar(text.fastCodeAt(i));
-				chars.push(c);
-				w += c.advance;
-			}
+			outIndex = copyLineRange(0, lineChars.length, outIndex);
+			w = lineWidth;
 		}
 
+		trimDisplayChars(outIndex);
 		return w;
 	}
 }

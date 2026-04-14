@@ -65,11 +65,14 @@ class Mouse implements s.shortcut.Shortcut {
 
 	public function new(id:Int = 0) {
 		mouse = kha.input.Mouse.get(id);
-		mouse.notify((b, x, y) -> down(b, x, y), (b, x, y) -> up(b, x, y), (x, y, dx, dy) -> moved(x, y, dx, dy), d -> scrolled(d), () -> exited());
-
+		connect();
+		
 		onDown((b, x, y) -> buttonDown(b, x, y));
 		onUp((b, x, y) -> buttonUp(b, x, y));
 	}
+
+	function connect()
+		mouse.notify((b, x, y) -> down(b, x, y), (b, x, y) -> up(b, x, y), (x, y, dx, dy) -> moved(x, y, dx, dy), d -> scrolled(d), () -> exited());
 
 	@:slot(moved)
 	function syncMoved(x:Int, y:Int, dx:Int, dy:Int) {

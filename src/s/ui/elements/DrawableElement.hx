@@ -9,13 +9,13 @@ abstract class DrawableElement extends Element {
 
 	abstract function draw(target:RenderTarget):Void;
 
-	override function sync() {
-		super.sync();
-
+	@:slot(sync)
+	function syncRealColor(_)
 		if (visualDirty || globalOpacityDirty)
 			realColor = Color.rgba(color.r, color.g, color.b, color.a * globalOpacity);
 
+	@:slot(sync)
+	function syncOrder(_)
 		if (globalVisible && scene.root.children.dirty)
 			scene.drawable.push(this);
-	}
 }

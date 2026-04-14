@@ -33,43 +33,43 @@ abstract class Gradient extends DrawableElement {
 		gradient = new RenderTarget(1, resolution);
 	}
 
-	override function sync() {
-		super.sync();
+	@:slot(sync)
+	function syncGradient(_) {
+		if (!gradientDirty)
+			return;
 
-		if (gradientDirty) {
-			if (resolutionDirty) {
-				gradient.unload();
-				gradient = new RenderTarget(1, resolution);
-			}
-
-			var ctx = gradient.context1D;
-			ctx.begin();
-
-			if (stops == null || stops.length == 0)
-				for (i in 0...resolution)
-					ctx.setPixel(0, i, Transparent);
-			else if (stops.length == 1) {
-				var c = stops[0].color;
-				for (i in 0...resolution)
-					ctx.setPixel(0, i, c);
-			} else {
-				var j = 0;
-				var stop = stops[j];
-				var next = stops[++j];
-
-				for (i in 0...resolution) {
-					var p = i / resolution;
-					if (p > next.position) {
-						stop = next;
-						next = stops[++j];
-					}
-					var t = (p - stop.position) / (next.position - stop.position);
-					ctx.setPixel(0, i, s.Color.mix(stop.color, next.color, interpolation(t)));
-				}
-			}
-
-			ctx.end();
+		if (resolutionDirty) {
+			gradient.unload();
+			gradient = new RenderTarget(1, resolution);
 		}
+
+		var ctx = gradient.context1D;
+		ctx.begin();
+
+		if (stops == null || stops.length == 0)
+			for (i in 0...resolution)
+				ctx.setPixel(0, i, Transparent);
+		else if (stops.length == 1) {
+			var c = stops[0].color;
+			for (i in 0...resolution)
+				ctx.setPixel(0, i, c);
+		} else {
+			var j = 0;
+			var stop = stops[j];
+			var next = stops[++j];
+
+			for (i in 0...resolution) {
+				var p = i / resolution;
+				if (p > next.position) {
+					stop = next;
+					next = stops[++j];
+				}
+				var t = (p - stop.position) / (next.position - stop.position);
+				ctx.setPixel(0, i, s.Color.mix(stop.color, next.color, interpolation(t)));
+			}
+		}
+
+		ctx.end();
 	}
 
 	inline function set_resolution(value:Int):Int

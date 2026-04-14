@@ -1,6 +1,6 @@
 package s;
 
-#if HOTLOAD
+#if hotload
 import haxe.Json;
 import haxe.rtti.Meta;
 #if kha
@@ -237,14 +237,10 @@ function getReloadReason(patch:Patch):String {
 		case "addClass":
 			'Type `${patch.klass?.nameId ?? patch.klass?.name}` is marked with @hotload.reload';
 		case "staticVar":
-			if (patch.name == "__meta__")
-				'Type `${patch.className}` metadata is marked with @hotload.reload';
-			else
+			if (patch.name == "__meta__") 'Type `${patch.className}` metadata is marked with @hotload.reload'; else
 				'Static field `${patch.className}.${patch.name}` is marked with @hotload.reload';
 		case "deleteStaticVar":
-			if (patch.name == "__meta__")
-				'Type `${patch.className}` metadata is marked with @hotload.reload';
-			else
+			if (patch.name == "__meta__") 'Type `${patch.className}` metadata is marked with @hotload.reload'; else
 				'Static field `${patch.className}.${patch.name}` is marked with @hotload.reload';
 		case "deleteClass":
 			'Type `${patch.className}` is marked with @hotload.reload';
@@ -253,13 +249,9 @@ function getReloadReason(patch:Patch):String {
 		case "func":
 			final name = patch.func?.name;
 			final isStatic = !!patch.func?.isStatic;
-			isStatic
-				? 'Static function `${patch.className}.${name}` is marked with @hotload.reload'
-				: 'Function `${patch.className}.${name}` is marked with @hotload.reload';
+			isStatic ? 'Static function `${patch.className}.${name}` is marked with @hotload.reload' : 'Function `${patch.className}.${name}` is marked with @hotload.reload';
 		case "deleteFunc":
-			patch.isStatic
-				? 'Static function `${patch.className}.${patch.name}` is marked with @hotload.reload'
-				: 'Function `${patch.className}.${patch.name}` is marked with @hotload.reload';
+			patch.isStatic ? 'Static function `${patch.className}.${patch.name}` is marked with @hotload.reload' : 'Function `${patch.className}.${patch.name}` is marked with @hotload.reload';
 		default:
 			"Patched declaration is marked with @hotload.reload";
 	}
@@ -276,8 +268,7 @@ function shouldReloadPatch(patch:Patch):Bool {
 					hasHotloadReload(Reflect.field(meta, "obj"));
 				} else
 					isTypeHotReload(patch.className);
-			} else
-				isFieldHotReload(patch.className, patch.name, true);
+			} else isFieldHotReload(patch.className, patch.name, true);
 		case "deleteClass":
 			isTypeHotReload(patch.className);
 		case "constructor":

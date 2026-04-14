@@ -19,6 +19,18 @@ private typedef GlyphSegment = {
 	var by:Float;
 }
 
+typedef CachedFontCharTemplate = {
+	var xoff:Float;
+	var yoff:Float;
+	var advance:Float;
+	var width:Float;
+	var height:Float;
+	var uvX:Float;
+	var uvY:Float;
+	var uvWidth:Float;
+	var uvHeight:Float;
+}
+
 class Font extends Asset<kha.Font> {
 	public static inline final sdfOversample:Int = 2;
 	public static inline final sdfSpread:Int = 8;
@@ -599,25 +611,24 @@ class Font extends Asset<kha.Font> {
 	var fontIndex:Int;
 	var atlases:Map<Int, FontAtlas> = [];
 	var glyphSegments:IntMap<Array<GlyphSegment>> = new IntMap();
+	var charTemplates:IntMap<IntMap<CachedFontCharTemplate>> = new IntMap();
+
+	inline function syncGlyphs(glyphs:Array<Int>) if (!glyphsEqual(glyphs, oldGlyphs)) { oldGlyphs = glyphs.copy(); oldGlyphHash = hashGlyphs(oldGlyphs); rebuildCharBlocks(oldGlyphs); }
+	inline function resolveFontOffset():Int { final offset = StbTruetype.stbtt_GetFontOffsetForIndex(blob, fontIndex); return offset == -1 ? StbTruetype.stbtt_GetFontOffsetForIndex(blob, 0) : offset; }
+	inline function ensureAtlasTemplates(atlasKey:Int):IntMap<CachedFontCharTemplate> { var atlasTemplates = charTemplates.get(atlasKey); if (atlasTemplates == null) charTemplates.set(atlasKey, atlasTemplates = new IntMap()); return atlasTemplates; }
 
 	public function getAtlas(size:Int) @:privateAccess {
 		final nominalSize = quantizeAtlasSize(size > 0 ? size : 1);
 		final bakedFontSize = nominalSize * sdfOversample;
 		final glyphs = sanitizeGlyphs(kha.graphics2.Graphics.fontGlyphs);
-		if (!glyphsEqual(glyphs, oldGlyphs)) {
-			oldGlyphs = glyphs.copy();
-			oldGlyphHash = hashGlyphs(oldGlyphs);
-			rebuildCharBlocks(oldGlyphs);
-		}
+		syncGlyphs(glyphs);
 
 		var index = makeAtlasKey(fontIndex, nominalSize, oldGlyphHash);
 		var atlas = atlases.get(index);
 		if (atlas != null)
 			return atlas;
 
-		var offset = StbTruetype.stbtt_GetFontOffsetForIndex(blob, fontIndex);
-		if (offset == -1)
-			offset = StbTruetype.stbtt_GetFontOffsetForIndex(blob, 0);
+		final offset = resolveFontOffset();
 
 		var atlasSize = estimateAtlasSize(blob, offset, bakedFontSize, oldGlyphs);
 		var width:Int = atlasSize.width;
@@ -652,6 +663,32 @@ class Font extends Asset<kha.Font> {
 		return atlas;
 	}
 
+	public function getFontCharTemplate(atlas:FontAtlas, char:Int):CachedFontCharTemplate @:privateAccess {
+		final atlasKey = makeAtlasKey(fontIndex, atlas.size, oldGlyphHash);
+		final atlasTemplates = ensureAtlasTemplates(atlasKey);
+		final glyphIndex = atlas.getCharIndex(char);
+		final cached = atlasTemplates.get(glyphIndex);
+		if (cached != null)
+			return cached;
+
+		final g = atlas.chars[glyphIndex];
+		final atlasW:Float = g.x1 - g.x0;
+		final atlasH:Float = g.y1 - g.y0;
+		final built:CachedFontCharTemplate = {
+			xoff: g.xoff,
+			yoff: g.yoff,
+			advance: g.xadvance,
+			width: atlasW / sdfOversample,
+			height: atlasH / sdfOversample,
+			uvX: g.x0 / atlas.width,
+			uvY: g.y0 / atlas.height,
+			uvWidth: atlasW / atlas.width,
+			uvHeight: atlasH / atlas.height
+		};
+		atlasTemplates.set(glyphIndex, built);
+		return built;
+	}
+
 	public function widthOfCharacters(size:Int, characters:Array<Int>, start:Int, length:Int) {
 		if (size <= 0 || characters == null || length <= 0)
 			return 0.0;
@@ -676,6 +713,7 @@ class Font extends Asset<kha.Font> {
 		if (atlases == null)
 			atlases = [];
 		glyphSegments = new IntMap();
+		charTemplates = new IntMap();
 	}
 
 	function toResource():kha.Font @:privateAccess {

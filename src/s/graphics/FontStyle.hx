@@ -1,6 +1,5 @@
 package s.graphics;
 
-import haxe.ds.IntMap;
 import s.assets.Font;
 
 typedef FontChar = {
@@ -9,18 +8,6 @@ typedef FontChar = {
 	advance:Float,
 	pos:{x:Float, y:Float, width:Float, height:Float},
 	uv:{x:Float, y:Float, width:Float, height:Float}
-}
-
-private typedef FontCharTemplate = {
-	xoff:Float,
-	yoff:Float,
-	advance:Float,
-	width:Float,
-	height:Float,
-	uvX:Float,
-	uvY:Float,
-	uvWidth:Float,
-	uvHeight:Float
 }
 
 enum abstract FontWeight(Int) from Int to Int {
@@ -46,11 +33,6 @@ enum FontCapitalization {
 @:allow(s.graphics.shaders.TextShader)
 class FontStyle implements s.shortcut.Shortcut {
 	var font:Font = "font_default";
-	var cachedAtlas:s.assets.internal.font.FontAtlas = null;
-	var cachedPixelSize:Int = -1;
-	var cachedLetterSpacing:Float = Math.NaN;
-	var cachedWordSpacing:Float = Math.NaN;
-	var charTemplates:IntMap<FontCharTemplate> = new IntMap();
 
 	var italicSlant:Float = 0.0;
 	var sdfWeight:Float = 0.0;
@@ -91,91 +73,32 @@ class FontStyle implements s.shortcut.Shortcut {
 	public function copyFrom(value:FontStyle):FontStyle {
 		if (value == null)
 			return this;
-
-		family = value.family;
-		bold = value.bold;
-		italic = value.italic;
-		strikeout = value.strikeout;
-		underline = value.underline;
-		snapToPixel = value.snapToPixel;
-		wordSpacing = value.wordSpacing;
-		letterSpacing = value.letterSpacing;
-		weight = value.weight;
-		softness = value.softness;
-		outlineColor = value.outlineColor;
-		outlineWidth = value.outlineWidth;
-		pixelSize = value.pixelSize;
+		family = value.family; bold = value.bold; italic = value.italic; strikeout = value.strikeout; underline = value.underline; snapToPixel = value.snapToPixel;
+		wordSpacing = value.wordSpacing; letterSpacing = value.letterSpacing; weight = value.weight; softness = value.softness; outlineColor = value.outlineColor;
+		outlineWidth = value.outlineWidth; pixelSize = value.pixelSize;
 		return this;
 	}
 
 	public function setDefault():FontStyle {
-		family = "font_default";
-		bold = false;
-		italic = false;
-		strikeout = false;
-		underline = false;
-		snapToPixel = true;
-		wordSpacing = 0.0;
-		letterSpacing = 0.0;
-		weight = Normal;
-		softness = 0.0;
-		outlineColor = Transparent;
-		outlineWidth = 0.0;
-		pixelSize = 18;
+		family = "font_default"; bold = false; italic = false; strikeout = false; underline = false; snapToPixel = true;
+		wordSpacing = 0.0; letterSpacing = 0.0; weight = Normal; softness = 0.0; outlineColor = Transparent; outlineWidth = 0.0; pixelSize = 18;
 		return this;
 	}
 
 	public inline function getAtlas()
 		return font.getAtlas(pixelSize);
 
-	inline function invalidateCharTemplates() {
-		cachedAtlas = null;
-		cachedPixelSize = -1;
-		cachedLetterSpacing = Math.NaN;
-		cachedWordSpacing = Math.NaN;
-		charTemplates = new IntMap();
-	}
-
-	inline function getTemplateAtlas() {
-		final atlas = getAtlas();
-		if (atlas != cachedAtlas || cachedPixelSize != pixelSize || cachedLetterSpacing != letterSpacing || cachedWordSpacing != wordSpacing) {
-			cachedAtlas = atlas;
-			cachedPixelSize = pixelSize;
-			cachedLetterSpacing = letterSpacing;
-			cachedWordSpacing = wordSpacing;
-			charTemplates = new IntMap();
-		}
-		return atlas;
-	}
-
-	inline function buildFontCharTemplate(atlas:s.assets.internal.font.FontAtlas, scale:Float, char:Int):FontCharTemplate {
-		final g = atlas.getGlyph(char);
-		final atlasW:Float = g.x1 - g.x0;
-		final atlasH:Float = g.y1 - g.y0;
-		return {
-			xoff: g.xoff * scale,
-			yoff: g.yoff * scale,
-			advance: g.xadvance + getSpacing(char),
-			width: atlasW / s.assets.internal.font.Font.sdfOversample * scale,
-			height: atlasH / s.assets.internal.font.Font.sdfOversample * scale,
-			uvX: g.x0 / atlas.width,
-			uvY: g.y0 / atlas.height,
-			uvWidth: atlasW / atlas.width,
-			uvHeight: atlasH / atlas.height
-		};
-	}
-
-	inline function copyFontCharTemplate(template:FontCharTemplate, out:FontChar):FontChar {
+	inline function copyFontCharTemplate(template:s.assets.internal.font.Font.CachedFontCharTemplate, scale:Float, spacing:Float, out:FontChar):FontChar {
 		if (out == null)
 			return {
-				xoff: template.xoff,
-				yoff: template.yoff,
-				advance: template.advance,
+				xoff: template.xoff * scale,
+				yoff: template.yoff * scale,
+				advance: template.advance * scale + spacing,
 				pos: {
 					x: 0.0,
 					y: 0.0,
-					width: template.width,
-					height: template.height
+					width: template.width * scale,
+					height: template.height * scale
 				},
 				uv: {
 					x: template.uvX,
@@ -185,11 +108,11 @@ class FontStyle implements s.shortcut.Shortcut {
 				}
 			};
 
-		out.xoff = template.xoff;
-		out.yoff = template.yoff;
-		out.advance = template.advance;
-		out.pos.width = template.width;
-		out.pos.height = template.height;
+		out.xoff = template.xoff * scale;
+		out.yoff = template.yoff * scale;
+		out.advance = template.advance * scale + spacing;
+		out.pos.width = template.width * scale;
+		out.pos.height = template.height * scale;
 		out.uv.x = template.uvX;
 		out.uv.y = template.uvY;
 		out.uv.width = template.uvWidth;
@@ -198,19 +121,13 @@ class FontStyle implements s.shortcut.Shortcut {
 	}
 
 	public inline function getFontCharFromAtlas(atlas:s.assets.internal.font.FontAtlas, scale:Float, char:Int):FontChar {
-		return copyFontCharTemplate(buildFontCharTemplate(atlas, scale, char), null);
+		return copyFontCharTemplate(font.getFontCharTemplate(atlas, char), scale, 0.0, null);
 	}
 
 	public function copyFontChar(char:Int, out:FontChar = null):FontChar {
-		final atlas = getTemplateAtlas();
-		final template = charTemplates.get(char);
-		if (template != null)
-			return copyFontCharTemplate(template, out);
-
+		final atlas = getAtlas();
 		final scale = pixelSize / atlas.size;
-		final built = buildFontCharTemplate(atlas, scale, char);
-		charTemplates.set(char, built);
-		return copyFontCharTemplate(built, out);
+		return copyFontCharTemplate(font.getFontCharTemplate(atlas, char), scale, getSpacing(char), out);
 	}
 
 	public function getFontChar(char:Int):FontChar {
@@ -273,7 +190,6 @@ class FontStyle implements s.shortcut.Shortcut {
 			return family;
 
 		font = value;
-		invalidateCharTemplates();
 		return family = value;
 	}
 

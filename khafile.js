@@ -188,7 +188,7 @@ for (const [k, v] of Object.entries(process.assetTypes)) {
 for (const [k, v] of Object.entries(process.shortcuts ?? {})) {
     if (typeof k !== "string" || typeof v !== "string" || !v) continue;
     project.addParameter(
-        `--macro s.ui.macro.MarkupMacro.useShortcut(${JSON.stringify(k)}, ${JSON.stringify(v)})`
+        `--macro s.ui.macro.ElementMacro.useShortcut(${JSON.stringify(k)}, ${JSON.stringify(v)})`
     );
 }
 
@@ -219,7 +219,7 @@ const hotloadEnabled = process.argv.includes("--watch") || process.argv.includes
 
 // hotload
 if (hotloadEnabled) { 
-    project.addDefine('HOTLOAD');
+    project.addDefine('hotload');
     // allow eval in electron
 	project.targetOptions.html5.unsafeEval = true;
     // to support constructors patching, optional

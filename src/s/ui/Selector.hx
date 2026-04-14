@@ -4,7 +4,7 @@ import s.ui.elements.Element;
 
 using StringTools;
 
-enum PropertyRule {
+enum AttrRule {
 	Exists;
 	Equals(value:Dynamic);
 }
@@ -15,7 +15,7 @@ enum Rule {
 	Tag(tag:String); // "..."
 	Type(type:Class<Element>); // a
 	Object(object:Element); // ~a
-	Properties(fields:Map<String, PropertyRule>); // [...=...]
+	Attrs(attrs:Map<String, AttrRule>); // [...=...]
 	// operations
 	Not(rule:Rule); // !... / not(...)
 	Or(rule1:Rule, rule2:Rule); // ... | ...
@@ -28,135 +28,142 @@ enum Rule {
 	Siblings(rule:Rule); // ... % ...
 }
 
-abstract Selector(SelectorData) from SelectorData {
+extern abstract Selector(Rule) from Rule to Rule {
 	@:from
-	public static function fromString(value:String) {
+	public static inline function fromString(value:String) {
 		// TODO: parse css selectors
 		return new Selector();
 	}
 
-	public function new(?rule:Rule) {
-		this = {rule: rule ?? Type(Element), slots: []};
-	}
+	public inline function new(?rule:Rule)
+		this = rule ?? Type(Element);
 
-	public function select(element:Element, callback:Element->Void):Void {
-		var slots = this.slots[element];
-		if (slots != null)
-			return;
+	public inline function matches(element:Element):Bool
+		return matchesRule(element, this);
 
-		slots = [];
-		this.slots[element] = slots;
+	public inline function select(element:Element, callback:Element->Void):Void
+		if (matches(element))
+			callback(element);
 
-		function match(r:Rule, ?cb:Bool->Void) {
-			cb = cb ?? b -> if (b) callback(element);
+	public inline function selectIfDirty(element:Element, callback:Element->Void):Void
+		if (needsSync(element))
+			select(element, callback);
 
-			switch r {
-				case Custom(f):
-					cb(f(element));
-				case Tag(tag):
-					var slot = _ -> cb(element.tag == tag);
-					// element.onTagDirty(slot);
-					// slots.push(() -> element.offTagDirty(slot));
-					slot(element.tag);
-				case Type(type):
-					cb(Std.isOfType(element, type));
-				case Object(object):
-					cb(object == element);
-				case Properties(fields):
-					for (f in fields.keyValueIterator())
-						switch f.value {
-							case Exists:
-								cb(Reflect.hasField(element, f.key));
-							case Equals(value):
-								var slot = _ -> cb(Reflect.getProperty(element, f.key) == value);
-								var signalName = '${f.key.charAt(0).toUpperCase()}${f.key.substr(1)}Changed';
-								var on = Reflect.field(element, "on" + signalName);
-								var off = Reflect.field(element, "off" + signalName);
-								if (on != null && off != null) {
-									Reflect.callMethod(element, on, [slot]);
-									slots.push(() -> Reflect.callMethod(element, off, [slot]));
-								}
-								slot(Reflect.getProperty(element, f.key));
-						}
-				case Not(rule):
-					match(rule, b -> cb(!b));
-				case Or(rule1, rule2), And(rule1, rule2):
-					var cond1 = false;
-					var cond2 = false;
-					switch r {
-						case Or(_, _):
-							match(rule1, b -> cb((cond1 = b) || cond2));
-							match(rule2, b -> cb(cond1 || (cond2 = b)));
-						default:
-							match(rule1, b -> cb((cond1 = b) && cond2));
-							match(rule2, b -> cb(cond1 && (cond2 = b)));
-					}
-				case Any(rules), All(rules):
-					var cond = 0;
-					final destination = switch r {
-						case All(_): rules.length - 1;
-						default: 0;
-					}
-					for (r in rules) {
-						var set = false;
-						match(r, b -> if (b) {
-							if (!set) {
-								set = true;
-								cb(++cond > destination);
+	public inline function deselect(element:Element):Bool
+		return false;
+
+	inline function needsSync(element:Element):Bool
+		return @:privateAccess element.dirty || needsRuleSync(element, this);
+
+	inline function matchesRule(element:Element, rule:Rule):Bool
+		return switch rule {
+			case Custom(f): f(element);
+			case Tag(tag): element.tag == tag;
+			case Type(type): Std.isOfType(element, type);
+			case Object(object): object == element;
+			case Attrs(fields):
+				var matched = true;
+				for (f in fields.keyValueIterator())
+					switch f.value {
+						case Exists:
+							if (!Reflect.hasField(element, f.key)) {
+								matched = false;
+								break;
 							}
-						} else if (set) --cond);
+						case Equals(value):
+							if (Reflect.getProperty(element, f.key) != value) {
+								matched = false;
+								break;
+							}
 					}
-				case Children(rule):
-					var s = new Selector(rule);
-					var slotApply = c -> s.select(c, callback);
-					var slotRemove = c -> s.deselect(c);
-					// element.onChildAdded(slotApply);
-					// element.onChildRemoved(slotRemove);
-					slots.push(() -> {
-						// element.offChildAdded(slotApply);
-						// element.offChildRemoved(slotRemove);
-						for (c in element.children)
-							slotRemove(c);
-					});
-					for (c in element.children)
-						slotApply(c);
-				case Parent(rule):
-					var s = new Selector(rule);
-					var slot = p -> {
-						if (p != null)
-							s.deselect(p);
-						if (element.parent != null)
-							s.select(element.parent, callback);
-					};
-					// element.onParentChanged(slot);
-					slots.push(() -> {
-						// element.offParentChanged(slot);
-						if (element.parent != null)
-							s.deselect(element.parent);
-					});
-					slot(null);
-				case Siblings(rule):
-					var s = new Selector(Parent(Children(And(Not(Object(element)), rule))));
-					s.select(element, callback);
-					slots.push(() -> s.deselect(element));
-				default:
-					true;
-			}
+				matched;
+			case Not(rule): !matchesRule(element, rule);
+			case Or(rule1, rule2): matchesRule(element, rule1) || matchesRule(element, rule2);
+			case And(rule1, rule2): matchesRule(element, rule1) && matchesRule(element, rule2);
+			case Any(rules):
+				var matched = false;
+				for (r in rules)
+					if (matchesRule(element, r)) {
+						matched = true;
+						break;
+					}
+				matched;
+			case All(rules):
+				var matched = true;
+				for (r in rules)
+					if (!matchesRule(element, r)) {
+						matched = false;
+						break;
+					}
+				matched;
+			case Parent(parentRule): element.parent != null && matchesRule(element.parent, parentRule);
+			case Children(rule):
+				var matched = false;
+				for (child in element.children)
+					if (matchesSubtree(child, rule)) {
+						matched = true;
+						break;
+					}
+				matched;
+			case Siblings(siblingRule):
+				var matched = false;
+				if (element.parent != null)
+					for (sibling in element.parent.children)
+						if (sibling != element && matchesRule(sibling, siblingRule)) {
+							matched = true;
+							break;
+						}
+				matched;
 		}
 
-		match(Or(this.rule, Children(this.rule)));
+	inline function matchesSubtree(element:Element, rule:Rule):Bool {
+		if (matchesRule(element, rule))
+			return true;
+		var d = false;
+		for (child in element.children)
+			if (matchesSubtree(child, rule)) {
+				d = true;
+				break;
+			}
+		return d;
 	}
 
-	public function deselect(element:Element):Bool {
-		var slots = this.slots[element];
-		if (slots != null)
-			for (s in slots)
-				s();
-		return this.slots.remove(element);
-	}
-}
+	inline function needsRuleSync(element:Element, rule:Rule):Bool
+		return @:privateAccess switch rule {
+			case Custom(_): true;
+			case Tag(_): element.tagDirty;
+			case Type(_), Object(_): false;
+			case Attrs(attrs):
+				var d = false;
+				for (f in attrs.keys())
+					if (attrDirty(element, f)) {
+						d = true;
+						break;
+					}
+				d;
+			case Not(rule): needsRuleSync(element, rule);
+			case Or(rule1, rule2), And(rule1, rule2): needsRuleSync(element, rule1) || needsRuleSync(element, rule2);
+			case Any(rules), All(rules):
+				var d = false;
+				for (r in rules)
+					if (needsRuleSync(element, r)) {
+						d = true;
+						break;
+					}
+				d;
+			case Parent(rule): element.parentDirty || element.parent != null && (element.parent.dirty || needsRuleSync(element.parent, rule));
+			case Children(_): element.children.dirty;
+			case Siblings(_): element.parentDirty || element.parent != null && (element.parent.dirty || element.parent.children.dirty);
+		}
 
-private typedef SelectorData = {
-	rule:Rule,
-	slots:Map<Element, Array<Void->Void>>
+	inline function attrDirty(element:Element, path:String):Bool {
+		final parts = path.split(".");
+
+		var target:Dynamic = element;
+		for (i in 0...parts.length - 1)
+			if (target = Reflect.getProperty(target, parts[i]) == null)
+				break;
+
+		return target == null ? true : Reflect.getProperty(target, '${parts[parts.length - 1]}Dirty') == true;
+	}
 }

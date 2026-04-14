@@ -105,7 +105,7 @@ class Server {
 	}
 
 	reportError(message) {
-		console.error(`HOTLOAD reportError: ${message} (clients: ${this.clients.size})`);
+		console.error(`hotload reportError: ${message} (clients: ${this.clients.size})`);
 		if (this.clients.size > 0) {
 			this.broadcast([{ type: "error", error: message }]);
 		}
