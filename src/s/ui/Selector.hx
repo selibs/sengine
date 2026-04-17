@@ -1,6 +1,6 @@
 package s.ui;
 
-import s.ui.elements.Element;
+import s.ui.Element;
 
 using StringTools;
 
@@ -28,7 +28,7 @@ enum Rule {
 	Siblings(rule:Rule); // ... % ...
 }
 
-extern abstract Selector(Rule) from Rule to Rule {
+abstract Selector(Rule) from Rule to Rule {
 	@:from
 	public static inline function fromString(value:String) {
 		// TODO: parse css selectors
@@ -53,7 +53,7 @@ extern abstract Selector(Rule) from Rule to Rule {
 		return false;
 
 	inline function needsSync(element:Element):Bool
-		return @:privateAccess element.dirty || needsRuleSync(element, this);
+		return @:privateAccess element.dirty || needsRuleUpdate(element, this);
 
 	inline function matchesRule(element:Element, rule:Rule):Bool
 		return switch rule {
@@ -128,7 +128,7 @@ extern abstract Selector(Rule) from Rule to Rule {
 		return d;
 	}
 
-	inline function needsRuleSync(element:Element, rule:Rule):Bool
+	inline function needsRuleUpdate(element:Element, rule:Rule):Bool
 		return @:privateAccess switch rule {
 			case Custom(_): true;
 			case Tag(_): element.tagDirty;
@@ -141,17 +141,17 @@ extern abstract Selector(Rule) from Rule to Rule {
 						break;
 					}
 				d;
-			case Not(rule): needsRuleSync(element, rule);
-			case Or(rule1, rule2), And(rule1, rule2): needsRuleSync(element, rule1) || needsRuleSync(element, rule2);
+			case Not(rule): needsRuleUpdate(element, rule);
+			case Or(rule1, rule2), And(rule1, rule2): needsRuleUpdate(element, rule1) || needsRuleUpdate(element, rule2);
 			case Any(rules), All(rules):
 				var d = false;
 				for (r in rules)
-					if (needsRuleSync(element, r)) {
+					if (needsRuleUpdate(element, r)) {
 						d = true;
 						break;
 					}
 				d;
-			case Parent(rule): element.parentDirty || element.parent != null && (element.parent.dirty || needsRuleSync(element.parent, rule));
+			case Parent(rule): element.parentDirty || element.parent != null && (element.parent.dirty || needsRuleUpdate(element.parent, rule));
 			case Children(_): element.children.dirty;
 			case Siblings(_): element.parentDirty || element.parent != null && (element.parent.dirty || element.parent.children.dirty);
 		}

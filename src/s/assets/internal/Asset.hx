@@ -10,9 +10,8 @@ abstract class Asset<T:Resource> implements s.shortcut.Shortcut {
 
 	@:signal public function loaded():Void;
 
-	function new(?name:String) {
+	function new(?name:String)
 		this.name = name;
-	}
 
 	abstract public function unload():Void;
 

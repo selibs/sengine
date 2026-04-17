@@ -132,9 +132,8 @@ class Audio implements s.shortcut.Shortcut {
 	 * @param retrigger Whether to restart playback if already playing.
 	 * @param waitForAsset Reserved for compatibility with older call sites.
 	 */
-	public inline function play(retrigger:Bool = false, waitForAsset:Bool = true) @:privateAccess {
-		asset.delay(_ -> panner.handle?.play(retrigger));
-	}
+	public inline function play(retrigger:Bool = false, waitForAsset:Bool = true)
+		@:privateAccess asset.delay(_ -> panner.handle?.play(retrigger));
 
 	/**
 	 * Pauses playback.
@@ -143,9 +142,8 @@ class Audio implements s.shortcut.Shortcut {
 	 *
 	 * @param waitForAsset Reserved for compatibility.
 	 */
-	public inline function pause(waitForAsset:Bool = true) @:privateAccess {
-		panner.handle?.pause();
-	}
+	public inline function pause(waitForAsset:Bool = true)
+		@:privateAccess panner.handle?.pause();
 
 	/**
 	 * Stops playback.
@@ -154,9 +152,8 @@ class Audio implements s.shortcut.Shortcut {
 	 *
 	 * @param waitForAsset Reserved for compatibility.
 	 */
-	public inline function stop(waitForAsset:Bool = true) @:privateAccess {
-		panner.handle?.stop();
-	}
+	public inline function stop(waitForAsset:Bool = true)
+		@:privateAccess panner.handle?.stop();
 
 	function set_uncompressed(value:Bool) {
 		if (value != uncompressed) {
@@ -172,7 +169,7 @@ class Audio implements s.shortcut.Shortcut {
 	}
 
 	@:slot(asset.assetLoaded)
-	function __syncAsset__(sound:Sound) {
+	function __updateAsset__(sound:Sound) {
 		if (uncompressed || sound.compressedData == null)
 			if (sound.uncompressedData == null)
 				sound.uncompress(() -> panner.handle = Aura.createUncompBufferChannel(sound));

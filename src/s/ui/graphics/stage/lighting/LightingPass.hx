@@ -35,7 +35,7 @@ class LightingPass extends StageRenderPass {
 			inputLayout: [inputLayout[0]], vertexShader: Reflect.field(Shaders, "s2d_2d_vert"), fragmentShader: Reflect.field(Shaders, "lighting_deferred_frag")
 			#else
 			inputLayout: inputLayout, vertexShader: Reflect.field(Shaders, "sprite_vert"), fragmentShader: Reflect.field(Shaders, "lighting_forward_frag"),
-			alphaBlendSource: SourceAlpha, alphaBlendDestination: InverseSourceAlpha, blendSource: SourceAlpha, blendDestination: InverseSourceAlpha
+			alphaBlendSource: One, alphaBlendDestination: InverseSourceAlpha, blendSource: SourceAlpha, blendDestination: InverseSourceAlpha
 			#end
 		});
 	}

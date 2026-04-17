@@ -1,15 +1,14 @@
 package s.assets.internal.image.format;
 
 import haxe.io.Bytes;
-import s.Assets;
 import s.assets.internal.image.Image;
 
-abstract class ImageDecoder extends AssetFormat<Image> {
+abstract class ImageDecoder<T:Image = Image> extends AssetFormat<T> {
 	public var width:Int = 0;
 	public var height:Int = 0;
 	public var pixels:Bytes = null;
 
-	public inline function finish():Void {
+	public function finish():Void {
 		if (width <= 0 || height <= 0)
 			DecodeTools.fail('Invalid image size: ${width}x$height');
 

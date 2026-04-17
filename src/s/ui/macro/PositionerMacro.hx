@@ -3,7 +3,7 @@ package s.ui.macro;
 using s.extensions.StringExt;
 
 class PositionerMacro {
-	public static macro function syncPositionerFlow(s:String, e:String) {
+	public static macro function updatePositionerFlow(s:String, e:String) {
 		var ds = macro $p{["s", "ui", "Direction", s.capitalize() + "To" + e.capitalize()]};
 		var de = macro $p{["s", "ui", "Direction", e.capitalize() + "To" + s.capitalize()]};
 		var sRef = macro $i{s};
@@ -36,17 +36,17 @@ class PositionerMacro {
 					tp = c.$s.positionDirty;
 				}
 
-				flowDirty = flowDirty || c.visibleDirty || c.visible && (lm || tm || lp || tp || c.$ld);
+				flowDirty = flowDirty || c.isVisibleDirty || c.isVisible && (lm || tm || lp || tp || c.$ld);
 
-				if (c.visible && (offsetDirty || c.visibleDirty || lm || lp))
+				if (c.isVisible && (offsetDirty || c.isVisibleDirty || lm || lp))
 					if (forward)
 						c.$s.position = base + c.$s.margin;
 					else
 						c.$e.position = base - c.$e.margin;
 
-				syncChild(c);
+				updateChild(c);
 
-				if (c.visible)
+				if (c.isVisible)
 					base = forward ? c.$e.position + c.$e.margin + spacing : c.$s.position - c.$s.margin - spacing;
 				offsetDirty = flowDirty;
 			}

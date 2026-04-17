@@ -13,5 +13,5 @@ void main() {
     vec2 dir = end - start;
     float dirLenSq = max(dot(dir, dir), 0.000001);
     float t = clamp(dot(fragPos - start, dir) / dirLenSq, 0.0, 1.0);
-    fragColor = texture(gradient, vec2(0.5, t)) * color;
+    fragColor = texture(gradient, vec2(t, 0.5)) * color;
 }

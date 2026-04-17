@@ -1,10 +1,10 @@
 package s.geometry;
 
-import s.math.Vec4I;
+import s.math.IVec4;
 
 @:forward(x, y)
 @:forward.new
-extern abstract RectI(Vec4I) from Vec4I to Vec4I {
+extern abstract RectI(IVec4) from IVec4 to IVec4 {
 	public var width(get, set):Int;
 	public var height(get, set):Int;
 	public var position(get, set):PositionI;

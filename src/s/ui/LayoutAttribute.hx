@@ -1,9 +1,9 @@
 package s.ui;
 
 import s.ui.Alignment;
-import s.ui.elements.Element;
+import s.ui.Element;
 
-@:allow(s.ui.elements.Element)
+@:allow(s.ui.Element)
 class LayoutAttribute extends s.shortcut.AttachedAttribute<Element> {
 	@:attr public var alignment:Alignment = AlignCenter;
 	@:attr(horizontal) public var fillWidth:Bool = false;

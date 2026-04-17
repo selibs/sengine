@@ -9,10 +9,9 @@ class DecodeTools {
 	public static inline function fail<T>(message:String):T
 		throw new Exception(message);
 
-	public static inline function ensureAvailable(bytes:Bytes, offset:Int, size:Int, what:String):Void {
+	public static inline function ensureAvailable(bytes:Bytes, offset:Int, size:Int, what:String):Void
 		if (size < 0 || offset < 0 || offset > bytes.length - size)
 			fail('Unexpected end of data while reading $what');
-	}
 
 	public static inline function u8(bytes:Bytes, offset:Int):Int
 		return bytes.get(offset);
@@ -86,11 +85,10 @@ class DecodeTools {
 		return pa <= pb && pa <= pc ? a : pb <= pc ? b : c;
 	}
 
-	public static function unpackBits(line:Bytes, bitDepth:Int, index:Int):Int {
+	public static inline function unpackBits(line:Bytes, bitDepth:Int, index:Int):Int
 		return unpackBitsAt(line, 0, bitDepth, index);
-	}
 
-	public static function unpackBitsAt(bytes:Bytes, baseOffset:Int, bitDepth:Int, index:Int):Int {
+	public static function unpackBitsAt(bytes:Bytes, baseOffset:Int, bitDepth:Int, index:Int):Int
 		return switch bitDepth {
 			case 1:
 				final byte = bytes.get(baseOffset + (index >> 3));
@@ -104,7 +102,6 @@ class DecodeTools {
 			case _:
 				fail('Unsupported packed bit depth: $bitDepth');
 		}
-	}
 
 	public static function packBitsDecode(bytes:Bytes, expectedLength:Int):Bytes {
 		final out = Bytes.alloc(expectedLength);

@@ -11,13 +11,13 @@ class FlowLayout extends DirectionalLayout {
 		this.axis = axis;
 	}
 
-	override function syncChildren() {
+	override function updateChildren() {
 		if (flowLayoutDirty)
 			flowDirty = true;
 
 		if (axis == Horizontal)
-			Layout.syncHorizontalWrap(this);
+			Layout.updateHorizontalWrap(this);
 		else
-			Layout.syncVerticalWrap(this);
+			Layout.updateVerticalWrap(this);
 	}
 }

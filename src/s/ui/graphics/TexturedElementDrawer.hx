@@ -2,11 +2,11 @@ package s.ui.graphics;
 
 import kha.graphics4.TextureUnit;
 import kha.graphics4.ConstantLocation;
-import s.ui.elements.DrawableElement;
+import s.ui.elements.Drawable;
 
-@:allow(s.ui.elements.DrawableElement)
-@:access(s.ui.elements.DrawableElement)
-abstract class TexturedElementDrawer<T:DrawableElement> extends ElementDrawer<T> {
+@:allow(s.ui.elements.Drawable)
+@:access(s.ui.elements.Drawable)
+abstract class TexturedElementDrawer<T:Drawable> extends ElementDrawer<T> {
 	var sourceTU:TextureUnit;
 	var clipRectCL:ConstantLocation;
 
@@ -22,7 +22,7 @@ abstract class TexturedElementDrawer<T:DrawableElement> extends ElementDrawer<T>
 
 	override function setUniforms(target:s.graphics.RenderTarget, element:T) {
 		final ctx = target.context3D;
-		ctx.setMat3(mvpCL, target.context2D.transform);
+		ctx.setMat3(mvpCL, element.globalTransform * target.context2D.transform);
 		ctx.setVec4(colorCL, element.realColor);
 	}
 }

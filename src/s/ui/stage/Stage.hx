@@ -5,12 +5,12 @@ import s.math.Vec2;
 import s.math.Mat3;
 import s.math.SMath;
 import s.graphics.RenderBuffer;
-import s.ui.elements.DrawableElement;
+import s.ui.elements.Drawable;
 import s.ui.stage.Camera;
 import s.ui.stage.StageLayer;
 
 @:access(s.ui.stage.objects.Object)
-class Stage extends DrawableElement {
+class Stage extends Drawable {
 	var layers:Array<StageLayer> = [];
 	var renderBuffer:RenderBuffer = new RenderBuffer();
 	@:inject(updateViewProjection)
@@ -88,7 +88,7 @@ class Stage extends DrawableElement {
 		return local2ScreenSpace(world2LocalSpace(point));
 
 	// @:slot(widthChanged, heightChanged)
-	function __syncSizeChanged__(_) {
+	function __updateSizeChanged__(_) {
 		renderBuffer.resize(Std.int(width), Std.int(height));
 		aspectRatio = width / height;
 	}

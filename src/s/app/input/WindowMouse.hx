@@ -9,6 +9,6 @@ class WindowMouse extends Mouse {
 	}
 
 	override function connect()
-		mouse.notifyWindowed(windowId, (b, x, y) -> down(b, x, y), (b, x, y) -> up(b, x, y), (x, y, dx, dy) -> moved(x, y, dx, dy), d -> scrolled(d),
+		mouse.notifyWindowed(windowId, (b, x, y) -> down(1 << b, x, y), (b, x, y) -> up(1 << b, x, y), (x, y, dx, dy) -> moved(x, y, dx, dy), d -> scrolled(d),
 			() -> exited());
 }

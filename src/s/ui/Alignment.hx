@@ -1,6 +1,6 @@
 package s.ui;
 
-import s.ui.elements.Element;
+import s.ui.Element;
 
 extern enum abstract Alignment(Int) from Int to Int {
 	var None:Int = 0;

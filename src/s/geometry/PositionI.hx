@@ -1,10 +1,10 @@
 package s.geometry;
 
-import s.math.Vec2I;
+import s.math.IVec2;
 
 @:forward.new
 @:forward(x, y)
-extern abstract PositionI(Vec2I) from Vec2I to Vec2I {
+extern abstract PositionI(IVec2) from IVec2 to IVec2 {
 	@:from
 	public static inline function fromPosition(value:Position):PositionI {
 		return new PositionI(Std.int(value.x), Std.int(value.y));

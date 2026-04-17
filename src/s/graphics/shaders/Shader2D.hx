@@ -11,7 +11,7 @@ abstract class Shader2D extends Shader {
 			inputLayout: [Shader.structure2D],
 			vertexShader: vert,
 			fragmentShader: frag,
-			alphaBlendSource: SourceAlpha,
+			alphaBlendSource: BlendOne,
 			alphaBlendDestination: InverseSourceAlpha,
 			blendSource: SourceAlpha,
 			blendDestination: InverseSourceAlpha

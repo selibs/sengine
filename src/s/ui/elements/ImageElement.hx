@@ -1,9 +1,9 @@
 package s.ui.elements;
 
 import s.math.Vec4;
-import s.assets.Image;
 import s.geometry.Rect;
 import s.graphics.RenderTarget;
+import s.assets.internal.image.Image;
 
 /**
  * RenderTarget sampling presets for [`ImageElement`](s.ui.elements.ImageElement).
@@ -28,7 +28,7 @@ enum ImageSampling {
  * Image-based drawable markup element.
  *
  * `ImageElement` renders a [`s.assets.Image`](s.assets.Image) inside the
- * rectangular bounds inherited from [`Element`](s.ui.elements.Element). The image is
+ * rectangular bounds inherited from [`Element`](s.ui.Element). The image is
  * loaded through an internal [`ImageAsset`](s.assets.ImageAsset), can be
  * restricted to a source sub-rectangle with
  * [`sourceClipRect`](s.ui.elements.ImageElement.sourceClipRect), fitted by
@@ -93,12 +93,12 @@ enum ImageSampling {
  * icon.fillMode = Stretch;
  * ```
  *
- * Loading is asynchronous from the point of view of the element API. Until the
+ * Loading is aupdatehronous from the point of view of the element API. Until the
  * asset is available, [`isLoaded`](s.ui.elements.ImageElement.isLoaded) is
  * `false` and the element skips rendering.
  *
  * `ImageElement` otherwise behaves like any other
- * [`DrawableElement`](s.ui.elements.DrawableElement): it participates in
+ * [`Drawable`](s.ui.elements.Drawable): it participates in
  * layout, anchoring, z-ordering, color modulation, visibility, opacity, and
  * child rendering.
  *
@@ -109,16 +109,16 @@ enum ImageSampling {
  * @see s.geometry.Rect
  */
 @:allow(s.ui.graphics.ImageElementDrawer)
-class ImageElement extends DrawableElement {
-	var parameters:TextureParameters = {
+class ImageElement<T:Image = Image> extends Drawable {
+	final parameters:TextureParameters = {
 		uAddressing: Clamp,
 		vAddressing: Clamp,
 		minificationFilter: LinearFilter,
 		magnificationFilter: LinearFilter,
 		mipmapFilter: NoMipFilter
 	}
-	var rect:Vec4 = new Vec4(0.0, 0.0, 1.0, 1.0);
-	var clipRect:Vec4 = new Vec4(0.0, 0.0, 1.0, 1.0);
+	final rect:Vec4 = new Vec4(0.0, 0.0, 1.0, 1.0);
+	@:attr final clipRect:Vec4 = new Vec4(0.0, 0.0, 1.0, 1.0);
 
 	/**
 	 * Whether the image referenced by
@@ -137,7 +137,7 @@ class ImageElement extends DrawableElement {
 	 * project's asset pipeline, but it typically matches the engine's image
 	 * identifiers such as `"ui/logo"` or `"atlas/icons"`.
 	 */
-	@:attr(sourceAsset) public var source:Image;
+	@:attr(sourceAsset) public var source(default, set):T;
 
 	/**
 	 * Optional source-space clipping rectangle in image pixels.
@@ -228,27 +228,29 @@ class ImageElement extends DrawableElement {
 	 *
 	 * @param source Asset key or path used to resolve the image asset.
 	 */
-	public function new(?source:String) {
+	public function new(?source:T) {
 		super();
 		this.source = source;
-		this.source.onLoaded(() -> sourceDirty = true);
 	}
 
-	@:slot(sync)
-	function syncSource(_)
+	function loadSource()
+		sourceDirty = true;
+
+	@:slot(update)
+	function updateSource(_)
 		if (isLoaded && (sourceAssetDirty || samplingDirty))
 			if (mipmap)
 				source.generateMipmaps(1);
 			else
 				source.setMipmaps([]);
 
-	@:slot(sync)
-	function syncClipRect(_) {
+	@:slot(update)
+	function updateClipRect(_) {
 		final hBoundsDirty = left.positionDirty || right.positionDirty;
 		final vBoundsDirty = top.positionDirty || bottom.positionDirty;
 
 		if (!isLoaded
-			&& !(sourceAssetDirty || sourceRegionDirty || imageLayoutDirty || widthDirty || heightDirty || hBoundsDirty || vBoundsDirty))
+			|| !(sourceAssetDirty || sourceRegionDirty || imageLayoutDirty || widthDirty || heightDirty || hBoundsDirty || vBoundsDirty))
 			return;
 
 		final imageWidth = source.width;
@@ -277,6 +279,7 @@ class ImageElement extends DrawableElement {
 		clipRect.y = baseClipY;
 		clipRect.z = baseClipW;
 		clipRect.w = baseClipH;
+		clipRectDirty = true;
 
 		switch fillMode {
 			case Tile:
@@ -345,7 +348,13 @@ class ImageElement extends DrawableElement {
 	function draw(target:RenderTarget) {
 		if (!isLoaded)
 			return;
-		s.ui.graphics.ImageElementDrawer.shader.render(target, this);
+		s.ui.graphics.ImageElementDrawer.shader.render(target, cast this); // TODO: no singletone shader instances. just classes
+	}
+
+	inline function set_source(value:T) {
+		source?.offLoaded(loadSource);
+		value?.onLoaded(loadSource);
+		return source = value;
 	}
 
 	inline function get_mipmap():Bool

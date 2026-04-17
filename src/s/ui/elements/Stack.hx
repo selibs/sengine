@@ -16,19 +16,19 @@ class Stack extends Element {
 		ctx.style.popOpacity();
 	}
 
-	override function syncChildren() {
-		sync(this);
+	override function updateChildren() {
+		update(this);
 		final c = current;
 		if (c != null)
-			syncChild(c);
+			updateChild(c);
 		flush();
 	}
 
 	inline function get_current():Element
 		return currentIndex >= 0 && currentIndex < children.length ? children[currentIndex] : null;
 
-	override function syncChildRemoved(child:Element) {
-		super.syncChildRemoved(child);
+	override function updateChildRemoved(child:Element) {
+		super.updateChildRemoved(child);
 		if (currentIndex >= children.length)
 			currentIndex = children.length - 1;
 	}

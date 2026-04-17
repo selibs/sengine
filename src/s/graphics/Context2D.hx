@@ -1,5 +1,6 @@
 package s.graphics;
 
+import s.assets.AnimatedImage;
 import s.math.Vec2;
 import s.math.Mat3;
 import s.math.SMath;
@@ -8,7 +9,7 @@ import s.geometry.Rect;
 import s.graphics.FontStyle;
 import s.ui.Alignment;
 
-using StringTools;
+using s.extensions.StringExt;
 
 class Context2DStyle implements s.shortcut.Shortcut {
 	final opacities:Array<Float> = [];
@@ -65,7 +66,7 @@ class Context2D implements s.shortcut.Shortcut {
 	public inline function disableScissor()
 		context.disableScissor();
 
-	public inline function render(?clear:Bool, ?clearColor:Color = Transparent, commands:Context2D->Void) {
+	public inline function draw(?clear:Bool, ?clearColor:Color = Transparent, commands:Context2D->Void) {
 		begin();
 		if (clear)
 			this.clear(clearColor);
@@ -156,6 +157,18 @@ class Context2D implements s.shortcut.Shortcut {
 	 */
 	public inline function drawScaledSubImage(img:Image, sx:Float, sy:Float, sw:Float, sh:Float, dx:Float, dy:Float, dw:Float, dh:Float)
 		s.graphics.shaders.ImageShader.shader.render(this, img, sx, sy, sw, sh, dx, dy, dw, dh);
+
+	public inline function drawAnimatedImage(img:AnimatedImage, x:Float, y:Float)
+		drawSubImage(img, x, y, img.currentFrame.x, img.currentFrame.y, img.width, img.height);
+
+	public inline function drawAnimatedSubImage(img:AnimatedImage, x:Float, y:Float, sx:Float, sy:Float, sw:Float, sh:Float)
+		drawSubImage(img, x, y, img.currentFrame.x + sx, img.currentFrame.y + sy, sw, sh);
+
+	public inline function drawAnimatedScaledImage(img:AnimatedImage, dx:Float, dy:Float, dw:Float, dh:Float)
+		drawScaledSubImage(img, img.currentFrame.x, img.currentFrame.y, img.width, img.height, dx, dy, dw, dh);
+
+	public inline function drawAnimatedScaledSubImage(img:AnimatedImage, sx:Float, sy:Float, sw:Float, sh:Float, dx:Float, dy:Float, dw:Float, dh:Float)
+		drawScaledSubImage(img, img.currentFrame.x + sx, img.currentFrame.y + sy, sw, sh, dx, dy, dw, dh);
 
 	/**
 	 * Draws a arc.
@@ -514,7 +527,7 @@ class Context2D implements s.shortcut.Shortcut {
 		s.graphics.shaders.TextShader.shader.render(this, chars);
 
 	public inline function drawString(text:String, x:Float, y:Float)
-		drawCharacters([for (i in 0...text.length) text.fastCodeAt(i)], 0, text.length, x, y);
+		drawCharacters(text.toCharArray(), 0, text.length, x, y);
 
 	public inline function drawCharacters(text:Array<Int>, start:Int, length:Int, x:Float, y:Float) {
 		var offset = x;
@@ -530,7 +543,7 @@ class Context2D implements s.shortcut.Shortcut {
 	}
 
 	public inline function drawAlignedString(text:String, x:Float, y:Float, alignment:Alignment):Void
-		drawAlignedCharacters([for (i in 0...text.length) text.fastCodeAt(i)], 0, text.length, x, y, alignment);
+		drawAlignedCharacters(text.toCharArray(), 0, text.length, x, y, alignment);
 
 	public inline function drawAlignedCharacters(text:Array<Int>, start:Int, length:Int, x:Float, y:Float, alignment:Alignment):Void {
 		var xoffset = 0.0;

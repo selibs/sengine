@@ -11,7 +11,7 @@ class Flow extends Positioner {
 		this.axis = axis;
 	}
 
-	function syncFlow() {
+	function updateFlow() {
 		if (flowLayoutDirty)
 			flowDirty = true;
 
@@ -59,11 +59,11 @@ class Flow extends Positioner {
 			var bp = cTrail.positionDirty;
 
 			childDirty = childDirty
-				|| c.visibleDirty
-				|| c.visible
+				|| c.isVisibleDirty
+				|| c.isVisible
 				&& (lm || rm || lp || rp || tm || bm || tp || bp || c.widthDirty || c.heightDirty);
 
-			if (c.visible) {
+			if (c.isVisible) {
 				final mStart = pLead.margin;
 				final mEnd = pTrail.margin;
 				final crossStart = cLead.margin;
@@ -94,7 +94,7 @@ class Flow extends Positioner {
 						cLead.position = lineBase - crossStart;
 				}
 
-				syncChild(c);
+				updateChild(c);
 
 				if (forward)
 					base = pTrail.position + mEnd + spacing;
@@ -106,7 +106,7 @@ class Flow extends Positioner {
 					lineSize = lineCandidate;
 				hasInLine = true;
 			} else {
-				syncChild(c);
+				updateChild(c);
 			}
 
 			offsetDirty = childDirty;

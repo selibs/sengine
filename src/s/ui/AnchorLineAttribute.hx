@@ -1,12 +1,12 @@
 package s.ui;
 
-import s.ui.elements.Element;
+import s.ui.Element;
 
 class HorizontalAnchor extends AnchorLineAttribute {}
 class VerticalAnchor extends AnchorLineAttribute {}
 
 @:allow(s.ui.AnchorsAttribute)
-@:allow(s.ui.elements.Element)
+@:allow(s.ui.Element)
 abstract class AnchorLineAttribute extends s.shortcut.AttachedAttribute<Element> {
 	final dependents:Array<Element> = [];
 
@@ -37,7 +37,7 @@ abstract class AnchorLineAttribute extends s.shortcut.AttachedAttribute<Element>
 	inline function removeDependent(el:Element)
 		dependents.remove(el);
 
-	@:access(s.ui.elements.Element)
+	@:access(s.ui.Element)
 	inline function markDependentsDirty()
 		for (d in dependents)
 			if (!d.dirty)

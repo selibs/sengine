@@ -23,7 +23,7 @@ class ExprError extends haxe.Exception {
 #end
 
 class ElementMacro {
-	public static macro function syncAxis(start:String, center:String, end:String, pos:String, length:String) {
+	public static macro function updateAxis(start:String, center:String, end:String, pos:String, length:String) {
 		var sd = start + "Dirty";
 		var cd = center + "Dirty";
 		var ed = end + "Dirty";
@@ -42,14 +42,14 @@ class ElementMacro {
 		var noBind = macro $as == null && $ac == null || $as == null && $ae == null || $ac == null && $ae == null;
 		var noAnchor = macro $as == null && $ac == null && $ae == null;
 
-		function syncPos()
+		function updatePos()
 			return macro {
 				$p = $s.position;
 				if (parent != null)
 					$p -= parent.$start.position;
 			}
 
-		function syncLength()
+		function updateLength()
 			return macro {
 				@:bypassAccessor $l = $e.position - $s.position;
 				lengthChanged = true;
@@ -69,7 +69,7 @@ class ElementMacro {
 				$e.position = $ae.position - $ae.padding - $e.margin;
 
 			if ($s.positionDirty) {
-				${syncPos()};
+				${updatePos()};
 				if ($ae == null && $ac == null) {
 					$e.position = $s.position + $l;
 					$c.position = ($s.position + $e.position) * 0.5;
@@ -78,7 +78,7 @@ class ElementMacro {
 						$c.position = ($s.position + $e.position) * 0.5;
 					else if ($ae == null && $ac != null)
 						$e.position = $c.position + ($c.position - $s.position);
-					${syncLength()};
+					${updateLength()};
 				}
 			}
 
@@ -87,15 +87,15 @@ class ElementMacro {
 					var d = $l * 0.5;
 					$s.position = $c.position - d;
 					$e.position = $c.position + d;
-					${syncPos()};
+					${updatePos()};
 				} else {
 					if ($as != null && $ae == null)
 						$e.position = $c.position + ($c.position - $s.position);
 					else if ($as == null && $ae != null) {
 						$s.position = $c.position - ($e.position - $c.position);
-						${syncPos()};
+						${updatePos()};
 					}
-					${syncLength()};
+					${updateLength()};
 				}
 			}
 
@@ -103,15 +103,15 @@ class ElementMacro {
 				if ($as == null && $ac == null) {
 					$s.position = $e.position - $l;
 					$c.position = ($s.position + $e.position) * 0.5;
-					${syncPos()};
+					${updatePos()};
 				} else {
 					if ($as != null && $ac == null)
 						$c.position = ($s.position + $e.position) * 0.5;
 					else if ($as == null && $ac != null) {
 						$s.position = $c.position - ($e.position - $c.position);
-						${syncPos()};
+						${updatePos()};
 					}
-					${syncLength()};
+					${updateLength()};
 				}
 			}
 
@@ -125,9 +125,9 @@ class ElementMacro {
 					$e.position = $s.position + $l;
 				} else if ($as == null && $ac != null && $ae == null) {
 					$e.position = $c.position + ($c.position - $s.position);
-					${syncLength()};
+					${updateLength()};
 				} else if ($as == null && $ac == null && $ae != null) {
-					${syncLength()};
+					${updateLength()};
 					$c.position = $s.position + $l * 0.5;
 				}
 			}
@@ -139,12 +139,12 @@ class ElementMacro {
 				} else if ($as == null && $ac == null && $ae != null) {
 					$s.position = $e.position - $l;
 					$c.position = $e.position - $l * 0.5;
-					${syncPos()};
+					${updatePos()};
 				} else if ($as == null && $ac != null && $ae == null) {
 					var d = $l * 0.5;
 					$s.position = $c.position - d;
 					$e.position = $c.position + d;
-					${syncPos()};
+					${updatePos()};
 				}
 			}
 
@@ -158,18 +158,19 @@ class ElementMacro {
 	static var stylesheets:Map<String, Map<String, Array<Expr>>>;
 
 	public static var shortcuts(default, null):Map<String, String> = [
-		"element" => "s.ui.elements.Element",
-		"drawable" => "s.ui.elements.DrawableElement",
-		"interactive" => "s.ui.elements.InteractiveElement",
+		"element" => "s.ui.Element",
+		"drawable" => "s.ui.elements.Drawable",
+		"interactive" => "s.ui.elements.Interactive",
 		// controls
-		// "button" => "s.ui.controls.Button",
-		// "input" => "s.ui.controls.TextInput",
-		// "edit" => "s.ui.elements.TextEdit",
+		"button" => "s.ui.elements.controls.Button",
+		// "input" => "s.ui.elements.controls.TextInput",
+		// "edit" => "s.ui.elements.elements.TextEdit",
 		// elements
 		"text" => "s.ui.elements.Text",
 		"label" => "s.ui.elements.Label",
 		"canvas" => "s.ui.elements.Canvas",
 		"image" => "s.ui.elements.ImageElement",
+		"image.animated" => "s.ui.elements.AnimatedImageElement",
 		// shapes
 		"ellipse" => "s.ui.elements.shapes.Ellipse",
 		"triangle" => "s.ui.elements.shapes.Triangle",
@@ -421,14 +422,14 @@ class ElementMacro {
 		}
 		args.push({
 			name: "parent",
-			type: macro :s.ui.elements.Element
+			type: macro :s.ui.Element
 		});
 
 		if (expr != null)
 			field.kind = FFun({
 				args: args,
 				expr: block(transform(expr).concat([macro return parent])),
-				ret: macro :s.ui.elements.Element
+				ret: macro :s.ui.Element
 			});
 	}
 

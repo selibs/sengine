@@ -2,6 +2,7 @@ package s.assets;
 
 import haxe.io.Bytes;
 import haxe.io.Path;
+import kha.Assets;
 import s.URI;
 import s.assets.AssetLocation;
 
@@ -91,6 +92,31 @@ abstract AssetLocation(AssetLocationType) from AssetLocationType to AssetLocatio
 	static function normalizeFilePath(value:String):String
 		return value.replace("\\", "/");
 
+	static function findResourceDescription(name:String):Dynamic {
+		if (name == null || name == "")
+			return null;
+
+		final field = name + "Description";
+		for (list in [cast Assets.images, cast Assets.sounds, cast Assets.blobs, cast Assets.fonts, cast Assets.videos]) {
+			final desc = Reflect.field(list, field);
+			if (desc != null)
+				return desc;
+		}
+		return null;
+	}
+
+	static function resourceExtension(name:String):String {
+		final ext = Path.extension(name ?? "");
+		if (ext != null && ext != "")
+			return ext;
+
+		final desc:Dynamic = findResourceDescription(name);
+		if (desc != null && desc.files != null && desc.files.length > 0)
+			return Path.extension(desc.files[0]);
+
+		return "";
+	}
+
 	static function cloneUri(uri:URI):URI
 		return new URI(uri.proto, uri.secure, uri.hasAuthority, uri.host, uri.user, uri.pass, uri.path, uri.query, uri.fragment);
 
@@ -142,7 +168,7 @@ abstract AssetLocation(AssetLocationType) from AssetLocationType to AssetLocatio
 
 	function get_extension():String
 		return switch this {
-			case Resource(name): Path.extension(name ?? "");
+			case Resource(name): resourceExtension(name);
 			case File(path): Path.extension(path ?? "");
 			case Web(url): Path.extension(url.path ?? "");
 		}

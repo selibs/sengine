@@ -7,6 +7,6 @@ class ColumnLayout extends DirectionalLayout {
 		super(direction);
 	}
 
-	function syncFlow()
-		Layout.syncVerticalFlow(this);
+	function updateFlow()
+		Layout.updateVerticalFlow(this);
 }

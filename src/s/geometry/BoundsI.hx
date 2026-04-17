@@ -1,16 +1,16 @@
 package s.geometry;
 
-import s.math.Vec4I;
+import s.math.IVec4;
 
 @:forward.new
-extern abstract BoundsI(Vec4I) from Vec4I to Vec4I {
+extern abstract BoundsI(IVec4) from IVec4 to IVec4 {
 	public var left(get, set):Int;
 	public var top(get, set):Int;
 	public var right(get, set):Int;
 	public var bottom(get, set):Int;
 
 	public inline function new(left:Int, top:Int, right:Int, bottom:Int) {
-		this = new Vec4I(left, top, right, bottom);
+		this = new IVec4(left, top, right, bottom);
 	}
 
 	@:from

@@ -59,6 +59,10 @@ extern abstract RenderTarget(ImageTexture) {
 	@:to
 	private inline function toCanvas():kha.Canvas
 		return toResource();
+
+	@:to
+	private inline function toAsset():s.assets.Image
+		return this;
 }
 
 private class ImageTexture extends s.assets.internal.image.Image {

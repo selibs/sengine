@@ -25,7 +25,7 @@ class Text extends Label {
 		// 	ctx.drawString(line.text, line.x, line.y);
 	}
 
-	// override function syncText() {
+	// override function updateText() {
 	// 	if (!font.isLoaded)
 	// 		return;
 	// 	final contentLeft = left.position + left.padding;

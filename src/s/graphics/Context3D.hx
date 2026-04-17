@@ -17,11 +17,11 @@ import s.math.Mat3;
 import s.math.Mat4;
 import s.math.SMath;
 import s.math.Vec2;
-import s.math.Vec2I;
+import s.math.IVec2;
 import s.math.Vec3;
-import s.math.Vec3I;
+import s.math.IVec3;
 import s.math.Vec4;
-import s.math.Vec4I;
+import s.math.IVec4;
 
 private final logger:Log.Logger = new Log.Logger("RENDER");
 
@@ -32,9 +32,9 @@ enum DrawCommand {
 	ConstantBool(location:ConstantLocation, value:Bool);
 	ConstantInt(location:ConstantLocation, value:Int);
 	ConstantInts(location:ConstantLocation, value:Int32Array);
-	ConstantIVec2(location:ConstantLocation, value:Vec2I);
-	ConstantIVec3(location:ConstantLocation, value:Vec3I);
-	ConstantIVec4(location:ConstantLocation, value:Vec4I);
+	ConstantIVec2(location:ConstantLocation, value:IVec2);
+	ConstantIVec3(location:ConstantLocation, value:IVec3);
+	ConstantIVec4(location:ConstantLocation, value:IVec4);
 	ConstantFloat(location:ConstantLocation, value:Float);
 	ConstantFloats(location:ConstantLocation, value:Float32Array);
 	ConstantVec2(location:ConstantLocation, value:Vec2);
@@ -654,19 +654,19 @@ class Context3D {
 	public inline function setInts(location:ConstantLocation, value:Int32Array)
 		addCommand(ConstantInts(location, value));
 
-	extern overload public inline function setIVec2(location:ConstantLocation, value:Vec2I)
+	extern overload public inline function setIVec2(location:ConstantLocation, value:IVec2)
 		addCommand(ConstantIVec2(location, value));
 
 	extern overload public inline function setIVec2(location:ConstantLocation, value1:Int, value2:Int)
 		setIVec2(location, ivec2(value1, value2));
 
-	extern overload public inline function setIVec3(location:ConstantLocation, value:Vec3I)
+	extern overload public inline function setIVec3(location:ConstantLocation, value:IVec3)
 		addCommand(ConstantIVec3(location, value));
 
 	extern overload public inline function setIVec3(location:ConstantLocation, value1:Int, value2:Int, value3:Int)
 		setIVec3(location, ivec3(value1, value2, value3));
 
-	extern overload public inline function setIVec4(location:ConstantLocation, value:Vec4I)
+	extern overload public inline function setIVec4(location:ConstantLocation, value:IVec4)
 		addCommand(ConstantIVec4(location, value));
 
 	extern overload public inline function setIVec4(location:ConstantLocation, value1:Int, value2:Int, value3:Int, value4:Int)

@@ -16,14 +16,10 @@ import s.app.Time;
  * ```
  */
 class Timer {
-	var listener:{
-		f:Void->Void,
-		time:Float
-	};
+	var slot:{callback:Void->Void, time:Float};
 
-	var callback:Void->Void;
-	var originalCallback:Void->Void;
-	var delay:Float;
+	final callback:Void->Void;
+	final delay:Float;
 
 	/**
 	 * Whether the timer is currently scheduled.
@@ -56,8 +52,7 @@ class Timer {
 	 * @param callback Function to call when the timer fires.
 	 * @param delay Delay in seconds.
 	 */
-	public function new(callback:Void->Void, delay:Float) {
-		this.originalCallback = callback;
+	public function new(callback:Void->Void, delay:Float = 1.0) {
 		this.callback = callback;
 		this.delay = delay;
 	}
@@ -72,8 +67,7 @@ class Timer {
 	 */
 	public function start(lock:Bool = true):Bool {
 		if (!lock || !started) {
-			callback = originalCallback;
-			listener = Time.notifyOnTime(callback, Time.time + delay);
+			slot = Time.notifyOnTime(callback, Time.time + delay);
 			return true;
 		}
 		return false;
@@ -85,10 +79,8 @@ class Timer {
 	 * This also restores the original callback when the timer had been configured
 	 * through [`repeat`](s.Timer.repeat) or [`loop`](s.Timer.loop).
 	 */
-	public function stop() {
-		Time.timeListeners.remove(listener);
-		callback = originalCallback;
-	}
+	public function stop()
+		return Time.timeListeners.remove(slot);
 
 	/**
 	 * Starts the timer repeatedly.
@@ -103,22 +95,21 @@ class Timer {
 		if (count < 0)
 			return false;
 		if (!lock || !started) {
-			final f = originalCallback;
 			if (count > 0)
-				callback = function() {
-					f();
+				slot.callback = () -> {
+					callback();
 					count--;
 					if (count > 0)
-						listener = Time.notifyOnTime(callback, Time.time + delay);
+						slot = Time.notifyOnTime(slot.callback, Time.time + delay);
 					else
-						callback = f;
+						slot.callback = callback;
 				};
 			else
-				callback = function() {
-					f();
-					listener = Time.notifyOnTime(callback, Time.time + delay);
+				slot.callback = () -> {
+					callback();
+					slot = Time.notifyOnTime(slot.callback, Time.time + delay);
 				};
-			listener = Time.notifyOnTime(callback, Time.time + delay);
+			slot = Time.notifyOnTime(slot.callback, Time.time + delay);
 			return true;
 		}
 		return false;
@@ -132,13 +123,11 @@ class Timer {
 	 * @param lock Whether to skip starting when the timer is already running.
 	 * @return `true` if looping was started.
 	 */
-	public function loop(lock:Bool = true):Bool {
+	public function loop(lock:Bool = true):Bool
 		return repeat(0, lock);
-	}
 
-	function get_started():Bool {
-		return Time.timeListeners.contains(listener);
-	}
+	function get_started():Bool
+		return Time.timeListeners.contains(slot);
 
 	function set_started(value:Bool):Bool {
 		if (!started && value)

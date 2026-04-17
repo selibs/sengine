@@ -117,6 +117,7 @@ extern abstract ObjectList<T:Object<T>>(ObjectListData<T>) to ObjectListData<T> 
 	private inline function arrayWrite(i:Int, x:T):T {
 		if (!contains(x))
 			list[i] = x;
+		setObjectParent(x, object);
 		return x;
 	}
 

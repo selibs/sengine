@@ -1,13 +1,13 @@
 package s.geometry;
 
-import s.math.Vec2I;
+import s.math.IVec2;
 
-extern abstract SizeI(Vec2I) from Vec2I to Vec2I {
+extern abstract SizeI(IVec2) from IVec2 to IVec2 {
 	public var width(get, set):Int;
 	public var height(get, set):Int;
 
 	public inline function new(width:Int, height:Int):SizeI {
-		this = new Vec2I(width, height);
+		this = new IVec2(width, height);
 	}
 
 	@:from

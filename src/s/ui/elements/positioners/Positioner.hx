@@ -2,7 +2,7 @@ package s.ui.elements.positioners;
 
 import s.ui.Direction;
 
-abstract class Positioner extends ContainerElement {
+abstract class Positioner extends Container {
 	var flowDirty:Bool = false;
 
 	@:attr(flowLayout) public var direction:Direction;
@@ -13,11 +13,11 @@ abstract class Positioner extends ContainerElement {
 		this.direction = direction;
 	}
 
-	override function syncChildren() {
-		final syncFlow = Reflect.field(this, "syncFlow");
-		if (syncFlow != null)
-			Reflect.callMethod(this, syncFlow, []);
+	override function updateChildren() {
+		final updateFlow = Reflect.field(this, "updateFlow");
+		if (updateFlow != null)
+			Reflect.callMethod(this, updateFlow, []);
 		else
-			super.syncChildren();
+			super.updateChildren();
 	}
 }

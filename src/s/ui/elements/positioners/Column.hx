@@ -7,7 +7,7 @@ class Column extends Positioner {
 		super(direction);
 	}
 
-	function syncFlow() {
-		s.ui.macro.PositionerMacro.syncPositionerFlow("top", "bottom");
+	function updateFlow() {
+		s.ui.macro.PositionerMacro.updatePositionerFlow("top", "bottom");
 	}
 }

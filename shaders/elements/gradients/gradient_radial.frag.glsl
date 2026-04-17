@@ -11,5 +11,5 @@ layout(location = 0) out vec4 fragColor;
 
 void main() {
     float t = distance(start, fragPos) / distance(start, end);
-    fragColor = texture(gradient, vec2(0.5, t)) * color;
+    fragColor = texture(gradient, vec2(t, 0.5)) * color;
 }

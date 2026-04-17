@@ -14,7 +14,8 @@ class ShaderMacro {
 			return fields;
 
 		final cls = clsRef.get();
-		if (cls.isAbstract || cls.params.length > 0 || Lambda.exists(fields, f -> f.name == "shader"))
+		final hasRequiredTypeParams = Lambda.exists(cls.params, p -> p.defaultType == null);
+		if (cls.isAbstract || hasRequiredTypeParams || Lambda.exists(fields, f -> f.name == "shader"))
 			return fields;
 
 		final tp:TypePath = {pack: cls.pack, name: cls.name};

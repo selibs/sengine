@@ -1,9 +1,9 @@
 package s.ui;
 
 import s.ui.AnchorLineAttribute;
-import s.ui.elements.Element;
+import s.ui.Element;
 
-@:allow(s.ui.elements.Element)
+@:allow(s.ui.Element)
 class AnchorsAttribute extends s.shortcut.AttachedAttribute<Element> {
 	@:attr(horizontal) public var left:HorizontalAnchor = null;
 	@:attr(horizontal) public var hCenter:HorizontalAnchor = null;

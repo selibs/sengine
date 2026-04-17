@@ -25,7 +25,7 @@ class SpritePass extends StageRenderPass {
 			// inputLayout: inputLayout,
 			vertexShader: Reflect.field(Shaders, "sprite_vert"),
 			fragmentShader: Reflect.field(Shaders, "sprite_frag"),
-			alphaBlendSource: SourceAlpha,
+			alphaBlendSource: One,
 			alphaBlendDestination: InverseSourceAlpha,
 			blendSource: SourceAlpha,
 			blendDestination: InverseSourceAlpha

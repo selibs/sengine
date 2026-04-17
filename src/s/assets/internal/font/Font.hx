@@ -111,8 +111,8 @@ class Font extends Asset<kha.Font> {
 		return key;
 	}
 
-	static function bakeFontBitmap(data:Blob, offset:Int, pixel_height:Float, pixels:Blob, pw:Int, ph:Int, chars:Array<Int>,
-			chardata:Vector<Stbtt_bakedchar>, fontIndex:Int, bakedFontSize:Int, glyphSegments:IntMap<Array<GlyphSegment>>):Int @:privateAccess {
+	static function bakeFontBitmap(data:Blob, offset:Int, pixel_height:Float, pixels:Blob, pw:Int, ph:Int, chars:Array<Int>, chardata:Vector<Stbtt_bakedchar>,
+			fontIndex:Int, bakedFontSize:Int, glyphSegments:IntMap<Array<GlyphSegment>>):Int @:privateAccess {
 		var scale:Float;
 		var x:Int, y:Int, bottom_y:Int;
 		var f:Stbtt_fontinfo = new Stbtt_fontinfo();
@@ -613,15 +613,30 @@ class Font extends Asset<kha.Font> {
 	var glyphSegments:IntMap<Array<GlyphSegment>> = new IntMap();
 	var charTemplates:IntMap<IntMap<CachedFontCharTemplate>> = new IntMap();
 
-	inline function syncGlyphs(glyphs:Array<Int>) if (!glyphsEqual(glyphs, oldGlyphs)) { oldGlyphs = glyphs.copy(); oldGlyphHash = hashGlyphs(oldGlyphs); rebuildCharBlocks(oldGlyphs); }
-	inline function resolveFontOffset():Int { final offset = StbTruetype.stbtt_GetFontOffsetForIndex(blob, fontIndex); return offset == -1 ? StbTruetype.stbtt_GetFontOffsetForIndex(blob, 0) : offset; }
-	inline function ensureAtlasTemplates(atlasKey:Int):IntMap<CachedFontCharTemplate> { var atlasTemplates = charTemplates.get(atlasKey); if (atlasTemplates == null) charTemplates.set(atlasKey, atlasTemplates = new IntMap()); return atlasTemplates; }
+	inline function updateGlyphs(glyphs:Array<Int>)
+		if (!glyphsEqual(glyphs, oldGlyphs)) {
+			oldGlyphs = glyphs.copy();
+			oldGlyphHash = hashGlyphs(oldGlyphs);
+			rebuildCharBlocks(oldGlyphs);
+		}
+
+	inline function resolveFontOffset():Int {
+		final offset = StbTruetype.stbtt_GetFontOffsetForIndex(blob, fontIndex);
+		return offset == -1 ? StbTruetype.stbtt_GetFontOffsetForIndex(blob, 0) : offset;
+	}
+
+	inline function ensureAtlasTemplates(atlasKey:Int):IntMap<CachedFontCharTemplate> {
+		var atlasTemplates = charTemplates.get(atlasKey);
+		if (atlasTemplates == null)
+			charTemplates.set(atlasKey, atlasTemplates = new IntMap());
+		return atlasTemplates;
+	}
 
 	public function getAtlas(size:Int) @:privateAccess {
 		final nominalSize = quantizeAtlasSize(size > 0 ? size : 1);
 		final bakedFontSize = nominalSize * sdfOversample;
 		final glyphs = sanitizeGlyphs(kha.graphics2.Graphics.fontGlyphs);
-		syncGlyphs(glyphs);
+		updateGlyphs(glyphs);
 
 		var index = makeAtlasKey(fontIndex, nominalSize, oldGlyphHash);
 		var atlas = atlases.get(index);

@@ -1,5 +1,6 @@
 package s;
 
+import kha.Scheduler;
 import kha.System;
 import kha.Framebuffer;
 import aura.Aura;
@@ -53,7 +54,6 @@ enum AppState {
  * @:app.window(width = 750, height = 500)
  * @:app.framebuffer(samplesPerPixel = 2, verticalSync = false)
  * class Main extends s.App {
- * }
  * ```
  *
  * The example above becomes roughly:
@@ -213,7 +213,6 @@ enum AppState {
 @:autoBuild(s.macro.AppMacro.build())
 class App implements s.shortcut.Shortcut {
 	static final logger:Log.Logger = new Log.Logger("APP");
-	static final windows:Array<Window> = [];
 
 	@:readonly @:alias public static var language:String = System.language;
 
@@ -234,6 +233,8 @@ class App implements s.shortcut.Shortcut {
 	 * [`start`](s.App.start) has begun setup, not at module load time.
 	 */
 	public static final input:{mouse:Mouse, keyboard:Keyboard} = {mouse: null, keyboard: null};
+
+	@:signal public static function update():Void;
 
 	/**
 	 * Starts the application.
@@ -272,8 +273,8 @@ class App implements s.shortcut.Shortcut {
 			Shader.compileShaders();
 
 			Assets.loadShelf({
-				fonts: ["font_default" => "font_default"],
-				images: ["image_default" => "image_default"]
+				fonts: ["default" => "font_default"],
+				images: ["default" => "image_default"]
 			}, progress -> {
 				if (progress == 1.0) {
 					System.notifyOnFrames(render);
@@ -357,15 +358,12 @@ class App implements s.shortcut.Shortcut {
 
 	static function render(frames:Array<Framebuffer>) {
 		Time.update();
+		update();
 
 		for (frame in frames) {
-			final window = windows[@:privateAccess frame.window];
-			window.render();
-
-			final g2 = frame.g2;
-			g2.begin();
-			g2.drawImage(window.backbuffer, 0, 0);
-			g2.end();
+			frame.g2.begin();
+			frame.g2.drawImage(Window.get(@:privateAccess frame.window).backbuffer, 0, 0);
+			frame.g2.end();
 		}
 	}
 }

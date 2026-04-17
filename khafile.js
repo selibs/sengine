@@ -157,14 +157,16 @@ project.addAssets("assets/**", {
 
 // asset types
 process.assetTypes = process.assetTypes ?? {}
-process.assetTypes["font"] = {
+process.assetTypes["Font"] = {
     type: "s.assets.internal.font.Font", 
+    resource: "Font",
     formats:{
         "ttf": "s.assets.internal.font.format.TTF"
     }
 };
-process.assetTypes["image"] = {
+process.assetTypes["Image"] = {
     type: "s.assets.internal.image.Image", 
+    resource: "Image",
     formats:{
         "bmp": "s.assets.internal.image.format.BMP",
         "exr": "s.assets.internal.image.format.EXR",
@@ -173,7 +175,14 @@ process.assetTypes["image"] = {
         "png": "s.assets.internal.image.format.PNG",
         "psd": "s.assets.internal.image.format.PSD",
         "tga": "s.assets.internal.image.format.TGA",
-        "tif": "s.assets.internal.image.format.TIF",
+        "tif": "s.assets.internal.image.format.TIF"
+    }
+};
+process.assetTypes["AnimatedImage"] = {
+    type: "s.assets.internal.image.AnimatedImage", 
+    resource: "Image",
+    formats:{
+        "gif": "s.assets.internal.image.format.GIF"
     }
 };
 
@@ -181,7 +190,7 @@ for (const [k, v] of Object.entries(process.assetTypes)) {
     var formats = [];
     for ([e, t] of Object.entries(v.formats))
         formats.push({extension: e, type: t});
-    project.addParameter(`--macro s.macro.AssetsMacro.addAssetType("${k}", "${v.type}", ${JSON.stringify(formats)})`);
+    project.addParameter(`--macro s.macro.AssetsMacro.addAssetType("${k}", "${v.resource}", "${v.type}", ${JSON.stringify(formats)})`);
 }
 
 // markup shortcuts

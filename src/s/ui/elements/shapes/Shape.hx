@@ -1,7 +1,7 @@
 package s.ui.elements.shapes;
 
 @:allow(s.ui.graphics.shapes.ShapeDrawer)
-abstract class Shape extends DrawableElement {
+abstract class Shape extends Drawable {
 	var realRadius:Float = 0.0;
 
 	@:attr.attached public final border:BorderAttribute;
@@ -13,8 +13,8 @@ abstract class Shape extends DrawableElement {
 		border = new BorderAttribute(this);
 	}
 
-	@:slot(sync)
-	function syncRealRadius(_)
+	@:slot(update)
+	function updateRealRadius(_)
 		if (radiusDirty || widthDirty || heightDirty)
 			realRadius = Math.min(radius, Math.min(width, height) * 0.5);
 }

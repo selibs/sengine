@@ -1,16 +1,17 @@
 package s.ui.elements.gradients;
 
 import s.math.Vec2;
+import s.math.Interpolation;
 import s.graphics.RenderTarget;
 
 @:structInit
 class GradientStop implements s.shortcut.Shortcut {
-	@:attr public var color:Color;
 	@:attr public var position:Float;
+	@:attr public var color:Color;
 }
 
 @:forward.new
-@:forward(length, concat, slice, toString, contains, indexOf, lastIndexOf, copy, iterator, keyValueIterator, map, filter,)
+@:forward(length, concat, slice, toString, contains, indexOf, lastIndexOf, copy, iterator, keyValueIterator, map, filter)
 extern abstract GradientStops(Array<GradientStop>) from Array<GradientStop> {
 	@:op([])
 	inline function arrayRead(i:Int)
@@ -19,7 +20,7 @@ extern abstract GradientStops(Array<GradientStop>) from Array<GradientStop> {
 
 @:dox(hide)
 @:allow(s.ui.graphics.gradients.GradientDrawer)
-abstract class Gradient extends DrawableElement {
+abstract class Gradient extends Drawable {
 	var gradient:RenderTarget;
 
 	public var start:Vec2 = new Vec2(0.5, 0.0);
@@ -28,44 +29,60 @@ abstract class Gradient extends DrawableElement {
 	@:attr(gradient) public var resolution(default, set):Int = 256;
 	@:attr(gradient) public var interpolation:Interpolation = Interpolation.Linear;
 
-	public function new() {
+	public function new(?stops:GradientStops) {
 		super();
-		gradient = new RenderTarget(1, resolution);
+		gradient = new RenderTarget(resolution, 1);
+		if (stops != null)
+			this.stops = stops;
 	}
 
-	@:slot(sync)
-	function syncGradient(_) {
-		if (!gradientDirty)
+	@:slot(update)
+	function updateGradient(_) {
+		if (!gradientDirty && !resolutionDirty)
 			return;
 
 		if (resolutionDirty) {
 			gradient.unload();
-			gradient = new RenderTarget(1, resolution);
+			gradient = new RenderTarget(resolution, 1);
 		}
+
+		gradient.context2D.begin();
+		gradient.context2D.clear(Transparent);
+		gradient.context2D.end();
 
 		var ctx = gradient.context1D;
 		ctx.begin();
 
 		if (stops == null || stops.length == 0)
 			for (i in 0...resolution)
-				ctx.setPixel(0, i, Transparent);
+				ctx.setPixel(i, 0, Transparent);
 		else if (stops.length == 1) {
 			var c = stops[0].color;
 			for (i in 0...resolution)
-				ctx.setPixel(0, i, c);
+				ctx.setPixel(i, 0, c);
 		} else {
+			var last = stops.length - 1;
 			var j = 0;
-			var stop = stops[j];
-			var next = stops[++j];
-
 			for (i in 0...resolution) {
-				var p = i / resolution;
-				if (p > next.position) {
-					stop = next;
-					next = stops[++j];
+				var p = resolution > 1 ? i / (resolution - 1) : 0.0;
+				var c:Color;
+
+				if (p <= stops[0].position)
+					c = stops[0].color;
+				else if (p >= stops[last].position)
+					c = stops[last].color;
+				else {
+					while (j + 1 < stops.length && p > stops[j + 1].position)
+						j++;
+
+					var stop = stops[j];
+					var next = stops[j + 1];
+					var length = next.position - stop.position;
+					var t = length == 0 ? 1.0 : (p - stop.position) / length;
+					c = s.Color.mix(stop.color, next.color, interpolation(t));
 				}
-				var t = (p - stop.position) / (next.position - stop.position);
-				ctx.setPixel(0, i, s.Color.mix(stop.color, next.color, interpolation(t)));
+
+				ctx.setPixel(i, 0, c);
 			}
 		}
 

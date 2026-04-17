@@ -7,7 +7,7 @@ class Row extends Positioner {
 		super(direction);
 	}
 
-	function syncFlow() {
-		s.ui.macro.PositionerMacro.syncPositionerFlow("left", "right");
+	function updateFlow() {
+		s.ui.macro.PositionerMacro.updatePositionerFlow("left", "right");
 	}
 }

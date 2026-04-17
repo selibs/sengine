@@ -32,12 +32,12 @@ enum FontCapitalization {
 
 @:allow(s.graphics.shaders.TextShader)
 class FontStyle implements s.shortcut.Shortcut {
-	var font:Font = "font_default";
+	var font:Font = "default";
 
 	var italicSlant:Float = 0.0;
 	var sdfWeight:Float = 0.0;
 
-	public var family(default, set):String = "font_default";
+	public var family(default, set):String = "default";
 
 	@:inject(setSdfWeight) public var bold:Bool = false;
 	public var italic(default, set):Bool = false;
@@ -73,15 +73,36 @@ class FontStyle implements s.shortcut.Shortcut {
 	public function copyFrom(value:FontStyle):FontStyle {
 		if (value == null)
 			return this;
-		family = value.family; bold = value.bold; italic = value.italic; strikeout = value.strikeout; underline = value.underline; snapToPixel = value.snapToPixel;
-		wordSpacing = value.wordSpacing; letterSpacing = value.letterSpacing; weight = value.weight; softness = value.softness; outlineColor = value.outlineColor;
-		outlineWidth = value.outlineWidth; pixelSize = value.pixelSize;
+		family = value.family;
+		bold = value.bold;
+		italic = value.italic;
+		strikeout = value.strikeout;
+		underline = value.underline;
+		snapToPixel = value.snapToPixel;
+		wordSpacing = value.wordSpacing;
+		letterSpacing = value.letterSpacing;
+		weight = value.weight;
+		softness = value.softness;
+		outlineColor = value.outlineColor;
+		outlineWidth = value.outlineWidth;
+		pixelSize = value.pixelSize;
 		return this;
 	}
 
 	public function setDefault():FontStyle {
-		family = "font_default"; bold = false; italic = false; strikeout = false; underline = false; snapToPixel = true;
-		wordSpacing = 0.0; letterSpacing = 0.0; weight = Normal; softness = 0.0; outlineColor = Transparent; outlineWidth = 0.0; pixelSize = 18;
+		family = "default";
+		bold = false;
+		italic = false;
+		strikeout = false;
+		underline = false;
+		snapToPixel = true;
+		wordSpacing = 0.0;
+		letterSpacing = 0.0;
+		weight = Normal;
+		softness = 0.0;
+		outlineColor = Transparent;
+		outlineWidth = 0.0;
+		pixelSize = 18;
 		return this;
 	}
 
@@ -185,7 +206,7 @@ class FontStyle implements s.shortcut.Shortcut {
 
 	inline function set_family(value:String):String {
 		if (value == null || value == "")
-			value = "font_default";
+			value = "default";
 		if (family == value)
 			return family;
 

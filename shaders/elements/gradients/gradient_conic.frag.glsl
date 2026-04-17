@@ -18,5 +18,5 @@ void main() {
     vec2 delta = fragPos - start;
     float angle = atan(delta.y, delta.x);
     float t = fract((angle - baseAngle) / TAU);
-    fragColor = texture(gradient, vec2(0.5, t)) * color;
+    fragColor = texture(gradient, vec2(t, 0.5)) * color;
 }

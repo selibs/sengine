@@ -7,11 +7,11 @@ import haxe.macro.Expr.ExprOf;
 @:nullSafety
 @:forward.new
 @:forward(x, y, z)
-extern abstract Vec3I(Vec3IData) from Vec3IData to Vec3IData {
+extern abstract IVec3(IVec3Data) from IVec3Data to IVec3Data {
 	#if !macro
 	@:from
-	public static inline function fromVec3(value:Vec3):Vec3I {
-		return new Vec3I(Std.int(value.x), Std.int(value.y), Std.int(value.z));
+	public static inline function fromVec3(value:Vec3):IVec3 {
+		return new IVec3(Std.int(value.x), Std.int(value.y), Std.int(value.z));
 	}
 
 	public inline function set(x:Int, y:Int, z:Int) {
@@ -21,7 +21,7 @@ extern abstract Vec3I(Vec3IData) from Vec3IData to Vec3IData {
 	}
 
 	public inline function clone() {
-		return new Vec3I(this.x, this.y, this.z);
+		return new IVec3(this.x, this.y, this.z);
 	}
 
 	public inline function toString() {
@@ -47,11 +47,11 @@ extern abstract Vec3I(Vec3IData) from Vec3IData to Vec3IData {
 		}
 
 	@:op(-a)
-	static private inline function neg(a:Vec3I)
-		return new Vec3I(-a.x, -a.y, -a.z);
+	static private inline function neg(a:IVec3)
+		return new IVec3(-a.x, -a.y, -a.z);
 
 	@:op(++a)
-	static private inline function prefixIncrement(a:Vec3I) {
+	static private inline function prefixIncrement(a:IVec3) {
 		++a.x;
 		++a.y;
 		++a.z;
@@ -59,7 +59,7 @@ extern abstract Vec3I(Vec3IData) from Vec3IData to Vec3IData {
 	}
 
 	@:op(--a)
-	static private inline function prefixDecrement(a:Vec3I) {
+	static private inline function prefixDecrement(a:IVec3) {
 		--a.x;
 		--a.y;
 		--a.z;
@@ -67,7 +67,7 @@ extern abstract Vec3I(Vec3IData) from Vec3IData to Vec3IData {
 	}
 
 	@:op(a++)
-	static private inline function postfixIncrement(a:Vec3I) {
+	static private inline function postfixIncrement(a:IVec3) {
 		var ret = a.clone();
 		++a.x;
 		++a.y;
@@ -76,7 +76,7 @@ extern abstract Vec3I(Vec3IData) from Vec3IData to Vec3IData {
 	}
 
 	@:op(a--)
-	static private inline function postfixDecrement(a:Vec3I) {
+	static private inline function postfixDecrement(a:IVec3) {
 		var ret = a.clone();
 		--a.x;
 		--a.y;
@@ -85,51 +85,51 @@ extern abstract Vec3I(Vec3IData) from Vec3IData to Vec3IData {
 	}
 
 	@:op(a * b)
-	static private inline function mul(a:Vec3I, b:Vec3I):Vec3I
-		return new Vec3I(a.x * b.x, a.y * b.y, a.z * b.z);
+	static private inline function mul(a:IVec3, b:IVec3):IVec3
+		return new IVec3(a.x * b.x, a.y * b.y, a.z * b.z);
 
 	@:op(a * b) @:commutative
-	static private inline function mulScalar(a:Vec3I, b:Int):Vec3I
-		return new Vec3I(a.x * b, a.y * b, a.z * b);
+	static private inline function mulScalar(a:IVec3, b:Int):IVec3
+		return new IVec3(a.x * b, a.y * b, a.z * b);
 
 	@:op(a / b)
-	static private inline function div(a:Vec3I, b:Vec3I):Vec3I
+	static private inline function div(a:IVec3, b:IVec3):IVec3
 		return new Vec3(a.x / b.x, a.y / b.y, a.z / b.z);
 
 	@:op(a / b)
-	static private inline function divScalar(a:Vec3I, b:Int):Vec3I
+	static private inline function divScalar(a:IVec3, b:Int):IVec3
 		return new Vec3(a.x / b, a.y / b, a.z / b);
 
 	@:op(a / b)
-	static private inline function divScalarInv(a:Int, b:Vec3I):Vec3I
+	static private inline function divScalarInv(a:Int, b:IVec3):IVec3
 		return new Vec3(a / b.x, a / b.y, a / b.z);
 
 	@:op(a + b)
-	static private inline function add(a:Vec3I, b:Vec3I):Vec3I
-		return new Vec3I(a.x + b.x, a.y + b.y, a.z + b.z);
+	static private inline function add(a:IVec3, b:IVec3):IVec3
+		return new IVec3(a.x + b.x, a.y + b.y, a.z + b.z);
 
 	@:op(a + b) @:commutative
-	static private inline function addScalar(a:Vec3I, b:Int):Vec3I
-		return new Vec3I(a.x + b, a.y + b, a.z + b);
+	static private inline function addScalar(a:IVec3, b:Int):IVec3
+		return new IVec3(a.x + b, a.y + b, a.z + b);
 
 	@:op(a - b)
-	static private inline function sub(a:Vec3I, b:Vec3I):Vec3I
-		return new Vec3I(a.x - b.x, a.y - b.y, a.z - b.z);
+	static private inline function sub(a:IVec3, b:IVec3):IVec3
+		return new IVec3(a.x - b.x, a.y - b.y, a.z - b.z);
 
 	@:op(a - b)
-	static private inline function subScalar(a:Vec3I, b:Int):Vec3I
-		return new Vec3I(a.x - b, a.y - b, a.z - b);
+	static private inline function subScalar(a:IVec3, b:Int):IVec3
+		return new IVec3(a.x - b, a.y - b, a.z - b);
 
 	@:op(b - a)
-	static private inline function subScalarInv(a:Int, b:Vec3I):Vec3I
-		return new Vec3I(a - b.x, a - b.y, a - b.z);
+	static private inline function subScalarInv(a:Int, b:IVec3):IVec3
+		return new IVec3(a - b.x, a - b.y, a - b.z);
 
 	@:op(a == b)
-	static private inline function equal(a:Vec3I, b:Vec3I):Bool
+	static private inline function equal(a:IVec3, b:IVec3):Bool
 		return a.x == b.x && a.y == b.y && a.z == b.z;
 
 	@:op(a != b)
-	static private inline function notEqual(a:Vec3I, b:Vec3I):Bool
+	static private inline function notEqual(a:IVec3, b:IVec3):Bool
 		return !equal(a, b);
 	#end // !macro
 
@@ -138,8 +138,8 @@ extern abstract Vec3I(Vec3IData) from Vec3IData to Vec3IData {
 	/**
 	 * Copy from any object with .x .y .z fields
 	 */
-	@:overload(function(source:{x:Int, y:Int, z:Int}):Vec3I {})
-	public macro function copyFrom(self:ExprOf<Vec3I>, source:ExprOf<{x:Int, y:Int, z:Int}>):ExprOf<Vec3I> {
+	@:overload(function(source:{x:Int, y:Int, z:Int}):IVec3 {})
+	public macro function copyFrom(self:ExprOf<IVec3>, source:ExprOf<{x:Int, y:Int, z:Int}>):ExprOf<IVec3> {
 		return macro {
 			var self = $self;
 			var source = $source;
@@ -154,7 +154,7 @@ extern abstract Vec3I(Vec3IData) from Vec3IData to Vec3IData {
 	 * Copy into any object with .x .y .z fields
 	 */
 	@:overload(function(target:{x:Int, y:Int, z:Int}):{x:Int, y:Int, z:Int} {})
-	public macro function copyInto(self:ExprOf<Vec3I>, target:ExprOf<{x:Int, y:Int, z:Int}>):ExprOf<{x:Int, y:Int, z:Int}> {
+	public macro function copyInto(self:ExprOf<IVec3>, target:ExprOf<{x:Int, y:Int, z:Int}>):ExprOf<{x:Int, y:Int, z:Int}> {
 		return macro {
 			var self = $self;
 			var target = $target;
@@ -166,7 +166,7 @@ extern abstract Vec3I(Vec3IData) from Vec3IData to Vec3IData {
 	}
 
 	@:overload(function<T>(arrayLike:T, index:Int):T {})
-	public macro function copyIntoArray(self:ExprOf<Vec3I>, array:ExprOf<ArrayAccess<Int>>, index:ExprOf<Int>) {
+	public macro function copyIntoArray(self:ExprOf<IVec3>, array:ExprOf<ArrayAccess<Int>>, index:ExprOf<Int>) {
 		return macro {
 			var self = $self;
 			var array = $array;
@@ -179,7 +179,7 @@ extern abstract Vec3I(Vec3IData) from Vec3IData to Vec3IData {
 	}
 
 	@:overload(function<T>(arrayLike:T, index:Int):T {})
-	public macro function copyFromArray(self:ExprOf<Vec3I>, array:ExprOf<ArrayAccess<Int>>, index:ExprOf<Int>) {
+	public macro function copyFromArray(self:ExprOf<IVec3>, array:ExprOf<ArrayAccess<Int>>, index:ExprOf<Int>) {
 		return macro {
 			var self = $self;
 			var array = $array;
@@ -196,25 +196,25 @@ extern abstract Vec3I(Vec3IData) from Vec3IData to Vec3IData {
 	/**
 	 * Create from any object with .x .y .z fields
 	 */
-	@:overload(function(source:{x:Int, y:Int, z:Int}):Vec3I {})
-	public static macro function from(xyz:ExprOf<{x:Int, y:Int, z:Int}>):ExprOf<Vec3I> {
+	@:overload(function(source:{x:Int, y:Int, z:Int}):IVec3 {})
+	public static macro function from(xyz:ExprOf<{x:Int, y:Int, z:Int}>):ExprOf<IVec3> {
 		return macro {
 			var source = $xyz;
-			new Vec3I(source.x, source.y, source.z);
+			new IVec3(source.x, source.y, source.z);
 		}
 	}
 
 	@:overload(function<T>(arrayLike:T, index:Int):T {})
-	public static macro function fromArray(array:ExprOf<ArrayAccess<Int>>, index:ExprOf<Int>):ExprOf<Vec3I> {
+	public static macro function fromArray(array:ExprOf<ArrayAccess<Int>>, index:ExprOf<Int>):ExprOf<IVec3> {
 		return macro {
 			var array = $array;
 			var i:Int = $index;
-			new Vec3I(array[0 + i], array[1 + i], array[2 + i]);
+			new IVec3(array[0 + i], array[1 + i], array[2 + i]);
 		}
 	}
 }
 
-private class Vec3IData {
+private class IVec3Data {
 	public var x:Int;
 	public var y:Int;
 	public var z:Int;

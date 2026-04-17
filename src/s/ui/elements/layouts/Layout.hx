@@ -4,14 +4,14 @@ import s.ui.Alignment;
 import s.ui.AnchorLineAttribute;
 import s.ui.Direction;
 import s.ui.LayoutAttribute;
-import s.ui.elements.ContainerElement;
-import s.ui.elements.Element;
+import s.ui.elements.Container;
+import s.ui.Element;
 
 @:access(s.ui.LayoutAttribute)
-@:access(s.ui.elements.ContainerElement)
-@:access(s.ui.elements.Element)
+@:access(s.ui.elements.Container)
+@:access(s.ui.Element)
 @:access(s.ui.elements.positioners.Positioner)
-class Layout extends ContainerElement {
+class Layout extends Container {
 	public static inline function clampWidth(el:Element, width:Float) {
 		final l = el.layout;
 		return Math.max(Math.min(width, l.maximumWidth), l.minimumWidth) + el.left.margin + el.right.margin;
@@ -45,19 +45,19 @@ class Layout extends ContainerElement {
 		}
 	}
 
-	public static inline function syncHorizontalFlow(layout:DirectionalLayout)
-		syncFlow(layout, true, false);
+	public static inline function updateHorizontalFlow(layout:DirectionalLayout)
+		updateFlow(layout, true, false);
 
-	public static inline function syncVerticalFlow(layout:DirectionalLayout)
-		syncFlow(layout, false, false);
+	public static inline function updateVerticalFlow(layout:DirectionalLayout)
+		updateFlow(layout, false, false);
 
-	public static inline function syncHorizontalWrap(layout:FlowLayout)
-		syncFlow(layout, true, true);
+	public static inline function updateHorizontalWrap(layout:FlowLayout)
+		updateFlow(layout, true, true);
 
-	public static inline function syncVerticalWrap(layout:FlowLayout)
-		syncFlow(layout, false, true);
+	public static inline function updateVerticalWrap(layout:FlowLayout)
+		updateFlow(layout, false, true);
 
-	static inline function syncFlow(layout:DirectionalLayout, horizontal:Bool, wrap:Bool) {
+	static inline function updateFlow(layout:DirectionalLayout, horizontal:Bool, wrap:Bool) {
 		if (layout.flowLayoutDirty)
 			layout.flowDirty = true;
 
@@ -105,8 +105,8 @@ class Layout extends ContainerElement {
 			var m = 0;
 			while (m < count) {
 				final c = children[m];
-				if (!c.visible) {
-					if (c.visibleDirty)
+				if (!c.isVisible) {
+					if (c.isVisibleDirty)
 						wrapMetricsDirty = true;
 					m++;
 					continue;
@@ -118,8 +118,8 @@ class Layout extends ContainerElement {
 				final ccStart = axisStart(c, horizontal, false);
 				final ccEnd = axisEnd(c, horizontal, false);
 
-				final crossChanged = syncCrossSize(c, horizontal, ccStart, ccEnd, crossSpace, crossSpaceDirty, crossBoundsAreDirty, false, c.visibleDirty);
-				if (crossChanged || syncPrimarySize(c, horizontal, cpStart, cpEnd))
+				final crossChanged = updateCrossSize(c, horizontal, ccStart, ccEnd, crossSpace, crossSpaceDirty, crossBoundsAreDirty, false, c.isVisibleDirty);
+				if (crossChanged || updatePrimarySize(c, horizontal, cpStart, cpEnd))
 					wrapMetricsDirty = true;
 
 				final fill = axisCanFill(l, horizontal, true);
@@ -209,8 +209,8 @@ class Layout extends ContainerElement {
 			var j = i;
 			while (j < count) {
 				final c = children[j];
-				if (!c.visible) {
-					if (c.visibleDirty)
+				if (!c.isVisible) {
+					if (c.isVisibleDirty)
 						sizeChanged = true;
 					j++;
 					continue;
@@ -225,10 +225,10 @@ class Layout extends ContainerElement {
 				final ccStart = axisStart(c, horizontal, false);
 				final ccEnd = axisEnd(c, horizontal, false);
 
-				final crossChanged = syncCrossSize(c, horizontal, ccStart, ccEnd, crossSpace, crossSpaceDirty, crossBoundsAreDirty, !wrap, c.visibleDirty);
+				final crossChanged = updateCrossSize(c, horizontal, ccStart, ccEnd, crossSpace, crossSpaceDirty, crossBoundsAreDirty, !wrap, c.isVisibleDirty);
 				if (crossChanged)
 					sizeChanged = true;
-				if (syncPrimarySize(c, horizontal, cpStart, cpEnd))
+				if (updatePrimarySize(c, horizontal, cpStart, cpEnd))
 					sizeChanged = true;
 
 				final fill = axisCanFill(l, horizontal, true);
@@ -311,10 +311,10 @@ class Layout extends ContainerElement {
 			while (k < lineEnd) {
 				final c = children[k++];
 				final l = c.layout;
-				var childDirty = offsetDirty || c.visibleDirty || l.alignmentDirty;
+				var childDirty = offsetDirty || c.isVisibleDirty || l.alignmentDirty;
 
-				if (!c.visible) {
-					layout.syncChild(c);
+				if (!c.isVisible) {
+					layout.updateChild(c);
 					offsetDirty = childDirty;
 					continue;
 				}
@@ -377,7 +377,7 @@ class Layout extends ContainerElement {
 					ccStart.position = lineStartPos + ccStart.margin + alignOffset(l.alignment, extra, horizontal, false);
 				}
 
-				layout.syncChild(c);
+				layout.updateChild(c);
 				base = forward ? base + cellSpan + spacing : base - cellSpan - spacing;
 
 				offsetDirty = childDirty;
@@ -458,7 +458,7 @@ class Layout extends ContainerElement {
 	static inline function clampSize(el:Element, size:Float, horizontal:Bool, primary:Bool):Float
 		return horizontal == primary ? clampWidth(el, size) : clampHeight(el, size);
 
-	static inline function syncPrimarySize(c:Element, horizontal:Bool, pStart:AnchorLineAttribute, pEnd:AnchorLineAttribute):Bool {
+	static inline function updatePrimarySize(c:Element, horizontal:Bool, pStart:AnchorLineAttribute, pEnd:AnchorLineAttribute):Bool {
 		final l = c.layout;
 		final minMaxDirty = axisMinMaxDirty(l, horizontal, true);
 		final preferred = axisPreferred(l, horizontal, true);
@@ -475,8 +475,8 @@ class Layout extends ContainerElement {
 		return changed;
 	}
 
-	static inline function syncCrossSize(c:Element, horizontal:Bool, cStart:AnchorLineAttribute, cEnd:AnchorLineAttribute, crossSpace:Float,
-			crossSpaceDirty:Bool, crossBoundsAreDirty:Bool, fill:Bool, visibleDirty:Bool):Bool {
+	static inline function updateCrossSize(c:Element, horizontal:Bool, cStart:AnchorLineAttribute, cEnd:AnchorLineAttribute, crossSpace:Float,
+			crossSpaceDirty:Bool, crossBoundsAreDirty:Bool, fill:Bool, isVisibleDirty:Bool):Bool {
 		final l = c.layout;
 		final minMaxDirty = axisMinMaxDirty(l, horizontal, false);
 		final preferred = axisPreferred(l, horizontal, false);
@@ -488,7 +488,7 @@ class Layout extends ContainerElement {
 			changed = setAxisSize(c, horizontal, false, clampSize(c, preferred, horizontal, false) - margins);
 		else if (fill
 			&& canFill
-			&& (visibleDirty
+			&& (isVisibleDirty
 				|| axisPreferredDirty(l, horizontal, false)
 				|| minMaxDirty
 				|| axisFillDirty(l, horizontal, false)
@@ -529,7 +529,7 @@ class Layout extends ContainerElement {
 		return offset;
 	}
 
-	override function syncChild(c:Element) {
+	override function updateChild(c:Element) {
 		final l = c.layout;
 
 		if (l.alignmentDirty)
@@ -549,6 +549,6 @@ class Layout extends ContainerElement {
 		else if (Math.isNaN(l.preferredHeight) && l.fillHeight && (l.verticalDirty || spaceVDirty))
 			c.height = Layout.clampHeight(c, spaceV * l.fillHeightFactor) - vMargins;
 
-		super.syncChild(c);
+		super.updateChild(c);
 	}
 }

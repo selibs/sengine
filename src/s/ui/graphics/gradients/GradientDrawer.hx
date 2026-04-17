@@ -2,6 +2,7 @@ package s.ui.graphics.gradients;
 
 import kha.graphics4.TextureUnit;
 import kha.graphics4.ConstantLocation;
+import s.graphics.RenderTarget;
 import s.ui.elements.gradients.Gradient;
 
 @:allow(s.ui.elements.gradients.Gradient)

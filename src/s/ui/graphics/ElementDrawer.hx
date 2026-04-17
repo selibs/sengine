@@ -3,11 +3,11 @@ package s.ui.graphics;
 import kha.graphics4.ConstantLocation;
 import s.graphics.RenderTarget;
 import s.graphics.shaders.Shader;
-import s.ui.elements.DrawableElement;
+import s.ui.elements.Drawable;
 
-@:allow(s.ui.elements.DrawableElement)
-@:access(s.ui.elements.DrawableElement)
-abstract class ElementDrawer<T:DrawableElement> extends Shader {
+@:allow(s.ui.elements.Drawable)
+@:access(s.ui.elements.Drawable)
+abstract class ElementDrawer<T:Drawable> extends Shader {
 	var mvpCL:ConstantLocation;
 	var rectCL:ConstantLocation;
 	var colorCL:ConstantLocation;
@@ -17,7 +17,7 @@ abstract class ElementDrawer<T:DrawableElement> extends Shader {
 			inputLayout: [Shader.structure2D],
 			vertexShader: vert,
 			fragmentShader: frag,
-			alphaBlendSource: SourceAlpha,
+			alphaBlendSource: BlendOne,
 			alphaBlendDestination: InverseSourceAlpha,
 			blendSource: SourceAlpha,
 			blendDestination: InverseSourceAlpha

@@ -29,6 +29,7 @@ if (!khaDir) {
 const makeScript = path.join(khaDir, "make");
 const buildRoot = path.join(workspace, "build");
 const buildDir = path.join(workspace, "build", target);
+const buildAssetsDir = path.join(buildDir, "assets");
 const hxmlName = `project-${target}.hxml`;
 const hxmlPath = path.join(buildRoot, hxmlName);
 const server = new Server(buildDir, "kha.js");
@@ -56,6 +57,38 @@ function stripAnsi(value) {
 
 function normalizeOutput(value) {
 	return stripAnsi(value).replace(/\r/g, "").trim();
+}
+
+function normalizePath(value) {
+	return value.replace(/\\/g, "/");
+}
+
+function getAssetTopLevelEntry(relativePath) {
+	const normalized = normalizePath(relativePath);
+	if (!normalized.startsWith("assets/")) {
+		return null;
+	}
+
+	const rest = normalized.slice("assets/".length);
+	if (rest.length === 0) {
+		return null;
+	}
+
+	const slash = rest.indexOf("/");
+	return slash === -1 ? rest : rest.slice(0, slash);
+}
+
+function isProjectAssetPath(relativePath) {
+	const entry = getAssetTopLevelEntry(relativePath);
+	if (entry == null) {
+		return false;
+	}
+
+	if (!fs.existsSync(hxmlPath) || !fs.existsSync(buildAssetsDir)) {
+		return true;
+	}
+
+	return fs.existsSync(path.join(buildAssetsDir, entry));
 }
 
 function collectError(outputText) {
@@ -99,6 +132,10 @@ function isIgnored(relativePath) {
 	if (!relativePath || relativePath.startsWith("..")) {
 		return true;
 	}
+	const normalized = normalizePath(relativePath);
+	if (normalized.startsWith("assets/") && !isProjectAssetPath(normalized)) {
+		return true;
+	}
 	const parts = relativePath.split(path.sep);
 	if (parts.some((part) => ignoredDirs.has(part))) {
 		return true;
@@ -133,7 +170,7 @@ function needsFullBuild(filePath) {
 
 	const relative = path.relative(workspace, filePath);
 	const ext = path.extname(relative).toLowerCase();
-	const normalized = relative.replace(/\\/g, "/");
+	const normalized = normalizePath(relative);
 
 	if (isCodeFile(relative)) {
 		return false;
@@ -142,7 +179,10 @@ function needsFullBuild(filePath) {
 	if (normalized === "khafile.js" || normalized === "sengine/khafile.js") {
 		return true;
 	}
-	if (normalized.startsWith("assets/") || normalized.startsWith("shaders/")) {
+	if (normalized.startsWith("assets/")) {
+		return isProjectAssetPath(normalized);
+	}
+	if (normalized.startsWith("shaders/")) {
 		return true;
 	}
 	if (normalized.includes("/assets/") || normalized.includes("/shaders/")) {

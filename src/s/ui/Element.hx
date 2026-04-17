@@ -1,8 +1,7 @@
-package s.ui.elements;
+package s.ui;
 
 import s.math.Mat3;
 import s.math.SMath;
-import s.app.Window;
 import s.geometry.Size;
 import s.geometry.Position;
 import s.ui.Style;
@@ -14,6 +13,7 @@ import s.graphics.Context2D;
 using s.extensions.StringExt;
 #end
 
+@:allow(s.ui.Scene)
 @:allow(s.AttachedAttribute)
 @:autoBuild(s.ui.macro.ElementMacro.build())
 class Element extends Object2D<Element> {
@@ -47,22 +47,23 @@ class Element extends Object2D<Element> {
 	@:attr(globalOrigin) var globalOriginX:Float = 0.0;
 	@:attr(globalOrigin) var globalOriginY:Float = 0.0;
 
-	public var scene(default, null):Window;
+	public var scene(default, null):Scene;
 
 	/**
 	 * Optional application-defined tag used for lookup.
 	 *
 	 * Tags are not required to be unique. Methods such as
-	 * [`getChild`](s.ui.elements.Element.getChild), [`getChildren`](s.ui.elements.Element.getChildren), and
-	 * [`findChild`](s.ui.elements.Element.findChild) use this field for simple structural
+	 * [`getChild`](s.ui.Element.getChild), [`getChildren`](s.ui.Element.getChildren), and
+	 * [`findChild`](s.ui.Element.findChild) use this field for simple structural
 	 * queries.
 	 */
 	@:attr public var tag:String;
 
 	public var clip:Bool = false; // TODO: stencil test (?)
-	@:attr(visibility) @:clamp public var opacity:Float = 1.0;
-	@:attr(visibility) public var visible:Bool = true;
 	@:attr.attached public final layout:LayoutAttribute;
+
+	@:attr(visibility) @:clamp public var opacity:Float = 1.0;
+	@:attr(visibility) public var isVisible:Bool = true;
 
 	public var padding(never, set):Float;
 	public var margins(never, set):Float;
@@ -242,12 +243,12 @@ class Element extends Object2D<Element> {
 	}
 
 	public function addStyle(style:Style) {
-		sync.connect(style.apply);
+		update.connect(style.apply);
 		dirty = true;
 	}
 
 	public function removeStyle(style:Style) {
-		sync.disconnect(style.apply);
+		update.disconnect(style.apply);
 		dirty = true;
 	}
 
@@ -262,59 +263,59 @@ class Element extends Object2D<Element> {
 	override function toString():String
 		return super.toString() + (tag != null ? '#$tag' : "");
 
-	function syncTree() {
-		sync(this);
-		syncChildren();
+	function updateTree() {
+		update(this);
+		updateChildren();
 		flush();
 	}
 
-	function syncChildren()
+	function updateChildren()
 		for (c in children)
-			syncChild(c);
+			updateChild(c);
 
-	function syncChild(child:Element)
-		if (scene?.root.children.dirty || child.dirty || globalVisibleDirty || globalOpacityDirty || globalTransformDirty)
-			child.syncTree();
+	function updateChild(child:Element)
+		if (scene?.children.dirty || child.dirty || globalVisibleDirty || globalOpacityDirty || globalTransformDirty)
+			child.updateTree();
 
-	@:slot(sync)
-	function syncParent(_)
+	@:slot(update)
+	function updateParent(_)
 		if (parentDirty)
 			scene = parent?.scene;
 
-	@:slot(sync)
-	function syncBounds(_) {
-		s.ui.macro.ElementMacro.syncAxis("left", "hCenter", "right", "x", "width");
-		s.ui.macro.ElementMacro.syncAxis("top", "vCenter", "bottom", "y", "height");
+	@:slot(update)
+	function updateBounds(_) {
+		s.ui.macro.ElementMacro.updateAxis("left", "hCenter", "right", "x", "width");
+		s.ui.macro.ElementMacro.updateAxis("top", "vCenter", "bottom", "y", "height");
 	}
 
-	@:slot(sync)
-	function syncOrigin(_) {
+	@:slot(update)
+	function updateOrigin(_) {
 		if (horizontalDirty || originDirty)
 			globalOriginX = left.position + (Math.isNaN(originX) ? width * 0.5 : originX);
 		if (verticalDirty || originDirty)
 			globalOriginY = top.position + (Math.isNaN(originY) ? height * 0.5 : originY);
 	}
 
-	@:slot(sync)
-	function syncTransform(_)
+	@:slot(update)
+	function updateTransform(_)
 		if (globalOriginDirty || transformDirty || parentDirty || parent?.globalTransformDirty) {
 			globalTransform = Mat3.translation(-globalOriginX, -globalOriginY) * transform * Mat3.translation(globalOriginX, globalOriginY);
 			if (parent != null)
 				globalTransform *= parent.globalTransform;
 		}
 
-	@:slot(sync)
-	function syncOpacity(_)
+	@:slot(update)
+	function updateOpacity(_)
 		if (visibilityDirty || parentDirty || parent?.globalOpacityDirty) {
 			globalOpacity = opacity;
 			if (parent != null)
 				globalOpacity = parent.globalOpacity * globalOpacity;
 		}
 
-	@:slot(sync)
-	function syncVisible(_)
+	@:slot(update)
+	function updateVisible(_)
 		if (visibilityDirty || parentDirty || parent?.globalVisibleDirty || globalOpacityDirty || widthDirty || heightDirty) {
-			globalVisible = visible && globalOpacity > 0.0 && width > 0.0 && height > 0.0;
+			globalVisible = isVisible && globalOpacity > 0.0 && width > 0.0 && height > 0.0;
 			if (parent != null)
 				globalVisible = parent.globalVisible && globalVisible;
 		}
@@ -325,7 +326,7 @@ class Element extends Object2D<Element> {
 
 		style.opacity = 0.5;
 		style.font.setDefault();
-		style.font.family = "font_default";
+		style.font.family = "default";
 		style.font.pixelSize = 16;
 
 		final lm = left.margin;

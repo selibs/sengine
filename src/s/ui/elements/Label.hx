@@ -8,7 +8,7 @@ using StringTools;
 
 @:allow(s.ui.graphics.TextDrawer)
 @:access(s.graphics.FontStyle)
-class Label extends DrawableElement {
+class Label extends Drawable {
 	var chars:Array<FontChar> = [];
 	var lineChars:Array<FontChar> = [];
 	var ellipsisChars:Array<FontChar> = [];
@@ -31,6 +31,7 @@ class Label extends DrawableElement {
 
 	public function new(text:String = "") {
 		super();
+		color = Black;
 		this.text = text;
 	}
 
@@ -38,13 +39,15 @@ class Label extends DrawableElement {
 		if (text.length == 0 || !font.isLoaded || font.pixelSize == 0)
 			return;
 		final ctx = target.context2D;
+		ctx.pushTransform(globalTransform);
 		ctx.style.color = realColor;
 		ctx.style.font.copyFrom(font);
 		ctx.drawFontChars(chars);
+		ctx.popTransform();
 	}
 
-	@:slot(sync)
-	function syncText(_):Void {
+	@:slot(update)
+	function updateText(_):Void {
 		if (text.length == 0 || !font.isLoaded || font.pixelSize == 0)
 			return;
 
@@ -115,7 +118,7 @@ class Label extends DrawableElement {
 			lineChars.resize(text.length);
 	}
 
-	function syncEllipsisChars():Float {
+	function updateEllipsisChars():Float {
 		var width = 0.0;
 		for (i in 0...3) {
 			final c = font.copyFontChar(".".code, i < ellipsisChars.length ? ellipsisChars[i] : null);
@@ -153,7 +156,7 @@ class Label extends DrawableElement {
 			return lineWidth;
 		}
 
-		final ew = syncEllipsisChars();
+		final ew = updateEllipsisChars();
 		final maxWidth = Math.max(0.0, availableWidth - ew);
 
 		var w = 0.0;

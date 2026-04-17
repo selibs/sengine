@@ -7,6 +7,6 @@ class RowLayout extends DirectionalLayout {
 		super(direction);
 	}
 
-	override function syncChildren()
-		Layout.syncHorizontalFlow(this);
+	override function updateChildren()
+		Layout.updateHorizontalFlow(this);
 }

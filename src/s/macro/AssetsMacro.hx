@@ -7,6 +7,7 @@ import haxe.macro.Context;
 
 using haxe.macro.ExprTools;
 using haxe.macro.TypeTools;
+using s.extensions.StringExt;
 #end
 
 class AssetsMacro {
@@ -135,12 +136,11 @@ class AssetsMacro {
 		return fields;
 	}
 
-	public static function addAssetType(name:String, type:String, formats:Array<{extension:String, type:String}>) {
+	public static function addAssetType(name:String, resName:String, type:String, formats:Array<{extension:String, type:String}>) {
 		var pos = Context.currentPos();
 
-		name = name.toLowerCase();
-		var listName = name + "s";
-		var capName = name.charAt(0).toUpperCase() + name.substr(1);
+		var capName = name.capitalize();
+		var listName = name.toLowerCase() + "s";
 
 		var loadName = "load" + capName;
 		var reloadName = "reload" + capName;
@@ -149,16 +149,7 @@ class AssetsMacro {
 		if (assetTypes.exists(listName))
 			return;
 
-		var resName = switch capName {
-			case "Video", "Image", "Sound", "Font":
-				capName;
-			default:
-				"Blob";
-		}
-		var resType = TPath({
-			pack: ["kha"],
-			name: resName
-		});
+		var resType = TPath({pack: ["kha"], name: resName});
 
 		// abstract
 		var abstractTypePath = {pack: ["s", "assets"], name: capName};
@@ -242,7 +233,7 @@ class AssetsMacro {
 		var reloadExpr = macro {};
 		#else
 		var decode = {
-			expr: ESwitch(macro location.extension, [
+			expr: ESwitch(macro decodeExtension, [
 				for (f in formats) {
 					var path = f.type.split(".");
 					var typePath = {
@@ -251,12 +242,10 @@ class AssetsMacro {
 					}
 					{
 						values: f.extension.split(",").map(ext -> macro $v{ext}),
-						expr: macro {
-							new $typePath(asset).decode(data.bytes);
-						}
+						expr: macro new $typePath(asset).decode(data.bytes)
 					}
 				}
-			], macro throw "Unknown format: " + location.extension),
+			], macro throw "Unknown format: " + decodeExtension),
 			pos: pos
 		}
 		var loadExpr = macro {
@@ -344,30 +333,44 @@ class AssetsMacro {
 
 	static function loadBytes(resName:String, loadBlob:Expr) {
 		function load(l)
-			return macro data -> try {
-				$l;
-				(asset: s.assets.internal.Asset<kha.$resName>).location = location;
+			return macro data -> {
+				try {
+					$l;
+					(asset : s.assets.internal.Asset<kha.$resName>).location = location;
+				} catch (e) {
+					reporter({error: e.message});
+					return;
+				}
+
 				asset.loaded();
-				logger.debug('Loaded asset "$location"');
-			} catch (e)
-				reporter({error: e.message});
+				logger.debug('Loaded "$location"');
+			}
 
 		var resLoadName = "load" + resName;
 
 		return macro {
+			var decodeExtension:String = location.extension;
 			var reporter = err -> {
 				if (failed != null)
 					failed({location: location, message: err.error});
-				logger.error('Failed to load asset "$location": ${err.error}');
+				logger.error('Failed to load "$location": ${err.error}');
 			}
-			switch (location : s.assets.AssetLocation.AssetLocationType) {
-				case Resource(name):
-					kha.Assets.$resLoadName(name, ${load(macro asset.fromResource(data))}, reporter);
-				case File(path):
-					kha.Assets.loadBlobFromPath(path, ${load(loadBlob)}, reporter);
-				case Web(url):
-					throw new haxe.exceptions.NotImplementedException("Web assets are not yet implemented");
-			}
+			try {
+				switch (location : s.assets.AssetLocation.AssetLocationType) {
+					case Resource(name):
+						kha.Assets.$resLoadName(name, ${load(macro asset.fromResource(data))}, err -> kha.Assets.loadBlob(name, ${load(loadBlob)}, reporter));
+					case File(path):
+						kha.Assets.loadBlobFromPath(path, ${load(loadBlob)}, reporter);
+					case Web(url):
+						var resp = s.net.Http.request(url);
+						switch resp.status {
+							case 200 if (resp.bytes != null): ${load(loadBlob)}(kha.Blob.fromBytes(resp.bytes));
+							case 200: reporter({error: "No data received"});
+							default: reporter({error: "Invalid response: " + resp});
+						}
+				}
+			} catch (e)
+				reporter({error: e.message});
 		}
 	}
 	#end

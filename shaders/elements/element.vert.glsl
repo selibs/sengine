@@ -8,6 +8,6 @@ layout(location = 1) in vec2 vertUV;
 layout(location = 0) out vec2 fragPos;
 
 void main() {
-    fragPos = rect.xy + vertUV * rect.zw;
+    fragPos = rect.xy + vertPos * rect.zw;
     gl_Position = vec4((mvp * vec3(rect.xy + vertPos * rect.zw, 1.0)).xy, 0.0, 1.0);
 }

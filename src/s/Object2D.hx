@@ -6,7 +6,7 @@ import s.math.Mat3;
 abstract class Object2D<T:Object2D<T>> extends Object<T> {
 	@:attr(transformLocal) final transform:Mat3 = new Mat3();
 
-	@:signal function sync(object:T):Void;
+	@:signal function update(object:T):Void;
 
 	public var translationX(get, set):Float;
 	public var translationY(get, set):Float;
@@ -80,8 +80,8 @@ abstract class Object2D<T:Object2D<T>> extends Object<T> {
 	extern overload public inline function shear(value:Vec2)
 		shear(value.x, value.y);
 
-	@:slot(sync)
-	function syncZ(_)
+	@:slot(update)
+	function updateZ(_)
 		if (zDirty)
 			parent?.insertChild(cast this);
 
