@@ -2,9 +2,9 @@ package s.ui.graphics.shapes;
 
 import kha.graphics4.ConstantLocation;
 import s.graphics.RenderTarget;
-import s.ui.elements.shapes.Triangle;
+import s.ui.shapes.Triangle;
 
-@:allow(s.ui.elements.shapes.Triangle)
+@:allow(s.ui.shapes.Triangle)
 class TriangleDrawer extends ShapeDrawer<Triangle> {
 	var point1CL:ConstantLocation;
 	var point2CL:ConstantLocation;

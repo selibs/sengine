@@ -2,27 +2,29 @@ package s.ui;
 
 import s.app.Time;
 import s.app.Window;
-import s.app.input.Mouse;
+import s.app.input.MouseButton;
 import s.math.Mat3;
 import s.math.SMath;
 import s.graphics.Context2D;
 import s.graphics.Context3D;
+import s.graphics.RenderTarget;
+import s.ui.FocusPolicy;
 import s.ui.elements.Drawable;
 import s.ui.elements.Interactive;
 
 @:allow(s.ui.Element)
 @:access(s.ObjectList)
 @:access(s.app.Window)
-class Scene implements s.shortcut.Shortcut extends Element {
+class Scene implements s.shortcut.Shortcut extends Drawable {
 	final window:Window;
 
 	final drawable:Array<Drawable> = [];
 	final interactive:Array<Interactive> = [];
 
-	final active:Array<Interactive> = [];
+	final hovered:Array<Interactive> = [];
+	final pressed:Array<Interactive> = [];
 
-	public var color:Color = White;
-	public var focus(default, set):Interactive;
+	public var focus(default, set):Interactive = null;
 
 	@:signal public static function resized(width:Int, height:Int):Void;
 
@@ -31,20 +33,23 @@ class Scene implements s.shortcut.Shortcut extends Element {
 		scene = this;
 
 		this.window = window;
+
 		App.onUpdate(render);
 
 		window.onResized(resize);
 		window.mouse.onMoved(processMouseMoved);
 		window.mouse.onScrolled(processMouseScrolled);
-		window.mouse.onDown(processMouseDown);
-		window.mouse.onUp(processMouseUp);
+		window.mouse.onPressed(processMousePressed);
+		window.mouse.onReleased(processMouseReleased);
 
 		var k = App.input.keyboard;
-		k.onDown(k -> if (k == Tab) adjustFocus(1, TabFocus));
-		k.onDown(key -> focus?.keyboardDown(key));
-		k.onUp(key -> focus?.keyboardUp(key));
-		k.onHold(key -> focus?.keyboardHold(key));
-		k.onPressed(char -> focus?.keyboardPressed(char));
+		k.onShortcut("Tab", () -> adjustFocus(1, TabFocus));
+
+		k.onPressed(key -> if (focus?.isEnabled) focus.keyboardPressed(key));
+		k.onReleased(key -> if (focus?.isEnabled) focus.keyboardReleased(key));
+		k.onHold(key -> if (focus?.isEnabled) focus.keyboardHold(key));
+		k.onTyped(char -> if (focus?.isEnabled) focus.keyboardTyped(char));
+		k.onHotkey(hotkey -> if (focus?.isEnabled) focus.keyboardHotkey(hotkey));
 
 		resize(window.width, window.height);
 	}
@@ -59,89 +64,77 @@ class Scene implements s.shortcut.Shortcut extends Element {
 	}
 
 	function adjustFocus(d:Int, policy:FocusPolicy) {
-		var ind = interactive.indexOf(focus);
-		if (ind >= 0)
-			ind = (ind + d) % interactive.length;
+		if (interactive.length == 0) {
+			focus = null;
+			return;
+		}
+
+		var start = interactive.indexOf(focus);
+		if (start < 0)
+			start = d >= 0 ? 0 : interactive.length - 1;
 		else
-			ind = 0;
-		for (i in ind...interactive.length) {
+			start = (start + d + interactive.length) % interactive.length;
+
+		for (step in 0...interactive.length) {
+			final i = (start + step * (d >= 0 ? 1 : -1) + interactive.length) % interactive.length;
 			final el = interactive[i];
-			if (el.isEnabled && el.focusPolicy & policy != 0) {
+			if (el.isEnabled && el.focusPolicy.matches(policy)) {
 				focus = el;
-				break;
+				return;
 			}
 		}
 	}
 
 	function processMouseMoved(x:Int, y:Int, dx:Int, dy:Int):Void {
-		final m = {
-			accepted: false,
-			x: x,
-			y: y,
-			dx: dx,
-			dy: dy
-		}
-
-		for (el in interactive)
-			if (el.isEnabled) {
-				final containsMouse = el.covers(x, y);
-				if (!active.contains(el)) {
-					if (containsMouse) {
-						active.push(el);
-						el.mouseEntered(x, y); // TODO: local space
-					}
-				} else {
-					if (!containsMouse) {
-						active.remove(el);
-						el.mouseExited(x, y); // TODO: local space
-					} else if (!m.accepted)
-						el.mouseMoved(m); // TODO: local space
+		for (el in interactive) {
+			final c = el.covers(x, y);
+			if (!hovered.contains(el)) {
+				if (c && el.isEnabled) {
+					hovered.push(el);
+					final p = el.mapFromGlobal(x, y);
+					el.enter(p.x, p.y);
+				}
+			} else {
+				if (!c) {
+					hovered.remove(el);
+					final p = el.mapFromGlobal(x, y);
+					el.exit(p.x, p.y);
+				} else if (el.isEnabled) {
+					final p = el.globalTransform * vec2(dx, dy);
+					el.mouse(p.x, p.y);
 				}
 			}
+		}
 	}
 
-	function processMouseDown(b:MouseButton, x:Int, y:Int):Void
-		processMouseEvent({
-			accepted: false,
-			button: b,
-			x: x,
-			y: y
-		}, (c, m) -> if (c.acceptedButtons & b != 0) c.mouseDown(m));
-
-	function processMouseUp(b:MouseButton, x:Int, y:Int):Void
-		processMouseEvent({
-			accepted: false,
-			button: b,
-			x: x,
-			y: y
-		}, (c, m) -> if (c.acceptedButtons & b != 0) c.mouseUp(m));
-
-	function processMouseScrolled(d:Int):Void {
-		processMouseEvent({
-			accepted: false,
-			delta: d,
-			x: s.App.input.mouse.x,
-			y: s.App.input.mouse.y
-		}, (c, m) -> c.mouseScrolled(m));
-		adjustFocus(d, WheelFocus);
-	}
-
-	inline function processMouseEvent<T:MouseEvent>(m:T, f:(Interactive, T) -> Void)
-		for (el in active)
+	function processMousePressed(b:MouseButton, x:Int, y:Int):Void {
+		var newFocus = null;
+		for (el in hovered)
 			if (el.isEnabled) {
-				f(el, m); // TODO: local space
-				if (m.accepted)
+				if (el.focusPolicy.matches(PointerFocus))
+					newFocus = el;
+				final p = el.mapFromGlobal(x, y);
+				el.press(b, p.x, p.y);
+				if (!el.propagateMouseEvents && el.acceptedButtons.matches(b))
 					break;
 			}
+		focus = newFocus;
+	}
 
-	function set_focus(value:Interactive):Interactive {
-		if (focus == value)
-			return focus;
-		if (focus != null)
-			@:bypassAccessor focus.isFocused = false;
-		if (value != null)
-			@:bypassAccessor value.isFocused = true;
-		return focus = value;
+	function processMouseReleased(b:MouseButton, x:Int, y:Int):Void
+		for (el in pressed.copy()) {
+			final p = el.mapFromGlobal(x, y);
+			el.release(b, p.x, p.y);
+		}
+
+	function processMouseScrolled(d:Int):Void {
+		adjustFocus(d, WheelFocus);
+		for (el in hovered)
+			if (el.isEnabled) {
+				el.scroll(d);
+				if (!el.propagateMouseEvents)
+					break;
+			}
 	}
 
 	function render() {
@@ -153,13 +146,16 @@ class Scene implements s.shortcut.Shortcut extends Element {
 			updateTree();
 			interactive.reverse();
 		}
+		draw(window.backbuffer);
+	}
 
-		final ctx = window.backbuffer.context2D;
+	function draw(target:RenderTarget) {
+		final ctx = target.context2D;
 		ctx.begin();
 		ctx.clear(color);
 
 		for (el in drawable)
-			el.draw(window.backbuffer);
+			el.draw(target);
 
 		#if debug_element_bounds
 		if (window.mouse.hovers)
@@ -201,4 +197,20 @@ class Scene implements s.shortcut.Shortcut extends Element {
 		draw("VB allocations: " + Context3D.vbAllocations);
 	}
 	#end
+
+	override function updateOrder(_) {}
+
+	function set_focus(value:Interactive):Interactive {
+		if (focus == value)
+			return focus;
+		if (focus != null) {
+			@:bypassAccessor focus.isFocused = false;
+			focus.isFocusedDirty = true;
+		}
+		if (value != null) {
+			@:bypassAccessor value.isFocused = true;
+			value.isFocusedDirty = true;
+		}
+		return focus = value;
+	}
 }

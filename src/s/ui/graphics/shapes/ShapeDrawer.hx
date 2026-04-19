@@ -3,8 +3,8 @@ package s.ui.graphics.shapes;
 import kha.graphics4.ConstantLocation;
 import s.graphics.RenderTarget;
 
-@:allow(s.ui.elements.shapes.Shape)
-abstract class ShapeDrawer<T:s.ui.elements.shapes.Shape> extends ElementDrawer<T> {
+@:allow(s.ui.shapes.Shape)
+abstract class ShapeDrawer<T:s.ui.shapes.Shape> extends ElementDrawer<T> {
 	var radiusCL:ConstantLocation;
 	var borderWidthCL:ConstantLocation;
 	var borderColorCL:ConstantLocation;

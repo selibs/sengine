@@ -24,7 +24,7 @@ class AssetsMacro {
 	public static function build():Array<Field> {
 		var fields = assetsFields.copy();
 
-		function makeFunction(loadName, args, f, iter, call, waitForLoad:Bool) {
+		function makeFunction(loadName, args, f, iter, call, waitForLoad:Bool, reportFailures:Bool) {
 			#if (display || display_details == 1)
 			fields.push({
 				name: loadName,
@@ -41,7 +41,11 @@ class AssetsMacro {
 
 			var exprs = [];
 			exprs.push(macro var total = 0);
-			exprs.push(macro var progress = 0.0);
+			exprs.push(macro var loaded = 0);
+			exprs.push(macro function reportProgress() {
+				if (onProgress != null)
+					onProgress(total == 0 ? 1.0 : (++loaded : Float) / total);
+			});
 
 			for (a in assetTypes.keyValueIterator()) {
 				var listName = a.key;
@@ -55,26 +59,28 @@ class AssetsMacro {
 				if (waitForLoad)
 					exprs.push(macro if ($i{listName} != null) {
 						for (name in ${iter(listName)}) {
-							var asset = ${call(f(a.value), listName)};
-							if (asset.isLoaded) {
-								if (onProgress != null)
-									onProgress(progress += 1 / total);
-							} else
-								asset.onLoaded(() -> {
-									if (onProgress != null)
-										onProgress(progress += 1 / total);
-								});
+							var asset = ${call(f(a.value), listName, reportFailures)};
+							if (asset.isLoaded)
+								reportProgress();
+							else {
+								var slot = null;
+								slot = () -> {
+									asset.offLoaded(slot);
+									reportProgress();
+								};
+								asset.onLoaded(slot);
+							}
 						}
 					});
 				else
 					exprs.push(macro if ($i{listName} != null) {
 						for (name in ${iter(listName)}) {
-							${call(f(a.value), listName)};
-							if (onProgress != null)
-								onProgress(progress += 1 / total);
+							${call(f(a.value), listName, reportFailures)};
+							reportProgress();
 						}
 					});
 			}
+			exprs.push(macro if (total == 0) reportProgress());
 			fields.push({
 				name: loadName,
 				access: [APublic, AStatic],
@@ -90,13 +96,13 @@ class AssetsMacro {
 		function mapIter(listName)
 			return macro $i{listName}.keys();
 
-		function mapCall(f, listName)
-			return macro $i{f}(name, $i{listName}.get(name));
+		function mapCall(f, listName, reportFailures:Bool)
+			return reportFailures ? macro $i{f}(name, $i{listName}.get(name), onFailed) : macro $i{f}(name, $i{listName}.get(name));
 
 		function arrIter(listName)
 			return macro $i{listName};
 
-		function arrCall(f, listName)
+		function arrCall(f, listName, reportFailures:Bool)
 			return macro $i{f}(name);
 
 		var shelfArg = {
@@ -126,9 +132,9 @@ class AssetsMacro {
 		var progressArg = {name: "onProgress", type: macro :Float->Void, opt: true};
 		var failedArg = {name: "onFailed", type: macro :s.assets.AssetError->Void, opt: true};
 
-		makeFunction("loadShelf", [shelfArg, progressArg, failedArg], v -> v.load, mapIter, mapCall, true);
-		makeFunction("reloadShelf", [shelfArg, progressArg, failedArg], v -> v.reload, mapIter, mapCall, false);
-		makeFunction("unloadShelf", [shelfArrArg, progressArg], v -> v.unload, arrIter, arrCall, false);
+		makeFunction("loadShelf", [shelfArg, progressArg, failedArg], v -> v.load, mapIter, mapCall, true, true);
+		makeFunction("reloadShelf", [shelfArg, progressArg, failedArg], v -> v.reload, mapIter, mapCall, false, true);
+		makeFunction("unloadShelf", [shelfArrArg, progressArg], v -> v.unload, arrIter, arrCall, false, false);
 
 		for (field in Context.getBuildFields())
 			fields.push(field);
@@ -337,13 +343,10 @@ class AssetsMacro {
 				try {
 					$l;
 					(asset : s.assets.internal.Asset<kha.$resName>).location = location;
-				} catch (e) {
+					logger.debug('Loaded "$location"');
+					asset.loaded();
+				} catch (e)
 					reporter({error: e.message});
-					return;
-				}
-
-				asset.loaded();
-				logger.debug('Loaded "$location"');
 			}
 
 		var resLoadName = "load" + resName;
@@ -351,9 +354,9 @@ class AssetsMacro {
 		return macro {
 			var decodeExtension:String = location.extension;
 			var reporter = err -> {
+				logger.error('Failed to load "$location": ${err.error}');
 				if (failed != null)
 					failed({location: location, message: err.error});
-				logger.error('Failed to load "$location": ${err.error}');
 			}
 			try {
 				switch (location : s.assets.AssetLocation.AssetLocationType) {

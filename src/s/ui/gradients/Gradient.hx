@@ -1,4 +1,4 @@
-package s.ui.elements.gradients;
+package s.ui.gradients;
 
 import s.math.Vec2;
 import s.math.Interpolation;
@@ -20,7 +20,7 @@ extern abstract GradientStops(Array<GradientStop>) from Array<GradientStop> {
 
 @:dox(hide)
 @:allow(s.ui.graphics.gradients.GradientDrawer)
-abstract class Gradient extends Drawable {
+abstract class Gradient extends s.ui.elements.Drawable {
 	var gradient:RenderTarget;
 
 	public var start:Vec2 = new Vec2(0.5, 0.0);
@@ -52,14 +52,18 @@ abstract class Gradient extends Drawable {
 
 		var ctx = gradient.context1D;
 		ctx.begin();
+		final inverted = kha.Image.renderTargetsInvertedY();
+
+		inline function setGradientPixel(x:Int, color:Color)
+			ctx.setPixel(inverted ? resolution - 1 - x : x, 0, color);
 
 		if (stops == null || stops.length == 0)
 			for (i in 0...resolution)
-				ctx.setPixel(i, 0, Transparent);
+				setGradientPixel(i, Transparent);
 		else if (stops.length == 1) {
 			var c = stops[0].color;
 			for (i in 0...resolution)
-				ctx.setPixel(i, 0, c);
+				setGradientPixel(i, c);
 		} else {
 			var last = stops.length - 1;
 			var j = 0;
@@ -82,7 +86,7 @@ abstract class Gradient extends Drawable {
 					c = s.Color.mix(stop.color, next.color, interpolation(t));
 				}
 
-				ctx.setPixel(i, 0, c);
+				setGradientPixel(i, c);
 			}
 		}
 

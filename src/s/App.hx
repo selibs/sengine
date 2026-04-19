@@ -1,15 +1,14 @@
 package s;
 
-import kha.Scheduler;
 import kha.System;
 import kha.Framebuffer;
 import aura.Aura;
 import s.Assets;
-import s.assets.AssetError;
 import s.app.Time;
 import s.app.Window;
 import s.app.input.Mouse;
 import s.app.input.Keyboard;
+import s.assets.AssetError;
 import s.graphics.shaders.Shader;
 
 /**
@@ -224,7 +223,7 @@ class App implements s.shortcut.Shortcut {
 	 *
 	 * @default Shutdown
 	 */
-	@:signal public static var state(default, null):AppState = Shutdown;
+	@:signal public static var state:AppState = Shutdown;
 
 	/**
 	 * Shared input devices available after startup.
@@ -262,6 +261,10 @@ class App implements s.shortcut.Shortcut {
 		s.Hotload.start();
 		#end
 
+		#if js
+		js.Browser.document.addEventListener("visibilitychange", () -> state = js.Browser.document.visibilityState == VISIBLE ? Foreground : Background);
+		#end
+
 		System.start(options, window -> {
 			input.mouse = new Mouse();
 			input.keyboard = new Keyboard();
@@ -276,13 +279,15 @@ class App implements s.shortcut.Shortcut {
 				fonts: ["default" => "font_default"],
 				images: ["default" => "image_default"]
 			}, progress -> {
-				if (progress == 1.0) {
-					System.notifyOnFrames(render);
+				if (progress >= 1.0) {
+					logger.debug("Started");
+
+					onStateChanged(s -> s == Foreground ? System.notifyOnFrames(render) : System.removeFramesListener(render));
+					if (state == Foreground)
+						System.notifyOnFrames(render);
 
 					if (started != null)
 						started(new Window(window));
-
-					logger.debug("Started");
 				}
 				if (loadProgress != null)
 					loadProgress(progress);
@@ -297,7 +302,7 @@ class App implements s.shortcut.Shortcut {
 	 */
 	public static inline function exit()
 		if (!System.stop())
-			Log.warning("This application can't be stopped!");
+			Log.warning("Application can't be stopped");
 
 	// aliases
 

@@ -1,4 +1,4 @@
-package s.ui.elements.layouts;
+package s.ui.layouts;
 
 import s.ui.Direction;
 

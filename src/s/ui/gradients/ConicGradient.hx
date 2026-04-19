@@ -1,6 +1,6 @@
-package s.ui.elements.gradients;
+package s.ui.gradients;
 
-import s.ui.elements.gradients.Gradient.GradientStops;
+import s.ui.gradients.Gradient.GradientStops;
 
 @:allow(s.ui.graphics.gradients.ConicGradientDrawer)
 class ConicGradient extends Gradient {

@@ -1,4 +1,4 @@
-package s.ui.elements.shapes;
+package s.ui.shapes;
 
 @:allow(s.ui.graphics.shapes.EllipseDrawer)
 class Ellipse extends Shape {

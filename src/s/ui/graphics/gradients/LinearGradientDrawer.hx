@@ -1,8 +1,8 @@
 package s.ui.graphics.gradients;
 
-import s.ui.elements.gradients.LinearGradient;
+import s.ui.gradients.LinearGradient;
 
-@:allow(s.ui.elements.gradients.LinearGradient)
+@:allow(s.ui.gradients.LinearGradient)
 class LinearGradientDrawer extends GradientDrawer<LinearGradient> {
 	function new() {
 		super("gradient_linear");

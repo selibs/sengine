@@ -41,6 +41,7 @@ class Element extends Object2D<Element> {
 	overload extern public static inline function mapFromElementNormalized(element:Element, p:Position):Position
 		return element.mapToGlobalNormalized(p.x, p.y);
 
+	final globalTransformInverted:Mat3 = new Mat3();
 	@:attr var globalTransform:Mat3 = new Mat3();
 	@:attr var globalOpacity:Float = 1.0;
 	@:attr var globalVisible:Bool = true;
@@ -94,6 +95,9 @@ class Element extends Object2D<Element> {
 		top = new VerticalAnchor(this);
 		vCenter = new VerticalAnchor(this);
 		bottom = new VerticalAnchor(this);
+
+		width = 100;
+		height = 100;
 	}
 
 	overload extern public inline function setPadding(value:Float):Void
@@ -150,7 +154,7 @@ class Element extends Object2D<Element> {
 		return mapToGlobal(vec2(x, y));
 
 	overload extern public inline function mapToGlobal(p:Position):Position
-		return inverse(globalTransform) * p;
+		return globalTransformInverted * p;
 
 	overload extern public inline function mapFromGlobalNormalized(x:Float, y:Float):Position
 		return mapFromGlobalNormalized(vec2(x, y));
@@ -167,10 +171,14 @@ class Element extends Object2D<Element> {
 	overload extern public inline function covers(x:Float, y:Float):Bool
 		return covers(vec2(x, y));
 
-	overload extern public inline function covers(p:Position):Bool {
-		p = mapToGlobal(p);
-		return left.position <= p.x && p.x <= right.position && top.position <= p.y && p.y <= bottom.position;
-	}
+	overload extern public inline function covers(p:Position):Bool
+		return contains(mapToGlobal(p));
+
+	overload extern public inline function contains(p:Position):Bool
+		return contains(p.x, p.y);
+
+	overload extern public inline function contains(x:Float, y:Float):Bool
+		return left.position <= x && x <= right.position && top.position <= y && y <= bottom.position;
 
 	/**
 	 * Returns the first direct child with the given tag.
@@ -302,6 +310,7 @@ class Element extends Object2D<Element> {
 			globalTransform = Mat3.translation(-globalOriginX, -globalOriginY) * transform * Mat3.translation(globalOriginX, globalOriginY);
 			if (parent != null)
 				globalTransform *= parent.globalTransform;
+			globalTransformInverted.setFrom(inverse(globalTransform));
 		}
 
 	@:slot(update)

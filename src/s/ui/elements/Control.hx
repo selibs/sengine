@@ -1,8 +1,8 @@
 package s.ui.elements;
 
-class Control extends Interactive {
-	public final background:Element;
-	public final content:Element;
+class Control<B:Element = Element, C:Element = Element> extends Interactive {
+	public final background:B;
+	public final content:C;
 
 	@:alias extern public var leftInset:Float = background.left.margin;
 	@:alias extern public var topInset:Float = background.top.margin;
@@ -22,7 +22,7 @@ class Control extends Interactive {
 	public inline function setContentPadding(value:Float)
 		contentPadding = value;
 
-	public function new(background:Element, content:Element) {
+	public function new(background:B, content:C) {
 		super();
 		addChild(this.background = background).anchors.fill(this);
 		addChild(this.content = content).anchors.fill(this);

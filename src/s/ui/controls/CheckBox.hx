@@ -1,4 +1,4 @@
-package s.ui.elements.controls;
+package s.ui.controls;
 
 import s.ui.elements.Interactive.MouseButtonEvent;
 

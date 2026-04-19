@@ -3,9 +3,9 @@ package s.ui.graphics.gradients;
 import kha.graphics4.TextureUnit;
 import kha.graphics4.ConstantLocation;
 import s.graphics.RenderTarget;
-import s.ui.elements.gradients.Gradient;
+import s.ui.gradients.Gradient;
 
-@:allow(s.ui.elements.gradients.Gradient)
+@:allow(s.ui.gradients.Gradient)
 abstract class GradientDrawer<T:Gradient> extends ElementDrawer<T> {
 	var startCL:ConstantLocation;
 	var endCL:ConstantLocation;

@@ -1,4 +1,4 @@
-package s.ui.elements.shapes;
+package s.ui.shapes;
 
 import s.math.Vec2;
 

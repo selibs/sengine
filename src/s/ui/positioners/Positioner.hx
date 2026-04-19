@@ -1,6 +1,7 @@
-package s.ui.elements.positioners;
+package s.ui.positioners;
 
 import s.ui.Direction;
+import s.ui.elements.Container;
 
 abstract class Positioner extends Container {
 	var flowDirty:Bool = false;

@@ -1,22 +1,21 @@
 package s.ui.elements;
 
 import s.ui.FocusPolicy;
-import s.app.input.Mouse;
-import s.app.input.Keyboard;
+import s.app.Time;
+import s.app.input.KeyCode;
+import s.app.input.Shortcut;
+import s.app.input.MouseButton;
 
-typedef MouseEvent = {accepted:Bool, x:Int, y:Int}
-typedef MouseMoveEvent = {> MouseEvent, dx:Int, dy:Int}
-typedef MouseScrollEvent = {> MouseEvent, delta:Int}
-typedef MouseButtonEvent = {> MouseEvent, button:MouseButton}
-
-@:allow(s.app.Window)
+@:allow(s.ui.Scene)
 class Interactive extends Element {
+	final clicks:Map<MouseButton, Float> = [];
 	final holdTimers:Map<MouseButton, Timer> = [];
-	final doubleClickTimers:Map<MouseButton, Timer> = [];
+	final pendingClick:Array<MouseButton> = [];
 
-	public var cursor:MouseCursor = Pointer;
+	public var propagateMouseEvents:Bool = true;
 	public var acceptedButtons:MouseButton = MouseButton.Left;
-	public var focusPolicy:FocusPolicy = ClickFocus | TabFocus;
+
+	public var focusPolicy:FocusPolicy = InputFocus;
 	public var holdInterval:Float = 0.3;
 	public var doubleClickInterval:Float = 0.5;
 
@@ -33,143 +32,176 @@ class Interactive extends Element {
 	public var pressX(default, null):Float = 0.0;
 	public var pressY(default, null):Float = 0.0;
 
-	@:signal public function mouseEntered(x:Float, y:Float);
+	public var clickX(default, null):Float = 0.0;
+	public var clickY(default, null):Float = 0.0;
 
-	@:signal public function mouseExited(x:Float, y:Float);
+	@:signal public function mouseEntered();
 
-	@:signal public function mouseMoved(m:MouseMoveEvent);
+	@:signal public function mouseExited();
 
-	@:signal public function mouseScrolled(m:MouseScrollEvent);
+	@:signal public function mouseMoved(dx:Float, dy:Float);
 
-	@:signal public function mouseDown(m:MouseButtonEvent);
+	@:signal public function mouseScrolled(delta:Int);
 
-	@:signal public function mouseUp(m:MouseButtonEvent);
+	@:signal public function mousePressed(button:MouseButton);
 
-	@:signal public function mouseHold(m:MouseButtonEvent);
+	@:signal public function mouseReleased(button:MouseButton);
 
-	@:signal public function mouseClicked(m:MouseButtonEvent);
+	@:signal public function mouseHold(button:MouseButton);
 
-	@:signal public function mouseDoubleClicked(m:MouseButtonEvent);
+	@:signal public function mouseClicked(button:MouseButton);
 
-	@:signal(button) public function mouseButtonDown(button:MouseButton, m:MouseEvent);
+	@:signal public function mouseDoubleClicked(button:MouseButton);
 
-	@:signal(button) public function mouseButtonUp(button:MouseButton, m:MouseEvent);
+	@:signal(button) public function mouseButtonPressed(button:MouseButton);
 
-	@:signal(button) public function mouseButtonHold(button:MouseButton, m:MouseEvent);
+	@:signal(button) public function mouseButtonReleased(button:MouseButton);
 
-	@:signal(button) public function mouseButtonClicked(button:MouseButton, m:MouseEvent);
+	@:signal(button) public function mouseButtonHold(button:MouseButton);
 
-	@:signal(button) public function mouseButtonDoubleClicked(button:MouseButton, m:MouseEvent);
+	@:signal(button) public function mouseButtonClicked(button:MouseButton);
 
-	@:signal public function keyboardDown(key:KeyCode);
+	@:signal(button) public function mouseButtonDoubleClicked(button:MouseButton);
 
-	@:signal public function keyboardUp(key:KeyCode);
+	@:signal public function keyboardPressed(key:KeyCode);
+
+	@:signal public function keyboardReleased(key:KeyCode);
 
 	@:signal public function keyboardHold(key:KeyCode);
 
-	@:signal public function keyboardPressed(char:String);
+	@:signal public function keyboardTyped(char:String);
 
-	@:signal public function keyboardHotkey(hotkey:Array<KeyCode>);
+	@:signal public function keyboardHotkey(hotkey:Hotkey);
 
-	@:signal(key) public function keyboardKeyDown(key:KeyCode);
+	@:signal(key) public function keyboardKeyPressed(key:KeyCode);
 
-	@:signal(key) public function keyboardKeyUp(key:KeyCode);
+	@:signal(key) public function keyboardKeyReleased(key:KeyCode);
 
 	@:signal(key) public function keyboardKeyHold(key:KeyCode);
 
-	@:signal(char) public function keyboardCharPressed(char:String);
+	@:signal(char) public function keyboardCharTyped(char:String);
 
-	@:slot(mouseMoved)
-	function updateMouseMoved(m:MouseMoveEvent) {
-		mouseX = m.x;
-		mouseY = m.y;
+	public function new() {
+		super();
+
+		onMouseHold(b -> mouseButtonHold(b));
+		onKeyboardPressed(k -> keyboardKeyPressed(k));
+		onKeyboardReleased(k -> keyboardKeyReleased(k));
+		onKeyboardHold(k -> keyboardKeyHold(k));
+		onKeyboardTyped(c -> keyboardCharTyped(c));
 	}
 
-	@:slot(mouseEntered)
-	function updateMouseEntered(x:Float, y:Float) {
+	public function setFocusPolicy(policy:FocusPolicy)
+		return focusPolicy = policy;
+
+	public function enter(x:Float, y:Float) {
 		mouseX = x;
 		mouseY = y;
 		isHovered = true;
-		scene.window.mouse.cursor = cursor;
+
+		mouseEntered();
 	}
 
-	@:slot(mouseExited)
-	function updateMouseExited(x:Float, y:Float) {
+	public function exit(x:Float, y:Float) {
 		mouseX = x;
 		mouseY = y;
 		isHovered = false;
-		scene.window.mouse.cursor = Default;
-
 		for (b in holdTimers.keys())
 			holdTimers[b].stop();
 		holdTimers.clear();
+		pendingClick.resize(0);
+
+		mouseExited();
 	}
 
-	@:slot(mouseDown)
-	function updateMouseDown(m:MouseButtonEvent) {
-		pressX = m.x;
-		pressY = m.y;
-		isPressed = true;
-		pressedButtons |= m.button;
+	public function mouse(dx:Float, dy:Float) {
+		mouseX += dx;
+		mouseY += dy;
 
-		holdTimers[m.button] = Timer.set(() -> {
-			holdTimers.remove(m.button);
-			mouseHold(m);
+		mouseMoved(dx, dy);
+	}
+
+	public function press(button:MouseButton, x:Float, y:Float) {
+		if (!acceptedButtons.matches(button))
+			return;
+
+		pressX = x;
+		pressY = y;
+		pressedButtons |= button;
+		isPressed = pressedButtons.matches(Any);
+		if (isPressed && !scene.pressed.contains(this))
+			scene.pressed.push(this);
+
+		pendingClick.push(button);
+
+		holdTimers[button] = Timer.set(() -> {
+			holdTimers.remove(button);
+			pendingClick.remove(button);
+			mouseHold(button);
 		}, holdInterval);
 
-		mouseButtonDown(m.button, m);
+		mouseButtonPressed(button);
+		mousePressed(button);
 	}
 
-	@:slot(mouseUp)
-	function updateMouseUp(m:MouseButtonEvent) {
-		isPressed = false;
-		final timer = holdTimers[m.button];
+	public function release(button:MouseButton, x:Float, y:Float) {
+		if (!pressedButtons.matches(button))
+			return;
+
+		pressedButtons -= button;
+		isPressed = pressedButtons.matches(Any);
+		if (!isPressed)
+			scene.pressed.remove(this);
+
+		final timer = holdTimers[button];
 		if (timer != null) {
 			timer.stop();
-			holdTimers.remove(m.button);
-			mouseClicked(m);
+			holdTimers.remove(button);
 		}
+		if (pendingClick.remove(button))
+			click(button, x, y);
 
-		mouseButtonUp(m.button, m);
+		mouseButtonReleased(button);
+		mouseReleased(button);
 	}
 
-	@:slot(mouseHold)
-	function updateMouseHold(m:MouseButtonEvent)
-		mouseButtonHold(m.button, m);
+	public function scroll(delta:Int)
+		mouseScrolled(delta);
 
-	@:slot(mouseClicked)
-	function updateMouseClicked(m:MouseButtonEvent)
-		mouseButtonClicked(m.button, m);
+	public function click(button:MouseButton, x:Float, y:Float) {
+		if (!acceptedButtons.matches(button))
+			return;
 
-	@:slot(mouseDoubleClicked)
-	function updateMouseDoubleClicked(m:MouseButtonEvent)
-		mouseButtonDoubleClicked(m.button, m);
+		clickX = x;
+		clickY = y;
 
-	@:slot(keyboardDown)
-	function updateKeyboardDown(key:KeyCode)
-		keyboardKeyDown(key);
+		mouseButtonClicked(button);
+		mouseClicked(button);
 
-	@:slot(keyboardUp)
-	function updateKeyboardUp(key:KeyCode)
-		keyboardKeyUp(key);
+		var time = Time.time;
+		var previous = clicks.get(button);
+		clicks.set(button, time);
 
-	@:slot(keyboardHold)
-	function updateKeyboardHold(key:KeyCode)
-		keyboardKeyHold(key);
+		if (previous != null && time - previous <= doubleClickInterval)
+			doubleClick(button, x, y);
+	}
 
-	@:slot(keyboardPressed)
-	function updateKeyboardPressed(char:String)
-		keyboardCharPressed(char);
+	public function doubleClick(button:MouseButton, x:Float, y:Float) {
+		clickX = x;
+		clickY = y;
+		mouseButtonDoubleClicked(button);
+		mouseDoubleClicked(button);
+	}
 
 	@:slot(update)
 	function updateOrder(_)
 		if (globalVisible && scene.children.dirty)
-			scene.interactive.push(this);
+			scene.interactive.unshift(this);
 
-	function set_focused(value:Bool) {
+	function set_isFocused(value:Bool) {
 		if (value && scene != null) {
 			scene.focus = this;
-			return isFocused = true;
+			return isFocused;
 		}
 		return isFocused = false;
 	}

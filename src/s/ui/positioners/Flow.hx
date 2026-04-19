@@ -1,4 +1,4 @@
-package s.ui.elements.positioners;
+package s.ui.positioners;
 
 import s.ui.AnchorsAttribute;
 import s.ui.Direction;

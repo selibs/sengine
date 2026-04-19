@@ -8,6 +8,7 @@ import haxe.macro.Compiler;
 using haxe.macro.ComplexTypeTools;
 using haxe.macro.TypeTools;
 using haxe.macro.ExprTools;
+using s.extensions.ArrayExt;
 
 class ExprError extends haxe.Exception {
 	public var expr:Expr;
@@ -162,8 +163,8 @@ class ElementMacro {
 		"drawable" => "s.ui.elements.Drawable",
 		"interactive" => "s.ui.elements.Interactive",
 		// controls
-		"button" => "s.ui.elements.controls.Button",
-		// "input" => "s.ui.elements.controls.TextInput",
+		"button" => "s.ui.controls.Button",
+		// "input" => "s.ui.controls.TextInput",
 		// "edit" => "s.ui.elements.elements.TextEdit",
 		// elements
 		"text" => "s.ui.elements.Text",
@@ -172,22 +173,22 @@ class ElementMacro {
 		"image" => "s.ui.elements.ImageElement",
 		"image.animated" => "s.ui.elements.AnimatedImageElement",
 		// shapes
-		"ellipse" => "s.ui.elements.shapes.Ellipse",
-		"triangle" => "s.ui.elements.shapes.Triangle",
-		"rectangle" => "s.ui.elements.shapes.Rectangle",
+		"ellipse" => "s.ui.shapes.Ellipse",
+		"triangle" => "s.ui.shapes.Triangle",
+		"rectangle" => "s.ui.shapes.Rectangle",
 		// gradients
-		"gradient.conic" => "s.ui.elements.gradients.ConicGradient",
-		"gradient.linear" => "s.ui.elements.gradients.LinearGradient",
-		"gradient.radial" => "s.ui.elements.gradients.RadialGradient",
+		"gradient.conic" => "s.ui.gradients.ConicGradient",
+		"gradient.linear" => "s.ui.gradients.LinearGradient",
+		"gradient.radial" => "s.ui.gradients.RadialGradient",
 		// positioners
-		"row" => "s.ui.elements.positioners.Row",
-		"flow" => "s.ui.elements.positioners.Flow",
-		"column" => "s.ui.elements.positioners.Column",
+		"row" => "s.ui.positioners.Row",
+		"flow" => "s.ui.positioners.Flow",
+		"column" => "s.ui.positioners.Column",
 		// layouts
-		"layout" => "s.ui.elements.layouts.Layout",
-		"layout.row" => "s.ui.elements.layouts.RowLayout",
-		"layout.flow" => "s.ui.elements.layouts.FlowLayout",
-		"layout.column" => "s.ui.elements.layouts.ColumnLayout",
+		"layout" => "s.ui.layouts.Layout",
+		"layout.row" => "s.ui.layouts.RowLayout",
+		"layout.flow" => "s.ui.layouts.FlowLayout",
+		"layout.column" => "s.ui.layouts.ColumnLayout",
 		// widgets
 		// "progress" => "s.ui.widgets.ProgressBar",
 		// "scroll" => "s.ui.widgets.ScrollView",
@@ -353,6 +354,19 @@ class ElementMacro {
 						default:
 							addEl(m, e, expr.pos);
 					}
+				case EMeta(m, e) if (m.name == ":bind"): // TODO
+					var attrs = (m.params ?? []).map(e -> {
+						var ident = extractName(transform(e)[0]).split(".");
+						ident[ident.lastIndex()] = ident.last() + "Dirty";
+						macro @:privateAccess $p{ident};
+					});
+					var cond = attrs[0];
+					for (i in 1...attrs.length)
+						cond = macro $cond || ${attrs[i]};
+					var ex = macro $b{transform(e)};
+					var updateExpr = cond != null ? macro if ($cond)
+						$ex : macro $ex;
+					return [ex, macro ${currentRef()}.onUpdate(_ -> $updateExpr)];
 				case EVars(vars):
 					var out:Array<Expr> = [];
 					for (v in vars) {

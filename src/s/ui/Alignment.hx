@@ -53,6 +53,9 @@ extern enum abstract Alignment(Int) from Int to Int {
 				element.y = v - element.height;
 	}
 
+	public inline function matches(value:Alignment)
+		return this & value != 0;
+
 	public inline function toString():String {
 		var strs = [];
 

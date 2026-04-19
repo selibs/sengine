@@ -1,4 +1,4 @@
-package s.ui.elements.shapes;
+package s.ui.shapes;
 
 @:allow(s.ui.graphics.RectangleDrawer)
 class Rectangle extends Shape {

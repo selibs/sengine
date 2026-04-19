@@ -1,4 +1,4 @@
-package s.ui.elements.layouts;
+package s.ui.layouts;
 
 import s.ui.Alignment;
 import s.ui.AnchorLineAttribute;
@@ -10,7 +10,7 @@ import s.ui.Element;
 @:access(s.ui.LayoutAttribute)
 @:access(s.ui.elements.Container)
 @:access(s.ui.Element)
-@:access(s.ui.elements.positioners.Positioner)
+@:access(s.ui.positioners.Positioner)
 class Layout extends Container {
 	public static inline function clampWidth(el:Element, width:Float) {
 		final l = el.layout;
