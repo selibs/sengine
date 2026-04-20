@@ -82,13 +82,13 @@ class FSM {
 			return;
 		var transition = current[to];
 		if (transition != null) {
-			current = to;
+			@:bypassAccessor current = to;
 			transition();
 		}
 	}
 
 	function set_current(value:State) {
 		goto(value);
-		return current;
+		return current = value;
 	}
 }
