@@ -50,6 +50,8 @@ class Element extends Object2D<Element> {
 
 	public var scene(default, null):Scene;
 
+	public var stylesheet:Stylesheet;
+
 	/**
 	 * Optional application-defined tag used for lookup.
 	 *
@@ -58,9 +60,9 @@ class Element extends Object2D<Element> {
 	 * [`findChild`](s.ui.Element.findChild) use this field for simple structural
 	 * queries.
 	 */
-	@:attr public var tag:String;
+	@:attr.attached public var tags(default, set):ElementTags;
 
-	public var clip:Bool = false; // TODO: stencil test (?)
+	@:attr public var clip:Bool = false; // TODO: stencil test (?)
 	@:attr.attached public final layout:LayoutAttribute;
 
 	@:attr(visibility) @:clamp public var opacity:Float = 1.0;
@@ -87,8 +89,10 @@ class Element extends Object2D<Element> {
 
 	public function new() {
 		super();
+
 		layout = new LayoutAttribute(this);
 		anchors = new AnchorsAttribute(this);
+
 		left = new HorizontalAnchor(this);
 		hCenter = new HorizontalAnchor(this);
 		right = new HorizontalAnchor(this);
@@ -98,6 +102,8 @@ class Element extends Object2D<Element> {
 
 		width = 100;
 		height = 100;
+
+		tags = [];
 	}
 
 	overload extern public inline function setPadding(value:Float):Void
@@ -180,6 +186,15 @@ class Element extends Object2D<Element> {
 	overload extern public inline function contains(x:Float, y:Float):Bool
 		return left.position <= x && x <= right.position && top.position <= y && y <= bottom.position;
 
+	public inline function hasTag(tag:String):Bool
+		return tags.has(tag);
+
+	public inline function addTag(tag:String):Void
+		tags.add(tag);
+
+	public inline function removeTag(tag:String):Void
+		tags.remove(tag);
+
 	/**
 	 * Returns the first direct child with the given tag.
 	 *
@@ -190,7 +205,7 @@ class Element extends Object2D<Element> {
 	 */
 	public function getChild(tag:String):Element {
 		for (c in children)
-			if (c.tag == tag)
+			if (c.tags.has(tag))
 				return c;
 		return null;
 	}
@@ -204,7 +219,7 @@ class Element extends Object2D<Element> {
 	 * @return Matching direct children.
 	 */
 	public function getChildren(tag:String):Array<Element>
-		return children.filter(c -> c.tag == tag);
+		return children.filter(c -> c.hasTag(tag));
 
 	/**
 	 * Searches the full descendant tree for the first node with the given tag.
@@ -216,7 +231,7 @@ class Element extends Object2D<Element> {
 	 */
 	public function findChild(tag:String):Element {
 		for (child in children)
-			if (child.tag == tag)
+			if (child.hasTag(tag))
 				return child;
 			else {
 				var c = child.findChild(tag);
@@ -250,29 +265,30 @@ class Element extends Object2D<Element> {
 		return null;
 	}
 
-	public function addStyle(style:Style) {
-		update.connect(style.apply);
+	public function setStyle(style:Style)
+		dirty = (stylesheet = stylesheet ?? []).push(style) > 0;
+
+	public function removeStyle(style:Style)
+		dirty = stylesheet?.remove(style);
+
+	public inline function setStylesheet(stylesheet:Stylesheet) {
+		this.stylesheet = stylesheet;
 		dirty = true;
 	}
 
-	public function removeStyle(style:Style) {
-		update.disconnect(style.apply);
+	public inline function removeStylesheet() {
+		this.stylesheet = null;
 		dirty = true;
 	}
-
-	public inline function addStylesheet(stylesheet:Stylesheet)
-		for (style in stylesheet)
-			addStyle(style);
-
-	public inline function removeStylesheet(stylesheet:Stylesheet)
-		for (style in stylesheet)
-			removeStyle(style);
 
 	override function toString():String
-		return super.toString() + (tag != null ? '#$tag' : "");
+		return super.toString() + tags.toString();
 
 	function updateTree() {
-		update(this);
+		update();
+		if (stylesheet != null)
+			for (style in stylesheet)
+				style.selector.selectIfDirty(this, style.f);
 		updateChildren();
 		flush();
 	}
@@ -285,27 +301,20 @@ class Element extends Object2D<Element> {
 		if (scene?.children.dirty || child.dirty || globalVisibleDirty || globalOpacityDirty || globalTransformDirty)
 			child.updateTree();
 
-	@:slot(update)
-	function updateParent(_)
+	override function update() {
+		super.update();
+
 		if (parentDirty)
 			scene = parent?.scene;
 
-	@:slot(update)
-	function updateBounds(_) {
 		s.ui.macro.ElementMacro.updateAxis("left", "hCenter", "right", "x", "width");
 		s.ui.macro.ElementMacro.updateAxis("top", "vCenter", "bottom", "y", "height");
-	}
 
-	@:slot(update)
-	function updateOrigin(_) {
 		if (horizontalDirty || originDirty)
 			globalOriginX = left.position + (Math.isNaN(originX) ? width * 0.5 : originX);
 		if (verticalDirty || originDirty)
 			globalOriginY = top.position + (Math.isNaN(originY) ? height * 0.5 : originY);
-	}
 
-	@:slot(update)
-	function updateTransform(_)
 		if (globalOriginDirty || transformDirty || parentDirty || parent?.globalTransformDirty) {
 			globalTransform = Mat3.translation(-globalOriginX, -globalOriginY) * transform * Mat3.translation(globalOriginX, globalOriginY);
 			if (parent != null)
@@ -313,21 +322,18 @@ class Element extends Object2D<Element> {
 			globalTransformInverted.setFrom(inverse(globalTransform));
 		}
 
-	@:slot(update)
-	function updateOpacity(_)
 		if (visibilityDirty || parentDirty || parent?.globalOpacityDirty) {
 			globalOpacity = opacity;
 			if (parent != null)
 				globalOpacity = parent.globalOpacity * globalOpacity;
 		}
 
-	@:slot(update)
-	function updateVisible(_)
 		if (visibilityDirty || parentDirty || parent?.globalVisibleDirty || globalOpacityDirty || widthDirty || heightDirty) {
 			globalVisible = isVisible && globalOpacity > 0.0 && width > 0.0 && height > 0.0;
 			if (parent != null)
 				globalVisible = parent.globalVisible && globalVisible;
 		}
+	}
 
 	#if debug_element_bounds
 	function drawBounds(ctx:Context2D) {
@@ -435,6 +441,9 @@ class Element extends Object2D<Element> {
 		ctx.drawString(rect, App.input.mouse.x - style.font.widthOfCharacters(rect.toCharArray(), 0, rect.length), App.input.mouse.y);
 	}
 	#end
+
+	function set_tags(value:ElementTags)
+		return tags = new ElementTags(value.tags, this);
 
 	function set_x(value:Float):Float {
 		if (!isHorizontallyAnchored())

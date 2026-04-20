@@ -1,5 +1,6 @@
 package s.ui.controls;
 
+import s.ui.elements.Control;
 import s.ui.shapes.Rectangle;
 
 class Progress extends Control<Rectangle, Rectangle> {
@@ -9,6 +10,7 @@ class Progress extends Control<Rectangle, Rectangle> {
 	public var position:Float = 0.0;
 	public var indeterminate:Bool = false;
 
-	@:slot(update)
-	function updateProgress(_) {}
+	override function update() {
+		super.update();
+	}
 }

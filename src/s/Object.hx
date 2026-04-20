@@ -78,10 +78,6 @@ abstract class Object<T:Object<T>> implements s.shortcut.Shortcut implements s.s
 	public function removeChild(value:T)
 		return children.remove(value);
 
-	/** Returns an iterator over direct children. */
-	public function iterator()
-		return children.iterator();
-
 	/**
 	 * Traverses all descendants depth-first and applies a callback.
 	 *
@@ -90,11 +86,19 @@ abstract class Object<T:Object<T>> implements s.shortcut.Shortcut implements s.s
 	 * @param f Callback invoked for each descendant.
 	 * @return This node.
 	 */
-	public function traverse(f:T->Void) {
-		for (child in children)
-			f(child.traverse(f));
-		return cast this;
-	}
+	public function traverse(f:T->Void)
+		iterate(c -> {
+			f(c);
+			c.traverse(f);
+		});
+
+	public function iterate(f:T->Void)
+		for (c in iterator())
+			f(c);
+
+	/** Returns an iterator over direct children. */
+	public function iterator()
+		return children.iterator();
 
 	/** Returns a debug-friendly string containing the class name and tag. */
 	public function toString():String

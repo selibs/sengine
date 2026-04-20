@@ -282,9 +282,7 @@ class App implements s.shortcut.Shortcut {
 				if (progress >= 1.0) {
 					logger.debug("Started");
 
-					onStateChanged(s -> s == Foreground ? System.notifyOnFrames(render) : System.removeFramesListener(render));
-					if (state == Foreground)
-						System.notifyOnFrames(render);
+					System.notifyOnFrames(render);
 
 					if (started != null)
 						started(new Window(window));

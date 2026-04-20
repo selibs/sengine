@@ -12,14 +12,16 @@ class Canvas extends Drawable {
 	}
 
 	public inline function paint(f:Context2D->Void):Void
-		texture.context2D.render(true, color, f);
+		texture.context2D.draw(true, color, f);
 
-	@:slot(update)
-	function updateTexture(_)
+	override function update() {
+		super.update();
+		
 		if (widthDirty || heightDirty) {
 			texture.unload();
 			texture = new RenderTarget(Std.int(width), Std.int(height));
 		}
+	}
 
 	function draw(target:RenderTarget) {
 		final ctx = target.context2D;

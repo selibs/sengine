@@ -7,8 +7,9 @@ abstract class Container extends Element {
 	@:readonly @:alias public var freeWidth:Float = spaceH;
 	@:readonly @:alias public var freeHeight:Float = spaceV;
 
-	@:slot(update)
-	function updateSpace(_) {
+	override function update() {
+		super.update();
+
 		if (widthDirty || left.paddingDirty || right.paddingDirty)
 			spaceH = width - left.padding - right.padding;
 		if (heightDirty || top.paddingDirty || bottom.paddingDirty)

@@ -146,6 +146,7 @@ class Scene implements s.shortcut.Shortcut extends Drawable {
 			updateTree();
 			interactive.reverse();
 		}
+
 		draw(window.backbuffer);
 	}
 
@@ -198,7 +199,7 @@ class Scene implements s.shortcut.Shortcut extends Drawable {
 	}
 	#end
 
-	override function updateOrder(_) {}
+	override function updateOrder() {}
 
 	function set_focus(value:Interactive):Interactive {
 		if (focus == value)

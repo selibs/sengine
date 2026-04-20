@@ -193,10 +193,12 @@ class Interactive extends Element {
 		mouseDoubleClicked(button);
 	}
 
-	@:slot(update)
-	function updateOrder(_)
+	override function update() {
+		super.update();
+		
 		if (globalVisible && scene.children.dirty)
 			scene.interactive.unshift(this);
+	}
 
 	function set_isFocused(value:Bool) {
 		if (value && scene != null) {

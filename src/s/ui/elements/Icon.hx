@@ -98,13 +98,15 @@ class Icon<T:Image = Image> extends Drawable {
 	function loadSource()
 		sourceDirty = true;
 
-	@:slot(update)
-	function updateSource(_)
+	override function update() {
+		super.update();
+
 		if (isLoaded && (sourceAssetDirty || samplingDirty))
 			if (mipmap)
 				source.generateMipmaps(1);
 			else
 				source.setMipmaps([]);
+	}
 
 	function draw(target:RenderTarget) {
 		if (!isLoaded)

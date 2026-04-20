@@ -17,13 +17,31 @@ extern abstract Mat3(KhaMat3) from KhaMat3 to KhaMat3 {
 	public static inline function empty():Mat3
 		return KhaMat3.empty();
 
-	public static inline function translation(x:Float, y:Float):Mat3
+	overload public static inline function translation(value:Float):Mat3
+		return translation(value, value);
+
+	overload public static inline function translation(value:Vec2):Mat3
+		return translation(value.x, value.y);
+
+	overload public static inline function translation(x:Float, y:Float):Mat3
 		return KhaMat3.translation(x, y);
 
-	public static inline function scale(x:Float, y:Float):Mat3
+	overload public static inline function scale(value:Float):Mat3
+		return scale(value, value);
+
+	overload public static inline function scale(value:Vec2):Mat3
+		return scale(value.x, value.y);
+
+	overload public static inline function scale(x:Float, y:Float):Mat3
 		return KhaMat3.scale(x, y);
 
-	public static inline function shear(x:Float, y:Float):Mat3
+	overload public static inline function shear(value:Float):Mat3
+		return shear(value, value);
+
+	overload public static inline function shear(value:Vec2):Mat3
+		return shear(value.x, value.y);
+
+	overload public static inline function shear(x:Float, y:Float):Mat3
 		return new Mat3(1, x, 0, y, 1, 0, 0, 0, 1);
 
 	overload public static inline function rotation(p1:Vec2, p2:Vec2):Mat3

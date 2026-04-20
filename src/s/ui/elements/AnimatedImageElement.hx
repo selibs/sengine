@@ -37,8 +37,9 @@ class AnimatedImageElement extends ImageElement<AnimatedImage> {
 	function markCurrentFrame(_)
 		currentFrameDirty = true;
 
-	@:slot(update)
-	function updateCurrentFrame(_) {
+	override function update() {
+		super.update();
+
 		if (!isLoaded || frameCount <= 0)
 			return;
 

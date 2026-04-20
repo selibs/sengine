@@ -10,13 +10,19 @@ abstract class Drawable extends Element {
 
 	abstract function draw(target:RenderTarget):Void;
 
-	@:slot(update)
-	function updateRealColor(_)
+	override function update() {
+		super.update();
+		updateRealColor();
+		updateOrder();
+	}
+
+	function updateRealColor() {
 		if (visualDirty || globalOpacityDirty)
 			realColor = Color.rgba(color.r, color.g, color.b, color.a * globalOpacity);
+	}
 
-	@:slot(update)
-	function updateOrder(_)
+	function updateOrder() {
 		if (globalVisible && scene.children.dirty)
 			scene.drawable.push(this);
+	}
 }

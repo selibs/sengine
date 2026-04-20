@@ -13,8 +13,10 @@ abstract class Shape extends s.ui.elements.Drawable {
 		border = new BorderAttribute(this);
 	}
 
-	@:slot(update)
-	function updateRealRadius(_)
+	override function update() {
+		super.update();
+
 		if (radiusDirty || widthDirty || heightDirty)
 			realRadius = Math.min(radius, Math.min(width, height) * 0.5);
+	}
 }

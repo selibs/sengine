@@ -46,8 +46,9 @@ class Label extends Drawable {
 		ctx.popTransform();
 	}
 
-	@:slot(update)
-	function updateText(_):Void {
+	override function update():Void {
+		super.update();
+
 		if (text.length == 0 || !font.isLoaded || font.pixelSize == 0)
 			return;
 

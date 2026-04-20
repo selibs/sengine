@@ -36,8 +36,9 @@ abstract class Gradient extends s.ui.elements.Drawable {
 			this.stops = stops;
 	}
 
-	@:slot(update)
-	function updateGradient(_) {
+	override function update() {
+		super.update();
+
 		if (!gradientDirty && !resolutionDirty)
 			return;
 

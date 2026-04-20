@@ -1,7 +1,5 @@
 package s.ui;
 
-import s.ui.Element;
-
 using StringTools;
 
 enum AttrRule {
@@ -12,7 +10,7 @@ enum AttrRule {
 enum Rule {
 	Custom(f:Element->Bool);
 	// object
-	Tag(tag:String); // "..."
+	Tags(tags:ElementTags); // "..."
 	Type(type:Class<Element>); // a
 	Object(object:Element); // ~a
 	Attrs(attrs:Map<String, AttrRule>); // [...=...]
@@ -25,17 +23,17 @@ enum Rule {
 	// relations
 	Parent(rule:Rule); // ... < ...
 	Children(rule:Rule); // ... > ...
-	Siblings(rule:Rule); // ... % ...
+	Siblings(rule:Rule); // ... >> ...
 }
 
 abstract Selector(Rule) from Rule to Rule {
 	@:from
-	public static inline function fromString(value:String) {
+	public static function fromString(value:String) {
 		// TODO: parse css selectors
 		return new Selector();
 	}
 
-	public inline function new(?rule:Rule)
+	public function new(?rule:Rule)
 		this = rule ?? Type(Element);
 
 	public inline function matches(element:Element):Bool
@@ -49,16 +47,13 @@ abstract Selector(Rule) from Rule to Rule {
 		if (needsSync(element))
 			select(element, callback);
 
-	public inline function deselect(element:Element):Bool
-		return false;
-
 	inline function needsSync(element:Element):Bool
 		return @:privateAccess element.dirty || needsRuleUpdate(element, this);
 
-	inline function matchesRule(element:Element, rule:Rule):Bool
+	function matchesRule(element:Element, rule:Rule):Bool
 		return switch rule {
 			case Custom(f): f(element);
-			case Tag(tag): element.tag == tag;
+			case Tags(tags): element.tags == tags;
 			case Type(type): Std.isOfType(element, type);
 			case Object(object): object == element;
 			case Attrs(fields):
@@ -116,7 +111,7 @@ abstract Selector(Rule) from Rule to Rule {
 				matched;
 		}
 
-	inline function matchesSubtree(element:Element, rule:Rule):Bool {
+	function matchesSubtree(element:Element, rule:Rule):Bool {
 		if (matchesRule(element, rule))
 			return true;
 		var d = false;
@@ -128,10 +123,10 @@ abstract Selector(Rule) from Rule to Rule {
 		return d;
 	}
 
-	inline function needsRuleUpdate(element:Element, rule:Rule):Bool
+	function needsRuleUpdate(element:Element, rule:Rule):Bool
 		return @:privateAccess switch rule {
 			case Custom(_): true;
-			case Tag(_): element.tagDirty;
+			case Tags(_): element.tags.dirty;
 			case Type(_), Object(_): false;
 			case Attrs(attrs):
 				var d = false;
@@ -156,12 +151,12 @@ abstract Selector(Rule) from Rule to Rule {
 			case Siblings(_): element.parentDirty || element.parent != null && (element.parent.dirty || element.parent.children.dirty);
 		}
 
-	inline function attrDirty(element:Element, path:String):Bool {
+	function attrDirty(element:Element, path:String):Bool {
 		final parts = path.split(".");
 
 		var target:Dynamic = element;
 		for (i in 0...parts.length - 1)
-			if (target = Reflect.getProperty(target, parts[i]) == null)
+			if ((target = Reflect.getProperty(target, parts[i])) == null)
 				break;
 
 		return target == null ? true : Reflect.getProperty(target, '${parts[parts.length - 1]}Dirty') == true;

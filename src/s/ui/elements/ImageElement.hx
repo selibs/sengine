@@ -143,8 +143,9 @@ class ImageElement<T:Image = Image> extends Icon<T> {
 	 */
 	@:attr(imageLayout) public var alignment:Alignment = AlignCenter;
 
-	@:slot(update)
-	function updateClipRect(_) {
+	override function update() {
+		super.update();
+		
 		final hBoundsDirty = left.positionDirty || right.positionDirty;
 		final vBoundsDirty = top.positionDirty || bottom.positionDirty;
 

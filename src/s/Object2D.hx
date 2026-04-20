@@ -6,8 +6,6 @@ import s.math.Mat3;
 abstract class Object2D<T:Object2D<T>> extends Object<T> {
 	@:attr(transformLocal) final transform:Mat3 = new Mat3();
 
-	@:signal function update(object:T):Void;
-
 	public var translationX(get, set):Float;
 	public var translationY(get, set):Float;
 	public var scaleX(get, set):Float;
@@ -18,36 +16,31 @@ abstract class Object2D<T:Object2D<T>> extends Object<T> {
 
 	@:attr(hierarchy) public var z:Float = 0.0;
 
+	extern overload public inline function setTranslation(value:Vec2)
+		setTranslation(value.x, value.y);
+
 	extern overload public inline function setTranslation(x:Float, y:Float) {
 		translationX = x;
 		translationY = y;
 	}
 
-	extern overload public inline function setTranslation(value:Vec2)
-		setTranslation(value.x, value.y);
+	extern overload public inline function setScale(value:Vec2)
+		setScale(value.x, value.y);
 
 	extern overload public inline function setScale(x:Float, y:Float) {
 		scaleX = x;
 		scaleY = y;
 	}
 
-	extern overload public inline function setScale(value:Vec2)
-		setScale(value.x, value.y);
-
 	extern overload public inline function setRotation(value:Float)
 		rotation = value;
-
-	extern overload public inline function setShear(x:Float, y:Float) {
-		shearX = x;
-		shearY = y;
-	}
 
 	extern overload public inline function setShear(value:Vec2)
 		setShear(value.x, value.y);
 
-	extern overload public inline function translate(x:Float, y:Float) {
-		transform *= Mat3.translation(x, y);
-		transformDirty = true;
+	extern overload public inline function setShear(x:Float, y:Float) {
+		shearX = x;
+		shearY = y;
 	}
 
 	extern overload public inline function translate(value:Vec2)
@@ -55,6 +48,11 @@ abstract class Object2D<T:Object2D<T>> extends Object<T> {
 
 	extern overload public inline function translate(value:Float)
 		translate(value, value);
+
+	extern overload public inline function translate(x:Float, y:Float) {
+		transform *= Mat3.translation(x, y);
+		transformDirty = true;
+	}
 
 	extern overload public inline function scale(x:Float, y:Float) {
 		transform *= Mat3.scale(x, y);
@@ -80,8 +78,7 @@ abstract class Object2D<T:Object2D<T>> extends Object<T> {
 	extern overload public inline function shear(value:Vec2)
 		shear(value.x, value.y);
 
-	@:slot(update)
-	function updateZ(_)
+	function update()
 		if (zDirty)
 			parent?.insertChild(cast this);
 
