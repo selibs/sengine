@@ -1,6 +1,11 @@
 const fs = require("fs");
 const path = require("path");
-const { WebSocketServer } = require("ws");
+let WebSocketServer = null;
+try {
+	({ WebSocketServer } = require("ws"));
+} catch (_error) {
+	WebSocketServer = null;
+}
 
 const JsType = {
 	CLASSIC: "Classic",
@@ -30,9 +35,14 @@ class Server {
 		this.port = port;
 		this.file = null;
 		this.clients = new Set();
-		this.server = new WebSocketServer({ port: this.port });
-		this.server.on("connection", (socket) => this.handleSocket(socket));
-		this.server.on("error", (error) => this.reportError(`Server error: ${formatError(error)}`));
+		this.server = null;
+		if (WebSocketServer != null) {
+			this.server = new WebSocketServer({ port: this.port });
+			this.server.on("connection", (socket) => this.handleSocket(socket));
+			this.server.on("error", (error) => this.reportError(`Server error: ${formatError(error)}`));
+		} else {
+			console.warn("hotload: package `ws` is not installed, websocket hotload server is disabled.");
+		}
 	}
 
 	close() {
