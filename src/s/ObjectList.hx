@@ -23,8 +23,8 @@ extern abstract ObjectList<T:Object<T>>(ObjectListData<T>) to ObjectListData<T> 
 		return setObjectParent(list.pop(), null);
 
 	public inline function add(x:T):T {
-		if (contains(x))
-			return null;
+		if (x == null || contains(x))
+			return x;
 		list.push(x);
 		return setObjectParent(x, object);
 	}
@@ -52,28 +52,40 @@ extern abstract ObjectList<T:Object<T>>(ObjectListData<T>) to ObjectListData<T> 
 		return list.toString();
 
 	public inline function unshift(x:T):T {
-		if (contains(x))
-			return null;
+		if (x == null || contains(x))
+			return x;
 		list.unshift(x);
 		return setObjectParent(x, object);
 	}
 
 	public inline function insert(pos:Int, x:T):T {
-		if (contains(x))
-			return null;
+		if (x == null || contains(x))
+			return x;
 		list.insert(pos, x);
 		return setObjectParent(x, object);
 	}
 
 	public inline function remove(x:T):Bool {
-		var r = list.remove(x);
-		if (r)
+		if (x != null && list.remove(x)) {
 			setObjectParent(x, null);
-		return r;
+			return true;
+		}
+		return false;
+	}
+
+	public inline function replace(x:T, y:T):Bool {
+		var ind = indexOf(x);
+		if (ind >= 0) {
+			setObjectParent(list[ind], null);
+			list[ind] = x;
+			setObjectParent(x, object);
+			return true;
+		}
+		return false;
 	}
 
 	public inline function contains(x:T):Bool
-		return x?.parent == object;
+		return list.contains(x);
 
 	public inline function indexOf(x:T, ?fromIndex:Int):Int
 		return list.indexOf(x, fromIndex);
@@ -115,9 +127,11 @@ extern abstract ObjectList<T:Object<T>>(ObjectListData<T>) to ObjectListData<T> 
 
 	@:op([])
 	private inline function arrayWrite(i:Int, x:T):T {
-		if (!contains(x))
+		if (!contains(x)) {
+			setObjectParent(list[i], null);
 			list[i] = x;
-		setObjectParent(x, object);
+			setObjectParent(x, object);
+		}
 		return x;
 	}
 

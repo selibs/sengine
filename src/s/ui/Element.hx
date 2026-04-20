@@ -5,6 +5,7 @@ import s.math.SMath;
 import s.geometry.Size;
 import s.geometry.Position;
 import s.ui.Style;
+import s.ui.Alignment;
 import s.ui.AnchorsAttribute;
 import s.ui.AnchorLineAttribute;
 #if debug_element_bounds
@@ -41,12 +42,55 @@ class Element extends Object2D<Element> {
 	overload extern public static inline function mapFromElementNormalized(element:Element, p:Position):Position
 		return element.mapToGlobalNormalized(p.x, p.y);
 
+	overload extern public static inline function align(alignment:Alignment, element:Element, ?h:Float = 0.0, ?v:Float = 0.0) {
+		// horizontal
+		if (alignment.matches(AlignLeft))
+			element.x = h;
+		else if (alignment.matches(AlignHCenter))
+			element.x = h - element.width * 0.5;
+		else if (alignment.matches(AlignRight))
+			element.x = h - element.width;
+		// vertical
+		if (alignment.matches(AlignTop))
+			element.y = v;
+		else if (alignment.matches(AlignVCenter))
+			element.y = v - element.height * 0.5;
+		else if (alignment.matches(AlignBottom))
+			element.y = v - element.height;
+	}
+
+	overload extern public static inline function align(alignment:Alignment, elements:Array<Element>, ?h:Float = 0.0, ?v:Float = 0.0) {
+		// horizontal
+		if (alignment.matches(AlignLeft))
+			for (element in elements)
+				element.x = h;
+		else if (alignment.matches(AlignHCenter))
+			for (element in elements)
+				element.x = h - element.width * 0.5;
+		else if (alignment.matches(AlignRight))
+			for (element in elements)
+				element.x = h - element.width;
+		// vertical
+		if (alignment.matches(AlignTop))
+			for (element in elements)
+				element.y = v;
+		else if (alignment.matches(AlignVCenter))
+			for (element in elements)
+				element.y = v - element.height * 0.5;
+		else if (alignment.matches(AlignBottom))
+			for (element in elements)
+				element.y = v - element.height;
+	}
+
 	final globalTransformInverted:Mat3 = new Mat3();
 	@:attr var globalTransform:Mat3 = new Mat3();
 	@:attr var globalOpacity:Float = 1.0;
 	@:attr var globalVisible:Bool = true;
 	@:attr(globalOrigin) var globalOriginX:Float = 0.0;
 	@:attr(globalOrigin) var globalOriginY:Float = 0.0;
+	var stylesheetDirty:Bool = false;
+	var inheritedStylesDirty:Bool = false;
+	var inheritedStyles:Array<Style> = null;
 
 	public var scene(default, null):Scene;
 
@@ -265,41 +309,66 @@ class Element extends Object2D<Element> {
 		return null;
 	}
 
-	public function setStyle(style:Style)
-		dirty = (stylesheet = stylesheet ?? []).push(style) > 0;
+	public function setStyle(style:Style) {
+		if ((stylesheet = stylesheet ?? []).push(style) > 0) {
+			stylesheetDirty = true;
+			dirty = true;
+		}
+	}
 
 	public function removeStyle(style:Style)
-		dirty = stylesheet?.remove(style);
+		if (stylesheet?.remove(style) == true) {
+			stylesheetDirty = true;
+			dirty = true;
+		}
 
 	public inline function setStylesheet(stylesheet:Stylesheet) {
 		this.stylesheet = stylesheet;
+		stylesheetDirty = true;
 		dirty = true;
 	}
 
 	public inline function removeStylesheet() {
 		this.stylesheet = null;
+		stylesheetDirty = true;
 		dirty = true;
 	}
 
 	override function toString():String
 		return super.toString() + tags.toString();
 
-	function updateTree() {
-		update();
+	function updateTree(?styles:Array<Style>, inheritedDirty:Bool = false) {
+		final currentStyles = styles ?? [];
+		final baseCount = currentStyles.length;
 		if (stylesheet != null)
 			for (style in stylesheet)
-				style.selector.selectIfDirty(this, style.f);
+				currentStyles.push(style);
+
+		inheritedStyles = currentStyles;
+		inheritedStylesDirty = inheritedDirty || stylesheetDirty;
+		if (inheritedStyles.length > 0)
+			for (style in inheritedStyles)
+				if (inheritedStylesDirty)
+					style.selector.select(this, style.f);
+				else
+					style.selector.selectIfDirty(this, style.f);
+
+		update();
 		updateChildren();
 		flush();
+
+		inheritedStyles = null;
+		inheritedStylesDirty = false;
+		stylesheetDirty = false;
+		currentStyles.resize(baseCount);
 	}
 
 	function updateChildren()
-		for (c in children)
-			updateChild(c);
+		iterate(updateChild);
 
 	function updateChild(child:Element)
-		if (scene?.children.dirty || child.dirty || globalVisibleDirty || globalOpacityDirty || globalTransformDirty)
-			child.updateTree();
+		if (inheritedStylesDirty || scene?.children.dirty || child.dirty || globalVisibleDirty || globalOpacityDirty || globalTransformDirty)
+			child.updateTree(inheritedStyles, inheritedStylesDirty);
 
 	override function update() {
 		super.update();

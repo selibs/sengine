@@ -350,7 +350,7 @@ class ElementMacro {
 				case EMeta(m, e) if (m.name.charAt(0) != ":"):
 					return switch m.name {
 						case "use":
-							[macro ${currentRef()}.useStylesheet($e)];
+							[macro ${currentRef()}.setStylesheet($e)];
 						default:
 							addEl(m, e, expr.pos);
 					}
