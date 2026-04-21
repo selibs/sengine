@@ -1,5 +1,6 @@
 package s.graphics;
 
+import haxe.Rest;
 import s.assets.AnimatedImage;
 import s.math.Vec2;
 import s.math.Mat3;
@@ -54,7 +55,7 @@ class Context2D implements s.shortcut.Shortcut {
 		context.reset();
 	}
 
-	public inline function clear(color:Color)
+	public inline function clear(color:Color = Transparent)
 		context.clear(color);
 
 	public inline function end()
@@ -66,7 +67,7 @@ class Context2D implements s.shortcut.Shortcut {
 	public inline function disableScissor()
 		context.disableScissor();
 
-	public inline function draw(?clear:Bool, ?clearColor:Color = Transparent, commands:Context2D->Void) {
+	public inline function draw(clear:Bool = true, clearColor:Color = Transparent, commands:Context2D->Void) {
 		begin();
 		if (clear)
 			this.clear(clearColor);
@@ -98,6 +99,14 @@ class Context2D implements s.shortcut.Shortcut {
 		fillRectangle(x1, y1 - strength * 0.5, sqrt(dx * dx + dy * dy), strength);
 		popTransform();
 	}
+
+	overload extern public inline function drawPath(strength:Float = 1.0, points:Rest<Vec2>)
+		drawPath(strength, points);
+
+	overload extern public inline function drawPath(strength:Float = 1.0, points:Array<Vec2>)
+		if (points?.length >= 2)
+			for (i in 1...points.length)
+				drawLine(points[i - 1], points[i], strength);
 
 	overload extern public inline function drawRectangle(rect:Rect, strength:Float = 1.0)
 		drawRectangle(rect.x, rect.y, rect.width, rect.height, strength);

@@ -359,14 +359,12 @@ class App implements s.shortcut.Shortcut {
 	public static inline function onCutCopyPaste(cut:Void->String, copy:Void->String, paste:String->Void)
 		System.notifyOnCutCopyPaste(cut, copy, paste);
 
-	static function render(frames:Array<Framebuffer>) {
-		Time.update();
-		update();
-
-		for (frame in frames) {
-			frame.g2.begin();
-			frame.g2.drawImage(Window.get(@:privateAccess frame.window).backbuffer, 0, 0);
-			frame.g2.end();
-		}
-	}
+	static function render(frames:Array<Framebuffer>)
+		try {
+			Time.update();
+			update();
+			for (frame in frames)
+				Window.get(@:privateAccess frame.window).render(frame);
+		} catch (e)
+			logger.error('Failed to execute frame: ${e.message}');
 }

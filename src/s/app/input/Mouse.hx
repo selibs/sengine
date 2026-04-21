@@ -43,7 +43,7 @@ class Mouse implements s.shortcut.Shortcut {
 	function updatePressed(b:MouseButton, x:Int, y:Int)
 		buttonPressed(b, x, y);
 
-	@:slot(pressed)
+	@:slot(released)
 	function updateReleased(b:MouseButton, x:Int, y:Int)
 		buttonReleased(b, x, y);
 

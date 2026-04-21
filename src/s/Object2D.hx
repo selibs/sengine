@@ -78,10 +78,6 @@ abstract class Object2D<T:Object2D<T>> extends Object<T> {
 	extern overload public inline function shear(value:Vec2)
 		shear(value.x, value.y);
 
-	function update()
-		if (zDirty)
-			parent?.insertChild(cast this);
-
 	function insertChild(child:T) {
 		var list = @:privateAccess children.list;
 		var ind = list.indexOf(child);

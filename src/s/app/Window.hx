@@ -1,5 +1,6 @@
 package s.app;
 
+import kha.Framebuffer;
 import kha.WindowMode;
 import kha.WindowOptions;
 import kha.FramebufferOptions;
@@ -21,6 +22,8 @@ import s.app.input.WindowMouse;
 class Window implements s.shortcut.Shortcut {
 	static final windows:Array<Window> = [];
 
+	@:signal public function render(framebuffer:Framebuffer);
+
 	public static function get(id:Int = 0)
 		return windows[id];
 
@@ -28,7 +31,6 @@ class Window implements s.shortcut.Shortcut {
 		return new Window(KhaWindow.create(win, frame));
 
 	final window:KhaWindow;
-	var backbuffer:RenderTarget;
 
 	public final id:Int;
 	public final mouse:WindowMouse;
@@ -116,12 +118,7 @@ class Window implements s.shortcut.Shortcut {
 		id = windows.push(this) - 1;
 		mouse = new WindowMouse(id);
 		window = w;
-		window.notifyOnResize((w, h) -> {
-			backbuffer.unload();
-			backbuffer = new RenderTarget(width, height);
-			resized(w, h);
-		});
-		backbuffer = new RenderTarget(width, height);
+		window.notifyOnResize((w, h) -> resized(w, h));
 	}
 
 	/**

@@ -43,10 +43,14 @@ class Time implements s.shortcut.Shortcut {
 		delta = time - t;
 		t = time;
 
-		for (l in timeListeners)
+		var i = 0;
+		while (i < timeListeners.length) {
+			var l = timeListeners[i];
 			if (time >= l.time) {
 				l.callback();
 				timeListeners.remove(l);
-			}
+			} else
+				++i;
+		}
 	}
 }

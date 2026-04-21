@@ -145,7 +145,7 @@ class ImageElement<T:Image = Image> extends Icon<T> {
 
 	override function update() {
 		super.update();
-		
+
 		final hBoundsDirty = left.positionDirty || right.positionDirty;
 		final vBoundsDirty = top.positionDirty || bottom.positionDirty;
 

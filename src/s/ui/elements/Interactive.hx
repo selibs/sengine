@@ -5,6 +5,7 @@ import s.app.Time;
 import s.app.input.KeyCode;
 import s.app.input.Shortcut;
 import s.app.input.MouseButton;
+import s.app.input.MouseCursor;
 
 @:allow(s.ui.Scene)
 class Interactive extends Element {
@@ -15,6 +16,7 @@ class Interactive extends Element {
 	public var propagateMouseEvents:Bool = true;
 	public var acceptedButtons:MouseButton = MouseButton.Left;
 
+	public var cursor:MouseCursor;
 	public var focusPolicy:FocusPolicy = InputFocus;
 	public var holdInterval:Float = 0.3;
 	public var doubleClickInterval:Float = 0.5;
@@ -91,14 +93,18 @@ class Interactive extends Element {
 		onKeyboardTyped(c -> keyboardCharTyped(c));
 	}
 
-	public function setFocusPolicy(policy:FocusPolicy)
-		return focusPolicy = policy;
+	public function setCursor(cursor:MouseCursor)
+		this.cursor = cursor;
+
+	public function setFocusPolicy(focusPolicy:FocusPolicy)
+		this.focusPolicy = focusPolicy;
 
 	public function enter(x:Float, y:Float) {
 		mouseX = x;
 		mouseY = y;
 		isHovered = true;
-
+		if (cursor != null && scene != null)
+			scene.window.mouse.cursor = cursor;
 		mouseEntered();
 	}
 
@@ -110,6 +116,8 @@ class Interactive extends Element {
 			holdTimers[b].stop();
 		holdTimers.clear();
 		pendingClick.resize(0);
+		if (cursor != null && scene != null)
+			scene.window.mouse.cursor = Default;
 
 		mouseExited();
 	}
@@ -195,8 +203,8 @@ class Interactive extends Element {
 
 	override function update() {
 		super.update();
-		
-		if (globalVisible && scene.children.dirty)
+
+		if (globalVisible && layer.children.dirty)
 			scene.interactive.unshift(this);
 	}
 

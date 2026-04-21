@@ -29,8 +29,8 @@ extern abstract Rect(Vec4) from Vec4 to Vec4 {
 		return Bounds.fromRect(this);
 
 	@:to
-	private inline function toRectI():RectI
-		return RectI.fromRect(this);
+	private inline function toRectI():IRect
+		return IRect.fromRect(this);
 
 	@:to
 	public inline function toString():String
@@ -45,9 +45,8 @@ extern abstract Rect(Vec4) from Vec4 to Vec4 {
 	private inline function get_height():Float
 		return this.w;
 
-	private inline function set_height(value:Float):Float {
+	private inline function set_height(value:Float):Float
 		return this.w = value;
-	}
 
 	private inline function get_position():Position
 		return new Position(this.x, this.y);

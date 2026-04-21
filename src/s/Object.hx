@@ -87,13 +87,13 @@ abstract class Object<T:Object<T>> implements s.shortcut.Shortcut implements s.s
 	 * @return This node.
 	 */
 	public function traverse(f:T->Void)
-		iterate(c -> {
+		for (c in children) {
 			f(c);
 			c.traverse(f);
-		});
+		}
 
 	public function iterate(f:T->Void)
-		for (c in iterator())
+		for (c in children)
 			f(c);
 
 	/** Returns an iterator over direct children. */
@@ -103,6 +103,12 @@ abstract class Object<T:Object<T>> implements s.shortcut.Shortcut implements s.s
 	/** Returns a debug-friendly string containing the class name and tag. */
 	public function toString():String
 		return Type.getClassName(Type.getClass(this));
+
+	public function destroy() {
+		while (children.count > 0)
+			children[0].destroy();
+		parent = null;
+	}
 
 	function set_parent(value:T):T {
 		if (value != null)

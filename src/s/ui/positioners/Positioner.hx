@@ -14,6 +14,7 @@ abstract class Positioner extends Container {
 		this.direction = direction;
 	}
 
+	// TODO: no reflection
 	override function updateChildren() {
 		final updateFlow = Reflect.field(this, "updateFlow");
 		if (updateFlow != null)

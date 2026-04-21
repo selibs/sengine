@@ -14,6 +14,7 @@ class Button extends Control<Rectangle, Row> {
 
 	public function new(?text:String) {
 		super(new Rectangle(), new Row());
+		cursor = Pointer;
 		content.addChild(icon = new ImageElement());
 		content.addChild(label = new Label(text));
 	}

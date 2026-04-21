@@ -43,12 +43,12 @@ class Stage extends Drawable {
 	}
 
 	public function addLayer(layer:StageLayer) {
-		if (!layers.contains(layer))
-			layers.push(layer);
+		if (!layers.contains())
+			layers.push();
 	}
 
 	public function removeLayer(layer:StageLayer) {
-		layers.remove(layer);
+		layers.remove();
 	}
 
 	extern overload public inline function local2WorldSpace(x:Float, y:Float):Vec2

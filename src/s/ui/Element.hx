@@ -8,6 +8,7 @@ import s.ui.Style;
 import s.ui.Alignment;
 import s.ui.AnchorsAttribute;
 import s.ui.AnchorLineAttribute;
+import s.ui.elements.Layer;
 #if debug_element_bounds
 import s.graphics.Context2D;
 
@@ -92,9 +93,10 @@ class Element extends Object2D<Element> {
 	var inheritedStylesDirty:Bool = false;
 	var inheritedStyles:Array<Style> = null;
 
-	public var scene(default, null):Scene;
+	@:attr public var scene(default, set):Scene;
+	@:attr public var layer(default, set):Layer;
 
-	public var stylesheet:Stylesheet;
+	@:attr public var stylesheet:Stylesheet;
 
 	/**
 	 * Optional application-defined tag used for lookup.
@@ -143,9 +145,6 @@ class Element extends Object2D<Element> {
 		top = new VerticalAnchor(this);
 		vCenter = new VerticalAnchor(this);
 		bottom = new VerticalAnchor(this);
-
-		width = 100;
-		height = 100;
 
 		tags = [];
 	}
@@ -309,30 +308,19 @@ class Element extends Object2D<Element> {
 		return null;
 	}
 
-	public function setStyle(style:Style) {
-		if ((stylesheet = stylesheet ?? []).push(style) > 0) {
+	public function setStyle(style:Style)
+		if ((stylesheet = stylesheet ?? []).push(style) > 0)
 			stylesheetDirty = true;
-			dirty = true;
-		}
-	}
 
 	public function removeStyle(style:Style)
-		if (stylesheet?.remove(style) == true) {
+		if (stylesheet?.remove(style) == true)
 			stylesheetDirty = true;
-			dirty = true;
-		}
 
-	public inline function setStylesheet(stylesheet:Stylesheet) {
+	public inline function setStylesheet(stylesheet:Stylesheet)
 		this.stylesheet = stylesheet;
-		stylesheetDirty = true;
-		dirty = true;
-	}
 
-	public inline function removeStylesheet() {
+	public inline function removeStylesheet()
 		this.stylesheet = null;
-		stylesheetDirty = true;
-		dirty = true;
-	}
 
 	override function toString():String
 		return super.toString() + tags.toString();
@@ -346,12 +334,11 @@ class Element extends Object2D<Element> {
 
 		inheritedStyles = currentStyles;
 		inheritedStylesDirty = inheritedDirty || stylesheetDirty;
-		if (inheritedStyles.length > 0)
-			for (style in inheritedStyles)
-				if (inheritedStylesDirty)
-					style.selector.select(this, style.f);
-				else
-					style.selector.selectIfDirty(this, style.f);
+		for (style in inheritedStyles)
+			if (inheritedStylesDirty)
+				style.selector.select(this, style.f);
+			else
+				style.selector.selectIfDirty(this, style.f);
 
 		update();
 		updateChildren();
@@ -364,18 +351,21 @@ class Element extends Object2D<Element> {
 	}
 
 	function updateChildren()
-		iterate(updateChild);
+		for (c in children)
+			updateChild(c);
 
 	function updateChild(child:Element)
-		if (inheritedStylesDirty || scene?.children.dirty || child.dirty || globalVisibleDirty || globalOpacityDirty || globalTransformDirty)
+		if (isChildDirty(child)) {
+			if (child.parentDirty)
+				insertChild(child);
+			if (child.parentDirty || sceneDirty)
+				setChildScene(child);
+			if (child.parentDirty || layerDirty)
+				setChildLayer(child);
 			child.updateTree(inheritedStyles, inheritedStylesDirty);
+		}
 
-	override function update() {
-		super.update();
-
-		if (parentDirty)
-			scene = parent?.scene;
-
+	function update() {
 		s.ui.macro.ElementMacro.updateAxis("left", "hCenter", "right", "x", "width");
 		s.ui.macro.ElementMacro.updateAxis("top", "vCenter", "bottom", "y", "height");
 
@@ -403,6 +393,16 @@ class Element extends Object2D<Element> {
 				globalVisible = parent.globalVisible && globalVisible;
 		}
 	}
+
+	function isChildDirty(child:Element):Bool
+		return inheritedStylesDirty || scene?.children.dirty || layer?.children.dirty || child.dirty || globalVisibleDirty || globalOpacityDirty
+			|| globalTransformDirty;
+
+	function setChildScene(child:Element)
+		@:bypassAccessor child.scene = scene;
+
+	function setChildLayer(child:Element)
+		@:bypassAccessor child.layer = layer;
 
 	#if debug_element_bounds
 	function drawBounds(ctx:Context2D) {
@@ -511,7 +511,17 @@ class Element extends Object2D<Element> {
 	}
 	#end
 
-	function set_tags(value:ElementTags)
+	function set_scene(value:Scene):Scene {
+		parent = value;
+		return scene = value;
+	}
+
+	function set_layer(value:Layer):Layer {
+		parent = value;
+		return layer = value;
+	}
+
+	function set_tags(value:ElementTags):ElementTags
 		return tags = new ElementTags(value.tags, this);
 
 	function set_x(value:Float):Float {
@@ -538,12 +548,12 @@ class Element extends Object2D<Element> {
 		return height;
 	}
 
-	function set_padding(value:Float) {
+	function set_padding(value:Float):Float {
 		setPadding(value);
 		return value;
 	}
 
-	function set_margins(value:Float) {
+	function set_margins(value:Float):Float {
 		setMargins(value);
 		return value;
 	}

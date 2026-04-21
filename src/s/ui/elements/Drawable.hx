@@ -12,6 +12,7 @@ abstract class Drawable extends Element {
 
 	override function update() {
 		super.update();
+
 		updateRealColor();
 		updateOrder();
 	}
@@ -22,7 +23,7 @@ abstract class Drawable extends Element {
 	}
 
 	function updateOrder() {
-		if (globalVisible && scene.children.dirty)
-			scene.drawable.push(this);
+		if (globalVisible && layer.children.dirty)
+			layer.drawable.push(this);
 	}
 }

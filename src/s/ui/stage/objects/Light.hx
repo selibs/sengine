@@ -12,7 +12,7 @@ class Light extends LayerObject {
 	#end
 
 	public function new(?layer:StageLayer) {
-		super(layer);
+		super();
 	}
 
 	function set_layer(value:StageLayer):StageLayer {

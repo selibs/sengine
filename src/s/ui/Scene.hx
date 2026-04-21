@@ -1,24 +1,23 @@
 package s.ui;
 
+import kha.Framebuffer;
 import s.app.Time;
 import s.app.Window;
 import s.app.input.MouseButton;
-import s.math.Mat3;
 import s.math.SMath;
 import s.graphics.Context2D;
 import s.graphics.Context3D;
 import s.graphics.RenderTarget;
 import s.ui.FocusPolicy;
-import s.ui.elements.Drawable;
+import s.ui.elements.Layer;
 import s.ui.elements.Interactive;
 
 @:allow(s.ui.Element)
 @:access(s.ObjectList)
 @:access(s.app.Window)
-class Scene implements s.shortcut.Shortcut extends Drawable {
+class Scene implements s.shortcut.Shortcut extends Layer {
 	final window:Window;
 
-	final drawable:Array<Drawable> = [];
 	final interactive:Array<Interactive> = [];
 
 	final hovered:Array<Interactive> = [];
@@ -26,21 +25,24 @@ class Scene implements s.shortcut.Shortcut extends Drawable {
 
 	public var focus(default, set):Interactive = null;
 
-	@:signal public static function resized(width:Int, height:Int):Void;
-
 	public function new(window:Window) {
 		super();
-		scene = this;
+
+		@:bypassAccessor scene = this;
+		@:bypassAccessor layer = this;
 
 		this.window = window;
+		this.width = window.width;
+		this.height = window.height;
 
-		App.onUpdate(render);
+		App.onUpdate(() -> updateTree());
+		window.onRender(render);
 
-		window.onResized(resize);
-		window.mouse.onMoved(processMouseMoved);
-		window.mouse.onScrolled(processMouseScrolled);
-		window.mouse.onPressed(processMousePressed);
-		window.mouse.onReleased(processMouseReleased);
+		var m = window.mouse;
+		m.onMoved(processMouseMoved);
+		m.onScrolled(processMouseScrolled);
+		m.onPressed(processMousePressed);
+		m.onReleased(processMouseReleased);
 
 		var k = App.input.keyboard;
 		k.onShortcut("Tab", () -> adjustFocus(1, TabFocus));
@@ -50,17 +52,6 @@ class Scene implements s.shortcut.Shortcut extends Drawable {
 		k.onHold(key -> if (focus?.isEnabled) focus.keyboardHold(key));
 		k.onTyped(char -> if (focus?.isEnabled) focus.keyboardTyped(char));
 		k.onHotkey(hotkey -> if (focus?.isEnabled) focus.keyboardHotkey(hotkey));
-
-		resize(window.width, window.height);
-	}
-
-	function resize(width:Int, height:Int) {
-		this.width = width;
-		this.height = height;
-
-		final t = window.backbuffer.context2D.transform;
-		final i = kha.Image.renderTargetsInvertedY();
-		t.setFrom(i ? Mat3.orthogonalProjection(0.0, width, 0.0, height) : Mat3.orthogonalProjection(0.0, width, height, 0.0));
 	}
 
 	function adjustFocus(d:Int, policy:FocusPolicy) {
@@ -137,26 +128,30 @@ class Scene implements s.shortcut.Shortcut extends Drawable {
 			}
 	}
 
-	function render() {
-		if (dirty || children.dirty) {
-			if (children.dirty) {
-				drawable.resize(0);
-				interactive.resize(0);
-			}
-			updateTree();
-			interactive.reverse();
-		}
+	override function update() {
+		if (width != window.width)
+			width = window.width;
+		if (height != window.height)
+			height = window.height;
 
-		draw(window.backbuffer);
+		super.update();
+
+		if (children.dirty)
+			interactive.resize(0);
 	}
 
-	function draw(target:RenderTarget) {
+	override function updateTree(?styles:Array<Style>, inheritedDirty:Bool = false) {
+		super.updateTree(styles, inheritedDirty);
+		if (children.dirty)
+			interactive.reverse();
+	}
+
+	override function draw(target:RenderTarget) {
 		final ctx = target.context2D;
 		ctx.begin();
 		ctx.clear(color);
-
-		for (el in drawable)
-			el.draw(target);
+		ctx.style.color = White;
+		ctx.drawImage(texture, 0, 0);
 
 		#if debug_element_bounds
 		if (window.mouse.hovers)
@@ -200,6 +195,14 @@ class Scene implements s.shortcut.Shortcut extends Drawable {
 	#end
 
 	override function updateOrder() {}
+
+	function render(framebuffer:Framebuffer) {
+		final g2 = framebuffer.g2;
+
+		g2.begin(color);
+		g2.drawImage(texture, 0, 0);
+		g2.end();
+	}
 
 	function set_focus(value:Interactive):Interactive {
 		if (focus == value)
