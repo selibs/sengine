@@ -9,6 +9,7 @@ class PositionerMacro {
 		var sRef = macro $i{s};
 		var eRef = macro $i{e};
 		var ld = (s == "left" || s == "right" ? "width" : "height") + "Dirty";
+		var pd = s == "left" || s == "right" ? "xDirty" : "yDirty";
 
 		return macro {
 			if (flowLayoutDirty)
@@ -21,7 +22,7 @@ class PositionerMacro {
 			var base = forward ? $sRef.position + $sRef.padding : $eRef.position - $eRef.padding;
 
 			for (c in children) {
-				var flowDirty = offsetDirty;
+				var childDirty = offsetDirty;
 
 				var lm, tm, lp, tp;
 				if (forward) {
@@ -36,19 +37,25 @@ class PositionerMacro {
 					tp = c.$s.positionDirty;
 				}
 
-				flowDirty = flowDirty || c.isVisibleDirty || c.isVisible && (lm || tm || lp || tp || c.$ld);
+				childDirty = childDirty || c.dirty || c.isVisibleDirty || c.isVisible && (lm || tm || lp || tp || c.$ld || c.$pd);
 
-				if (c.isVisible && (offsetDirty || c.isVisibleDirty || lm || lp))
+				if (c.isVisible && childDirty)
 					if (forward)
 						c.$s.position = base + c.$s.margin;
 					else
 						c.$e.position = base - c.$e.margin;
 
+				if (c.isVisible && childDirty)
+					if (forward)
+						@:privateAccess @:bypassAccessor c.$s.positionDirty = true;
+					else
+						@:privateAccess @:bypassAccessor c.$e.positionDirty = true;
+
 				updateChild(c);
 
 				if (c.isVisible)
 					base = forward ? c.$e.position + c.$e.margin + spacing : c.$s.position - c.$s.margin - spacing;
-				offsetDirty = flowDirty;
+				offsetDirty = childDirty;
 			}
 		}
 	}

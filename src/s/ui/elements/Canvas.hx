@@ -72,7 +72,7 @@ class Canvas extends Drawable {
 			return;
 		final ctx = target.context2D;
 		ctx.style.color = realColor;
-		ctx.pushTransform(globalTransform);
+		ctx.pushTransform(realTransform);
 		ctx.drawImage(texture, left.position, top.position);
 		ctx.popTransform();
 	}

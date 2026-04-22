@@ -105,8 +105,7 @@ abstract class Object<T:Object<T>> implements s.shortcut.Shortcut implements s.s
 		return Type.getClassName(Type.getClass(this));
 
 	public function destroy() {
-		while (children.count > 0)
-			children[0].destroy();
+		children.destroy();
 		parent = null;
 	}
 

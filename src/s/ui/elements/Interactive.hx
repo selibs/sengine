@@ -13,7 +13,7 @@ class Interactive extends Element {
 	final holdTimers:Map<MouseButton, Timer> = [];
 	final pendingClick:Array<MouseButton> = [];
 
-	public var propagateMouseEvents:Bool = true;
+	public var propagateMouseEvents:Bool = false;
 	public var acceptedButtons:MouseButton = MouseButton.Left;
 
 	public var cursor:MouseCursor;
@@ -205,7 +205,7 @@ class Interactive extends Element {
 	override function update() {
 		super.update();
 
-		if (globalVisible && layer.children.dirty)
+		if (realVisible && layer.children.dirty)
 			scene.interactive.unshift(this);
 	}
 

@@ -38,7 +38,7 @@ class Label extends Drawable {
 		if (text.length == 0 || !font.isLoaded || font.pixelSize == 0)
 			return;
 		final ctx = target.context2D;
-		ctx.pushTransform(globalTransform);
+		ctx.pushTransform(realTransform);
 		ctx.style.color = realColor;
 		ctx.style.font.copyFrom(font);
 		ctx.drawFontChars(chars);

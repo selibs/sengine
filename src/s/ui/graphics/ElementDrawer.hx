@@ -40,7 +40,7 @@ abstract class ElementDrawer<T:Drawable> extends Shader {
 
 	function setUniforms(target:RenderTarget, element:T) {
 		final ctx = target.context3D;
-		ctx.setMat3(mvpCL, element.globalTransform * target.context2D.transform);
+		ctx.setMat3(mvpCL, element.realTransform * target.context2D.transform);
 		ctx.setVec4(rectCL, element.left.position, element.top.position, element.width, element.height);
 		ctx.setVec4(colorCL, element.realColor);
 	}

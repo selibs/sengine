@@ -116,7 +116,7 @@ class ElementMacro {
 				}
 			}
 
-			if ($i{pos + "Dirty"} && $noAnchor) {
+			if ($i{pos + "Dirty"} && !$s.positionDirty && !$c.positionDirty && !$e.positionDirty && $noAnchor) {
 				$s.position = $p;
 				if (parent != null)
 					$s.position += parent.$start.position;
@@ -307,6 +307,18 @@ class ElementMacro {
 					var elName = "__el" + i++;
 					elRef = macro @:pos(pos) $i{elName};
 					elExprs.push(macro @:pos(pos) var $elName = $ctor);
+				}
+
+				switch expr.expr {
+					case EBinop(OpAssign, e1, e2):
+						switch e1.expr {
+							case EConst(CString(s, kind)):
+								var exprs = flatten(e2);
+								exprs.unshift(macro @:pos(e1.pos) $elRef.tags = $e1);
+								expr.expr = EBlock(exprs);
+							default:
+						}
+					default:
 				}
 
 				stack.push(elRef);

@@ -25,13 +25,13 @@ abstract class Drawable extends Element {
 	override function update() {
 		super.update();
 
-		if (visualDirty || globalOpacityDirty)
-			realColor = Color.rgba(color.r, color.g, color.b, color.a * globalOpacity);
+		if (visualDirty || realOpacityDirty)
+			realColor = Color.rgba(color.r, color.g, color.b, color.a * realOpacity);
 
 		updateOrder();
 	}
 
 	function updateOrder()
-		if (globalVisible && layer.children.dirty)
+		if (realVisible && layer.children.dirty)
 			layer.drawable.push(this);
 }

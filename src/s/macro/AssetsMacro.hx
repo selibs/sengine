@@ -344,9 +344,11 @@ class AssetsMacro {
 					$l;
 					(asset : s.assets.internal.Asset<kha.$resName>).location = location;
 					logger.debug('Loaded "$location"');
-					asset.loaded();
-				} catch (e)
+				} catch (e) {
 					reporter({error: e.message});
+					return;
+				}
+				asset.loaded();
 			}
 
 		var resLoadName = "load" + resName;

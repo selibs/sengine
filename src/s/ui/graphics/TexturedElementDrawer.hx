@@ -22,7 +22,7 @@ abstract class TexturedElementDrawer<T:Drawable> extends ElementDrawer<T> {
 
 	override function setUniforms(target:s.graphics.RenderTarget, element:T) {
 		final ctx = target.context3D;
-		ctx.setMat3(mvpCL, element.globalTransform * target.context2D.transform);
+		ctx.setMat3(mvpCL, element.realTransform * target.context2D.transform);
 		ctx.setVec4(colorCL, element.realColor);
 	}
 }

@@ -145,12 +145,14 @@ class Element extends Object2D<Element> implements Markup {
 				element.y = v - element.height;
 	}
 
-	final globalTransformInverted:Mat3 = new Mat3();
-	@:attr var globalTransform:Mat3 = new Mat3();
-	@:attr var globalOpacity:Float = 1.0;
-	@:attr var globalVisible:Bool = true;
-	@:attr(globalOrigin) var globalOriginX:Float = 0.0;
-	@:attr(globalOrigin) var globalOriginY:Float = 0.0;
+	final realTransformInverted:Mat3 = new Mat3();
+	@:attr var realTransform:Mat3 = new Mat3();
+	@:attr var realOpacity:Float = 1.0;
+	@:attr var realVisible:Bool = true;
+	@:attr var realWidth:Float = 0.0;
+	@:attr var realHeight:Float = 0.0;
+	@:attr(realOrigin) var realOriginX:Float = 0.0;
+	@:attr(realOrigin) var realOriginY:Float = 0.0;
 
 	@:attr public var scene(default, set):Scene;
 	@:attr public var layer(default, set):Layer;
@@ -190,10 +192,17 @@ class Element extends Object2D<Element> implements Markup {
 	@:attr(origin) public var originX:Float = Math.NaN;
 	@:attr(origin) public var originY:Float = Math.NaN;
 
+	@:readonly @:alias public var implicitWidth:Float = realWidth;
+	@:readonly @:alias public var implicitHeight:Float = realHeight;
+
 	@:signal public function updated():Void;
 
-	public function new() {
+	public function new(?tags:ElementTags) {
 		super();
+
+		if (tags== null)
+			tags = "";
+		this.tags = tags;
 
 		layout = new LayoutAttribute(this);
 		anchors = new AnchorsAttribute(this);
@@ -204,8 +213,6 @@ class Element extends Object2D<Element> implements Markup {
 		top = new VerticalAnchor(this);
 		vCenter = new VerticalAnchor(this);
 		bottom = new VerticalAnchor(this);
-
-		tags = [];
 	}
 
 	overload extern public inline function setPadding(value:Float):Void
@@ -256,13 +263,13 @@ class Element extends Object2D<Element> implements Markup {
 		return mapFromGlobal(vec2(x, y));
 
 	overload extern public inline function mapFromGlobal(p:Position):Position
-		return globalTransform * p - vec2(left.position, top.position);
+		return realTransform * p - vec2(left.position, top.position);
 
 	overload extern public inline function mapToGlobal(x:Float, y:Float):Position
 		return mapToGlobal(vec2(x, y));
 
 	overload extern public inline function mapToGlobal(p:Position):Position
-		return globalTransformInverted * p;
+		return realTransformInverted * p;
 
 	overload extern public inline function mapFromGlobalNormalized(x:Float, y:Float):Position
 		return mapFromGlobalNormalized(vec2(x, y));
@@ -322,8 +329,6 @@ class Element extends Object2D<Element> implements Markup {
 	 */
 	public function getChildren(tag:String):Array<Element>
 		return children.filter(c -> c.hasTag(tag));
-
-	public function mapChildren() {}
 
 	/**
 	 * Searches the full descendant tree for the first node with the given tag.
@@ -399,32 +404,37 @@ class Element extends Object2D<Element> implements Markup {
 		s.ui.macro.ElementMacro.updateAxis("top", "vCenter", "bottom", "y", "height");
 
 		if (horizontalDirty || originDirty)
-			globalOriginX = left.position + (Math.isNaN(originX) ? width * 0.5 : originX);
+			realOriginX = left.position + (Math.isNaN(originX) ? width * 0.5 : originX);
 		if (verticalDirty || originDirty)
-			globalOriginY = top.position + (Math.isNaN(originY) ? height * 0.5 : originY);
+			realOriginY = top.position + (Math.isNaN(originY) ? height * 0.5 : originY);
 
-		if (globalOriginDirty || transformDirty || parentDirty || parent?.globalTransformDirty) {
-			globalTransform = Mat3.translation(-globalOriginX, -globalOriginY) * transform * Mat3.translation(globalOriginX, globalOriginY);
+		if (realOriginDirty || transformDirty || parentDirty || parent?.realTransformDirty) {
+			realTransform = Mat3.translation(-realOriginX, -realOriginY) * transform * Mat3.translation(realOriginX, realOriginY);
 			if (parent != null)
-				globalTransform *= parent.globalTransform;
-			globalTransformInverted.setFrom(inverse(globalTransform));
+				realTransform *= parent.realTransform;
+			realTransformInverted.setFrom(inverse(realTransform));
 		}
 
-		if (visibilityDirty || parentDirty || parent?.globalOpacityDirty) {
-			globalOpacity = opacity;
+		if (visibilityDirty || parentDirty || parent?.realOpacityDirty) {
+			realOpacity = opacity;
 			if (parent != null)
-				globalOpacity = parent.globalOpacity * globalOpacity;
+				realOpacity = parent.realOpacity * realOpacity;
 		}
 
-		if (visibilityDirty || parentDirty || parent?.globalVisibleDirty || globalOpacityDirty || widthDirty || heightDirty) {
-			globalVisible = isVisible && globalOpacity > 0.0 && width > 0.0 && height > 0.0;
+		if (visibilityDirty || parentDirty || parent?.realVisibleDirty || realOpacityDirty) {
+			realVisible = isVisible && realOpacity > 0.0;
 			if (parent != null)
-				globalVisible = parent.globalVisible && globalVisible;
+				realVisible = parent.realVisible && realVisible;
 		}
 	}
 
 	function isChildDirty(child:Element):Bool
-		return scene?.children.dirty || layer?.children.dirty || child.dirty || globalVisibleDirty || globalOpacityDirty || globalTransformDirty;
+		return scene?.children.dirty
+			|| layer?.children.dirty
+			|| child.dirty
+			|| realVisibleDirty
+			|| realOpacityDirty
+			|| realTransformDirty;
 
 	function setChildScene(child:Element)
 		@:bypassAccessor child.scene = scene;

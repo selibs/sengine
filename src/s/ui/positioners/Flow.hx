@@ -59,9 +59,10 @@ class Flow extends Positioner {
 			var bp = cTrail.positionDirty;
 
 			childDirty = childDirty
+				|| c.dirty
 				|| c.isVisibleDirty
 				|| c.isVisible
-				&& (lm || rm || lp || rp || tm || bm || tp || bp || c.widthDirty || c.heightDirty);
+				&& (lm || rm || lp || rp || tm || bm || tp || bp || c.widthDirty || c.heightDirty || c.xDirty || c.yDirty);
 
 			if (c.isVisible) {
 				final mStart = pLead.margin;
@@ -87,11 +88,13 @@ class Flow extends Positioner {
 						pLead.position = base + mStart;
 					else
 						pLead.position = base - mStart;
+					@:privateAccess @:bypassAccessor pLead.positionDirty = true;
 
 					if (crossForward)
 						cLead.position = lineBase + crossStart;
 					else
 						cLead.position = lineBase - crossStart;
+					@:privateAccess @:bypassAccessor cLead.positionDirty = true;
 				}
 
 				updateChild(c);

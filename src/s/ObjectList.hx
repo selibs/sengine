@@ -118,17 +118,9 @@ extern abstract ObjectList<T:Object<T>>(ObjectListData<T>) to ObjectListData<T> 
 	public inline function filter(f:T->Bool):Array<T>
 		return list.filter(f);
 
-	public inline function clear() @:privateAccess {
-		if (count == 0)
-			return;
-
-		dirty = true;
-		while (count > 0) {
-			final x = list.pop();
-			x.parentDirty = true;
-			@:bypassAccessor x.parent = null;
-		}
-	}
+	public inline function destroy()
+		while (count > 0)
+			list[0].destroy();
 
 	@:op([])
 	private inline function arrayRead(i:Int):T

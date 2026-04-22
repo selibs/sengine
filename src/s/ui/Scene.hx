@@ -54,80 +54,6 @@ class Scene implements s.shortcut.Shortcut extends Layer {
 		k.onHotkey(hotkey -> if (focus?.isEnabled) focus.keyboardHotkey(hotkey));
 	}
 
-	function adjustFocus(d:Int, policy:FocusPolicy) {
-		if (interactive.length == 0) {
-			focus = null;
-			return;
-		}
-
-		var start = interactive.indexOf(focus);
-		if (start < 0)
-			start = d >= 0 ? 0 : interactive.length - 1;
-		else
-			start = (start + d + interactive.length) % interactive.length;
-
-		for (step in 0...interactive.length) {
-			final i = (start + step * (d >= 0 ? 1 : -1) + interactive.length) % interactive.length;
-			final el = interactive[i];
-			if (el.isEnabled && el.focusPolicy.matches(policy)) {
-				focus = el;
-				return;
-			}
-		}
-	}
-
-	function processMouseMoved(x:Int, y:Int, dx:Int, dy:Int):Void {
-		for (el in interactive) {
-			final c = el.covers(x, y);
-			if (!hovered.contains(el)) {
-				if (c && el.isEnabled) {
-					hovered.push(el);
-					final p = el.mapFromGlobal(x, y);
-					el.enter(p.x, p.y);
-				}
-			} else {
-				if (!c) {
-					hovered.remove(el);
-					final p = el.mapFromGlobal(x, y);
-					el.exit(p.x, p.y);
-				} else if (el.isEnabled) {
-					final p = el.globalTransform * vec2(dx, dy);
-					el.mouse(p.x, p.y);
-				}
-			}
-		}
-	}
-
-	function processMousePressed(b:MouseButton, x:Int, y:Int):Void {
-		var newFocus = null;
-		for (el in hovered)
-			if (el.isEnabled) {
-				if (el.focusPolicy.matches(PointerFocus))
-					newFocus = el;
-				final p = el.mapFromGlobal(x, y);
-				el.press(b, p.x, p.y);
-				if (!el.propagateMouseEvents && el.acceptedButtons.matches(b))
-					break;
-			}
-		focus = newFocus;
-	}
-
-	function processMouseReleased(b:MouseButton, x:Int, y:Int):Void
-		for (el in pressed.copy()) {
-			final p = el.mapFromGlobal(x, y);
-			el.release(b, p.x, p.y);
-		}
-
-	function processMouseScrolled(d:Int):Void {
-		adjustFocus(d, WheelFocus);
-		for (el in hovered)
-			if (el.isEnabled) {
-				el.scroll(d);
-				if (!el.propagateMouseEvents)
-					break;
-			}
-	}
-
 	override function update() {
 		if (width != window.width)
 			width = window.width;
@@ -141,8 +67,9 @@ class Scene implements s.shortcut.Shortcut extends Layer {
 	}
 
 	override function updateTree() {
+		final childrenDirty = children.dirty;
 		super.updateTree();
-		if (children.dirty)
+		if (childrenDirty)
 			interactive.reverse();
 	}
 
@@ -197,11 +124,83 @@ class Scene implements s.shortcut.Shortcut extends Layer {
 	override function updateOrder() {}
 
 	function render(framebuffer:Framebuffer) {
-		final g2 = framebuffer.g2;
+		framebuffer.g2.begin(color);
+		framebuffer.g2.drawImage(texture, 0, 0);
+		framebuffer.g2.end();
+	}
 
-		g2.begin(color);
-		g2.drawImage(texture, 0, 0);
-		g2.end();
+	function adjustFocus(d:Int, policy:FocusPolicy) {
+		if (interactive.length == 0) {
+			focus = null;
+			return;
+		}
+
+		var start = interactive.indexOf(focus);
+		if (start < 0)
+			start = d >= 0 ? 0 : interactive.length - 1;
+		else
+			start = (start + d + interactive.length) % interactive.length;
+
+		for (step in 0...interactive.length) {
+			final i = (start + step * (d >= 0 ? 1 : -1) + interactive.length) % interactive.length;
+			final el = interactive[i];
+			if (el.isEnabled && el.focusPolicy.matches(policy)) {
+				focus = el;
+				return;
+			}
+		}
+	}
+
+	function processMouseMoved(x:Int, y:Int, dx:Int, dy:Int):Void {
+		for (el in interactive) {
+			final c = el.covers(x, y);
+			if (!hovered.contains(el)) {
+				if (c && el.isEnabled) {
+					hovered.push(el);
+					final p = el.mapFromGlobal(x, y);
+					el.enter(p.x, p.y);
+				}
+			} else {
+				if (!c) {
+					hovered.remove(el);
+					final p = el.mapFromGlobal(x, y);
+					el.exit(p.x, p.y);
+				} else if (el.isEnabled) {
+					final p = el.realTransform * vec2(dx, dy);
+					el.mouse(p.x, p.y);
+				}
+			}
+		}
+	}
+
+	function processMousePressed(b:MouseButton, x:Int, y:Int):Void {
+		var newFocus = null;
+		for (el in hovered)
+			if (el.isEnabled) {
+				if (el.focusPolicy.matches(PointerFocus))
+					newFocus = el;
+				final p = el.mapFromGlobal(x, y);
+				el.press(b, p.x, p.y);
+				if (!el.propagateMouseEvents && el.acceptedButtons.matches(b))
+					break;
+			}
+		focus = newFocus;
+	}
+
+	function processMouseReleased(b:MouseButton, x:Int, y:Int):Void
+		for (el in pressed.copy()) {
+			final p = el.mapFromGlobal(x, y);
+			el.release(b, p.x, p.y);
+		}
+
+	function processMouseScrolled(d:Int):Void {
+		adjustFocus(d, WheelFocus);
+		for (el in hovered)
+			if (el.isEnabled) {
+				el.scroll(d);
+				if (!el.propagateMouseEvents)
+					break;
+			}
 	}
 
 	function set_focus(value:Interactive):Interactive {
