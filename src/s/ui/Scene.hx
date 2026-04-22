@@ -125,7 +125,7 @@ class Scene implements s.shortcut.Shortcut extends Layer {
 
 	function render(framebuffer:Framebuffer) {
 		framebuffer.g2.begin(color);
-		framebuffer.g2.drawImage(texture, 0, 0);
+		framebuffer.g2.drawImage(@:privateAccess texture.image, 0, 0);
 		framebuffer.g2.end();
 	}
 

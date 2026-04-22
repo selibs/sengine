@@ -2,7 +2,7 @@ package s.graphics.shaders;
 
 import kha.graphics4.ConstantLocation;
 import s.graphics.FontStyle;
-import s.graphics.RenderTarget;
+import s.graphics.TextureAddressing;
 
 class TextShader extends TexturedShader {
 	var sdfRangeCL:ConstantLocation;

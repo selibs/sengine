@@ -40,7 +40,7 @@ class AnimatedImageElement extends ImageElement<AnimatedImage> {
 	override function update() {
 		super.update();
 
-		if (!isLoaded || frameCount <= 0)
+		if (frameCount <= 0)
 			return;
 
 		if (clipRectDirty) {

@@ -348,7 +348,6 @@ class AssetsMacro {
 					reporter({error: e.message});
 					return;
 				}
-				asset.loaded();
 			}
 
 		var resLoadName = "load" + resName;

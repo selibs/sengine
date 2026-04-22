@@ -1,8 +1,6 @@
 package s.ui.elements;
 
-import s.math.Vec4;
-import s.geometry.Rect;
-import s.assets.internal.image.Image;
+import s.assets.Image;
 
 /**
  * Image-based drawable markup element.
@@ -88,160 +86,33 @@ import s.assets.internal.image.Image;
  * @see s.ui.Alignment
  * @see s.geometry.Rect
  */
-@:allow(s.ui.graphics.ImageElementDrawer)
-class ImageElement<T:Image = Image> extends Icon<T> {
-	final rect:Vec4 = new Vec4(0.0, 0.0, 1.0, 1.0);
-	@:attr final clipRect:Vec4 = new Vec4(0.0, 0.0, 1.0, 1.0);
+class ImageElement<T:Image> extends Textured<T> {
+	/**
+	 * Asset key or path of the image to display.
+	 *
+	 * Assigning this field forwards the value to the internal
+	 * [`ImageAsset`](s.assets.ImageAsset). The exact naming scheme depends on the
+	 * project's asset pipeline, but it typically matches the engine's image
+	 * identifiers such as `"ui/logo"` or `"atlas/icons"`.
+	 */
+	@:alias public var source:T = texture;
 
 	/**
-	 * Optional source-space clipping rectangle in image pixels.
+	 * Creates a new image element bound to the given source asset.
 	 *
-	 * When `null`, the full source image is used. When non-null, the element
-	 * first restricts sampling to this rectangle and only then applies the
-	 * current fill-mode logic.
-	 *
-	 * Coordinates are expressed in source image pixels:
-	 *
-	 * - `x`, `y`: top-left corner within the image
-	 * - `width`, `height`: size of the source region
-	 *
-	 * This is primarily useful for atlas-backed UI icons, spritesheet frames, or
-	 * reusable image slices.
-	 *
-	 * @default `null`
+	 * @param source Asset key or path used to resolve the image asset.
 	 */
-	@:attr(sourceRegion) public var sourceClipRect:Rect = null;
+	public function new(?source:T) {
+		super();
+		this.source = source;
+	}
 
-	/**
-	 * Defines how the image is fitted, cropped, or tiled inside the element.
-	 *
-	 * The chosen mode affects the derived destination rectangle
-	 * ([`rect`](s.ui.elements.ImageElement.rect)), the derived source
-	 * rectangle ([`clipRect`](s.ui.elements.ImageElement.clipRect)), and the
-	 * sampler addressing mode used at draw time.
-	 *
-	 * @default `Stretch`
-	 */
-	@:attr(imageLayout) public var fillMode:FillMode = Stretch;
+	function loadSource()
+		textureDirty = true;
 
-	/**
-	 * Alignment policy used together with
-	 * [`fillMode`](s.ui.elements.ImageElement.fillMode).
-	 *
-	 * Horizontal flags (`AlignLeft`, `AlignHCenter`, `AlignRight`) and vertical
-	 * flags (`AlignTop`, `AlignVCenter`, `AlignBottom`) are interpreted according
-	 * to the active fill mode:
-	 *
-	 * - `Pad` and `Contain`: place the rendered image inside the leftover space
-	 * - `Cover`: choose the visible side of the cropped source
-	 * - `Tile*`: offset the repeated texture pattern phase
-	 *
-	 * `Stretch` ignores alignment because the image always covers the whole
-	 * destination area.
-	 *
-	 * @default `AlignCenter`
-	 */
-	@:attr(imageLayout) public var alignment:Alignment = AlignCenter;
-
-	override function update() {
-		super.update();
-
-		final hBoundsDirty = left.positionDirty || right.positionDirty;
-		final vBoundsDirty = top.positionDirty || bottom.positionDirty;
-
-		if (!isLoaded
-			|| !(sourceAssetDirty || sourceRegionDirty || imageLayoutDirty || widthDirty || heightDirty || hBoundsDirty || vBoundsDirty))
-			return;
-
-		final imageWidth = source.width;
-		final imageHeight = source.height;
-		var sourceWidth:Float = imageWidth;
-		var sourceHeight:Float = imageHeight;
-		var baseClipX = 0.0;
-		var baseClipY = 0.0;
-		var baseClipW = 1.0;
-		var baseClipH = 1.0;
-
-		if (sourceClipRect != null) {
-			sourceWidth = sourceClipRect.width;
-			sourceHeight = sourceClipRect.height;
-			baseClipX = sourceClipRect.x / imageWidth;
-			baseClipY = sourceClipRect.y / imageHeight;
-			baseClipW = sourceClipRect.width / imageWidth;
-			baseClipH = sourceClipRect.height / imageHeight;
-		}
-
-		rect.x = left.position;
-		rect.y = top.position;
-		rect.z = width;
-		rect.w = height;
-		clipRect.x = baseClipX;
-		clipRect.y = baseClipY;
-		clipRect.z = baseClipW;
-		clipRect.w = baseClipH;
-		clipRectDirty = true;
-
-		switch fillMode {
-			case Tile:
-				parameters.uAddressing = Repeat;
-				parameters.vAddressing = Repeat;
-			case TileVertically:
-				parameters.uAddressing = Clamp;
-				parameters.vAddressing = Repeat;
-			case TileHorizontally:
-				parameters.uAddressing = Repeat;
-				parameters.vAddressing = Clamp;
-			case _:
-				parameters.uAddressing = Clamp;
-				parameters.vAddressing = Clamp;
-		}
-
-		if (width == 0.0 || height == 0.0 || sourceWidth == 0.0 || sourceHeight == 0.0)
-			return;
-
-		final alignX = (alignment & Alignment.AlignRight) != 0 ? 1.0 : (alignment & Alignment.AlignHCenter) != 0 ? 0.5 : 0.0;
-		final alignY = (alignment & Alignment.AlignBottom) != 0 ? 1.0 : (alignment & Alignment.AlignVCenter) != 0 ? 0.5 : 0.0;
-		final sourceAspect = sourceWidth / sourceHeight;
-		final targetAspect = width / height;
-
-		switch fillMode {
-			case Pad:
-				rect.z = sourceWidth;
-				rect.w = sourceHeight;
-				rect.x = left.position + (width - rect.z) * alignX;
-				rect.y = top.position + (height - rect.w) * alignY;
-			case Cover:
-				if (targetAspect > sourceAspect) {
-					clipRect.w = baseClipH * sourceAspect / targetAspect;
-					clipRect.y += (baseClipH - clipRect.w) * alignY;
-				} else if (targetAspect < sourceAspect) {
-					clipRect.z = baseClipW * targetAspect / sourceAspect;
-					clipRect.x += (baseClipW - clipRect.z) * alignX;
-				}
-			case Contain:
-				if (targetAspect > sourceAspect) {
-					rect.z = height * sourceAspect;
-					rect.x = left.position + (width - rect.z) * alignX;
-				} else if (targetAspect < sourceAspect) {
-					rect.w = width / sourceAspect;
-					rect.y = top.position + (height - rect.w) * alignY;
-				}
-			case Tile:
-				final repeatX = width / sourceWidth;
-				final repeatY = height / sourceHeight;
-				clipRect.x += baseClipW * (Math.ceil(repeatX) - repeatX) * alignX;
-				clipRect.y += baseClipH * (Math.ceil(repeatY) - repeatY) * alignY;
-				clipRect.z = baseClipW * repeatX;
-				clipRect.w = baseClipH * repeatY;
-			case TileVertically:
-				final repeatY = height / sourceHeight;
-				clipRect.y += baseClipH * (Math.ceil(repeatY) - repeatY) * alignY;
-				clipRect.w = baseClipH * repeatY;
-			case TileHorizontally:
-				final repeatX = width / sourceWidth;
-				clipRect.x += baseClipW * (Math.ceil(repeatX) - repeatX) * alignX;
-				clipRect.z = baseClipW * repeatX;
-			case Stretch:
-		}
+	function set_source(value:T) {
+		source?.offLoaded(loadSource);
+		value?.onLoaded(loadSource);
+		return texture = value;
 	}
 }

@@ -7,12 +7,6 @@ import kha.graphics4.Graphics;
 import kha.graphics4.IndexBuffer;
 import kha.graphics4.PipelineState;
 import kha.graphics4.TextureUnit;
-import s.assets.Image;
-import s.geometry.Mesh;
-import s.graphics.RenderTarget.MipMapFilter;
-import s.graphics.RenderTarget.TextureAddressing;
-import s.graphics.RenderTarget.TextureFilter;
-import s.graphics.RenderTarget.TextureParameters;
 import s.math.Mat3;
 import s.math.Mat4;
 import s.math.SMath;
@@ -22,6 +16,8 @@ import s.math.Vec3;
 import s.math.IVec3;
 import s.math.Vec4;
 import s.math.IVec4;
+import s.assets.Image;
+import s.geometry.Mesh;
 
 private final logger:Log.Logger = new Log.Logger("RENDER");
 

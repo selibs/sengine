@@ -605,7 +605,7 @@ class Font extends Asset<kha.Font> {
 		}
 	}
 
-	var blob:Blob;
+	var blob(default, set):Blob;
 	var oldGlyphs:Array<Int>;
 	var oldGlyphHash:Int = 0;
 	var fontIndex:Int;
@@ -741,6 +741,12 @@ class Font extends Asset<kha.Font> {
 
 	function unload()
 		blob = null;
+
+	function set_blob(value:Blob):Blob {
+		if ((blob = value) != null)
+			loaded();
+		return blob;
+	}
 
 	function get_isLoaded():Bool
 		return blob != null;
