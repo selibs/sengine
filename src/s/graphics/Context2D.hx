@@ -540,11 +540,12 @@ class Context2D implements s.shortcut.Shortcut {
 
 	public inline function drawCharacters(text:Array<Int>, start:Int, length:Int, x:Float, y:Float) {
 		var offset = x;
+		final snappedY = style.font.snapToPixel ? Math.round(y) : y;
 		drawFontChars([
 			for (c in text.slice(start, start + length)) {
 				var char = style.font.getFontChar(c);
 				char.pos.x = offset + char.xoff;
-				char.pos.y = y + char.yoff;
+				char.pos.y = snappedY + char.yoff;
 				offset += char.advance;
 				char;
 			}

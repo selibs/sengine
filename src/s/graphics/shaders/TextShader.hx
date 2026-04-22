@@ -60,7 +60,7 @@ class TextShader extends TexturedShader {
 
 			var yTop = c.pos.y;
 			var yBottom = c.pos.y + h;
-			var yoff = font.snapToPixel ? Math.round(c.yoff) : c.yoff;
+			var yoff = c.yoff;
 			var slantTop = -font.italicSlant * yoff;
 			var slantBottom = -font.italicSlant * (yoff + h);
 			var xLeftTop = c.pos.x + slantTop;

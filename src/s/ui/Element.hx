@@ -4,8 +4,8 @@ import s.math.Mat3;
 import s.math.SMath;
 import s.geometry.Size;
 import s.geometry.Position;
-import s.ui.Style;
 import s.ui.Alignment;
+import s.ui.LayoutAttribute;
 import s.ui.AnchorsAttribute;
 import s.ui.AnchorLineAttribute;
 import s.ui.elements.Layer;
@@ -15,10 +15,72 @@ import s.graphics.Context2D;
 using s.extensions.StringExt;
 #end
 
+typedef ElementAttributes = {
+	?clip:Bool,
+	?layout:LayoutAttributeAttributes,
+	?opacity:Float,
+	?isVisible:Bool,
+	?padding:Float,
+	?margins:Float,
+	?anchors:AnchorsAttributeAttributes,
+	?left:AnchorLineAttributeAttributes,
+	?hCenter:AnchorLineAttributeAttributes,
+	?right:AnchorLineAttributeAttributes,
+	?top:AnchorLineAttributeAttributes,
+	?vCenter:AnchorLineAttributeAttributes,
+	?bottom:AnchorLineAttributeAttributes,
+	?x:Float,
+	?y:Float,
+	?width:Float,
+	?height:Float,
+	?originX:Float,
+	?originY:Float
+}
+
 @:allow(s.ui.Scene)
 @:allow(s.AttachedAttribute)
-@:autoBuild(s.ui.macro.ElementMacro.build())
-class Element extends Object2D<Element> {
+class Element extends Object2D<Element> implements Markup {
+	public static inline function setAttributes(x:Element, a:ElementAttributes) {
+		if (a.clip != null)
+			x.clip = a.clip;
+		if (a.layout != null)
+			LayoutAttribute.setAttributes(x.layout, a.layout);
+		if (a.opacity != null)
+			x.opacity = a.opacity;
+		if (a.isVisible != null)
+			x.isVisible = a.isVisible;
+		if (a.padding != null)
+			x.padding = a.padding;
+		if (a.margins != null)
+			x.margins = a.margins;
+		if (a.anchors != null)
+			AnchorsAttribute.setAttributes(x.anchors, a.anchors);
+		if (a.left != null)
+			AnchorLineAttribute.setAttributes(x.left, a.left);
+		if (a.hCenter != null)
+			AnchorLineAttribute.setAttributes(x.hCenter, a.hCenter);
+		if (a.right != null)
+			AnchorLineAttribute.setAttributes(x.right, a.right);
+		if (a.top != null)
+			AnchorLineAttribute.setAttributes(x.top, a.top);
+		if (a.vCenter != null)
+			AnchorLineAttribute.setAttributes(x.vCenter, a.vCenter);
+		if (a.bottom != null)
+			AnchorLineAttribute.setAttributes(x.bottom, a.bottom);
+		if (a.x != null)
+			x.x = a.x;
+		if (a.y != null)
+			x.y = a.y;
+		if (a.width != null)
+			x.width = a.width;
+		if (a.height != null)
+			x.height = a.height;
+		if (a.originX != null)
+			x.originX = a.originX;
+		if (a.originY != null)
+			x.originY = a.originY;
+	}
+
 	overload extern public static inline function mapToElement(element:Element, x:Float, y:Float):Position
 		return element.mapFromGlobal(x, y);
 
@@ -89,14 +151,9 @@ class Element extends Object2D<Element> {
 	@:attr var globalVisible:Bool = true;
 	@:attr(globalOrigin) var globalOriginX:Float = 0.0;
 	@:attr(globalOrigin) var globalOriginY:Float = 0.0;
-	var stylesheetDirty:Bool = false;
-	var inheritedStylesDirty:Bool = false;
-	var inheritedStyles:Array<Style> = null;
 
 	@:attr public var scene(default, set):Scene;
 	@:attr public var layer(default, set):Layer;
-
-	@:attr public var stylesheet:Stylesheet;
 
 	/**
 	 * Optional application-defined tag used for lookup.
@@ -132,6 +189,8 @@ class Element extends Object2D<Element> {
 
 	@:attr(origin) public var originX:Float = Math.NaN;
 	@:attr(origin) public var originY:Float = Math.NaN;
+
+	@:signal public function updated():Void;
 
 	public function new() {
 		super();
@@ -264,6 +323,8 @@ class Element extends Object2D<Element> {
 	public function getChildren(tag:String):Array<Element>
 		return children.filter(c -> c.hasTag(tag));
 
+	public function mapChildren() {}
+
 	/**
 	 * Searches the full descendant tree for the first node with the given tag.
 	 *
@@ -308,46 +369,14 @@ class Element extends Object2D<Element> {
 		return null;
 	}
 
-	public function setStyle(style:Style)
-		if ((stylesheet = stylesheet ?? []).push(style) > 0)
-			stylesheetDirty = true;
-
-	public function removeStyle(style:Style)
-		if (stylesheet?.remove(style) == true)
-			stylesheetDirty = true;
-
-	public inline function setStylesheet(stylesheet:Stylesheet)
-		this.stylesheet = stylesheet;
-
-	public inline function removeStylesheet()
-		this.stylesheet = null;
-
 	override function toString():String
 		return super.toString() + tags.toString();
 
-	function updateTree(?styles:Array<Style>, inheritedDirty:Bool = false) {
-		final currentStyles = styles ?? [];
-		final baseCount = currentStyles.length;
-		if (stylesheet != null)
-			for (style in stylesheet)
-				currentStyles.push(style);
-
-		inheritedStyles = currentStyles;
-		inheritedStylesDirty = inheritedDirty || stylesheetDirty;
-		for (style in inheritedStyles)
-			if (inheritedStylesDirty)
-				style.selector.select(this, style.f);
-			else
-				style.selector.selectIfDirty(this, style.f);
-
+	function updateTree() {
+		updated();
 		update();
 		updateChildren();
 		flush();
-
-		inheritedStyles = null;
-		inheritedStylesDirty = false;
-		stylesheetDirty = false;
-		currentStyles.resize(baseCount);
 	}
 
 	function updateChildren()
@@ -362,7 +391,7 @@ class Element extends Object2D<Element> {
 				setChildScene(child);
 			if (child.parentDirty || layerDirty)
 				setChildLayer(child);
-			child.updateTree(inheritedStyles, inheritedStylesDirty);
+			child.updateTree();
 		}
 
 	function update() {
@@ -395,8 +424,7 @@ class Element extends Object2D<Element> {
 	}
 
 	function isChildDirty(child:Element):Bool
-		return inheritedStylesDirty || scene?.children.dirty || layer?.children.dirty || child.dirty || globalVisibleDirty || globalOpacityDirty
-			|| globalTransformDirty;
+		return scene?.children.dirty || layer?.children.dirty || child.dirty || globalVisibleDirty || globalOpacityDirty || globalTransformDirty;
 
 	function setChildScene(child:Element)
 		@:bypassAccessor child.scene = scene;
@@ -522,7 +550,7 @@ class Element extends Object2D<Element> {
 	}
 
 	function set_tags(value:ElementTags):ElementTags
-		return tags = new ElementTags(value.tags, this);
+		return tags = new ElementTags(value.tags, this); // error: s.ui.Element.A should be s.ui.ElementAttributes
 
 	function set_x(value:Float):Float {
 		if (!isHorizontallyAnchored())

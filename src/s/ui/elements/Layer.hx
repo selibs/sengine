@@ -21,8 +21,8 @@ class Layer extends Canvas {
 			drawable.resize(0);
 	}
 
-	override function updateTree(?styles:Array<Style>, inheritedDirty:Bool = false) {
-		super.updateTree(styles, inheritedDirty);
+	override function updateTree() {
+		super.updateTree();
 
 		if (paintDirty) {
 			paintDirty = false;

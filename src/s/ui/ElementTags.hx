@@ -1,7 +1,5 @@
 package s.ui;
 
-import s.shortcut.AttachedAttribute;
-
 using s.extensions.StringExt;
 
 @:forward
@@ -75,6 +73,6 @@ extern abstract ElementTags(ElementTagsData) {
 
 @:allow(s.ui.Element)
 @:allow(s.ui.ElementTags)
-private class ElementTagsData extends AttachedAttribute<Element> {
+private class ElementTagsData extends s.shortcut.AttachedAttribute<Element> {
 	final tags:Array<String> = [];
 }

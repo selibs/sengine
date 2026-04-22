@@ -155,8 +155,7 @@ class ElementMacro {
 	}
 
 	#if macro
-	static var reserved = ["style", "use", "all"];
-	static var stylesheets:Map<String, Map<String, Array<Expr>>>;
+	static var reserved = ["all"];
 
 	public static var shortcuts(default, null):Map<String, String> = [
 		"element" => "s.ui.Element",
@@ -201,7 +200,6 @@ class ElementMacro {
 			metadata: ":ui.markup",
 			doc: "A"
 		});
-		stylesheets = [];
 		Compiler.addGlobalMetadata("", "@:build(s.ui.macro.ElementMacro.build())", true, true, true);
 	}
 
@@ -230,13 +228,6 @@ class ElementMacro {
 				switch m.name {
 					case ":ui.markup":
 						buildMarkup(field);
-					case ":ui.style":
-						try {
-							buildStylesheet(field);
-						} catch (er:ExprError) {
-							er.warn();
-							fields.remove(field);
-						}
 				}
 		}
 
@@ -348,12 +339,7 @@ class ElementMacro {
 						expr.expr = EField(currentRef(), s.substr(1));
 					return transform(expr);
 				case EMeta(m, e) if (m.name.charAt(0) != ":"):
-					return switch m.name {
-						case "use":
-							[macro ${currentRef()}.setStylesheet($e)];
-						default:
-							addEl(m, e, expr.pos);
-					}
+					return addEl(m, e, expr.pos);
 				case EMeta(m, e) if (m.name == ":bind"): // TODO
 					var attrs = (m.params ?? []).map(e -> {
 						var ident = extractName(transform(e)[0]).split(".");
@@ -366,7 +352,7 @@ class ElementMacro {
 					var ex = macro $b{transform(e)};
 					var updateExpr = cond != null ? macro if ($cond)
 						$ex : macro $ex;
-					return [ex, macro ${currentRef()}.onUpdate(_ -> $updateExpr)];
+					return [ex, macro @:pos(expr.pos) ${currentRef()}.onUpdated(() -> $updateExpr)];
 				case EVars(vars):
 					var out:Array<Expr> = [];
 					for (v in vars) {
@@ -445,170 +431,6 @@ class ElementMacro {
 				expr: block(transform(expr).concat([macro return parent])),
 				ret: macro :s.ui.Element
 			});
-	}
-
-	static function buildStylesheet(field:Field) {
-		function buildStyle(meta:MetadataEntry, expr:Expr, mExpr:Expr):Array<Expr> {
-			var substyles = [];
-
-			function getName(expr:Expr) {
-				return switch expr.expr {
-					case EConst((CIdent(s))):
-						switch s {
-							case "$":
-								meta.name;
-							default: s;
-						}
-					case EField(e, field, kind):
-						getName(e) + "." + field;
-					default:
-						null;
-				}
-			}
-
-			function prop(expr:Expr) {
-				return switch expr.expr {
-					case EConst(CIdent(s)):
-						macro @:pos(expr.pos) $v{s} => Exists;
-					case EBinop(OpAssign, e1, e2):
-						var name = getName(e1);
-						if (name == null)
-							throw new ExprError(expr, "Name expected");
-						macro @:pos(e1.pos) $v{name} => Equals($e2);
-					default:
-						throw new ExprError(expr);
-				}
-			}
-
-			function rule(expr:Expr) {
-				var name = getName(expr);
-				if (name != null)
-					return macro @:pos(expr.pos) Type($p{getTypeName(name).split(".")});
-
-				return switch expr.expr {
-					case EConst(CString(s)):
-						macro @:pos(expr.pos) Tag($expr);
-					case EUnop(op, false, e):
-						switch op {
-							case OpNot:
-								macro @:pos(expr.pos) Not(${rule(e)});
-							case OpNegBits:
-								macro @:pos(expr.pos) Object($e);
-							default:
-								throw new ExprError(expr);
-						}
-					case EBinop(op, e1, e2):
-						switch op {
-							case OpOr:
-								macro @:pos(expr.pos) Or(${rule(e1)}, ${rule(e2)});
-							case OpAnd:
-								macro @:pos(expr.pos) And(${rule(e1)}, ${rule(e2)});
-							case OpLt:
-								macro @:pos(expr.pos) And(${rule(e1)}, Parent(${rule(e2)}));
-							case OpGt:
-								macro @:pos(expr.pos) And(${rule(e1)}, Children(${rule(e2)}));
-							case OpMod:
-								macro @:pos(expr.pos) And(${rule(e1)}, Siblings(${rule(e2)}));
-							default:
-								throw new ExprError(expr);
-						}
-					case EArrayDecl(values):
-						var props = [
-							for (v in values)
-								try {
-									prop(v);
-								} catch (er:ExprError) {
-									er.warn();
-									continue;
-								}
-						];
-						macro @:pos(expr.pos) Properties([$a{props}]);
-					case ECall(e, params):
-						switch e.expr {
-							case EConst(CIdent(s)):
-								switch s {
-									case "not" if (params.length == 1):
-										macro @:pos(expr.pos) Not(${rule(params[0])});
-									case "or" if (params.length == 2):
-										macro @:pos(expr.pos) Or(${rule(params[0])}, ${rule(params[1])});
-									case "and" if (params.length == 2):
-										macro @:pos(expr.pos) And(${rule(params[0])}, ${rule(params[1])});
-									case "any":
-										macro @:pos(expr.pos) Any([$a{params.map(rule)}]);
-									case "all":
-										macro @:pos(expr.pos) All([$a{params.map(rule)}]);
-									default:
-										throw new ExprError(expr, 'Unknown operation "$s"');
-								}
-							default:
-								throw new ExprError(expr, "Operation name expected");
-						}
-					default:
-						throw new ExprError(expr);
-				}
-			}
-
-			function body(type:String, expr:Expr) {
-				function replace(e:Expr) {
-					return e.map(e -> switch e.expr {
-						case EConst(CIdent(s)) if (s.charAt(0) == "$"):
-							macro @:pos(e.pos) $p{["e"].concat(s.substr(1).split("."))};
-						default:
-							replace(e);
-					});
-				}
-
-				return switch expr.expr {
-					case EBlock(exprs):
-						var t = getType(type);
-						var fields = [macro var e:$t = cast e];
-						for (e in exprs)
-							switch e.expr {
-								case EMeta(m, e) if (m.name.charAt(0) != ":"):
-									try {
-										for (s in buildStyle(m, e, expr))
-											substyles.push(s);
-									} catch (er:ExprError)
-										er.warn();
-								default:
-									fields.push(replace(e));
-							}
-						macro e -> ${block(fields)};
-					default:
-						throw new ExprError(expr);
-				}
-			}
-
-			var params = meta.params ?? [];
-			if (params.length < 2) {
-				var selector = macro Type($p{getTypeName(meta.name).split(".")});
-				if (params.length == 1)
-					selector = macro And($selector, ${rule(params[0])});
-				substyles.push(macro new s.ui.Style($selector, ${body(meta.name, expr)}));
-			} else
-				throw new ExprError(mExpr, "Expected only 1 selector");
-
-			return substyles;
-		}
-
-		var expr = extractExpr(field);
-		switch expr.expr {
-			case EBlock(exprs):
-				var styles = [];
-				for (ex in exprs)
-					try {
-						switch ex.expr {
-							case EMeta(m, e) if (m.name.charAt(0) != ":"):
-								styles = styles.concat(buildStyle(m, e, ex));
-							default:
-								throw new ExprError(ex);
-						}
-					} catch (er:ExprError)
-						er.warn();
-				field.kind = FVar(macro :s.ui.Style.Stylesheet, macro @:pos(expr.pos) $a{styles});
-			default:
-				throw new ExprError(expr);
-		}
 	}
 
 	static function extractExpr(field:Field) {

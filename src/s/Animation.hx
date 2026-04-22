@@ -4,7 +4,6 @@ import s.app.Time;
 import s.math.Vec2;
 import s.math.Vec3;
 import s.math.Vec4;
-import s.math.Interpolation;
 
 @:nullSafety
 class Animation implements s.shortcut.Shortcut {
@@ -22,7 +21,7 @@ class Animation implements s.shortcut.Shortcut {
 
 	public var loops:Int = 1;
 	public var speed:Float = 1.0;
-	public var easing:Interpolation = Interpolation.Linear;
+	public var easing:Easing = Easing.Linear;
 
 	public var active(default, set):Bool = false;
 	public var paused(default, set):Bool = false;
@@ -94,7 +93,7 @@ class Animation implements s.shortcut.Shortcut {
 		return this;
 	}
 
-	public function ease(f:Interpolation) {
+	public function ease(f:Easing) {
 		easing = f;
 		return this;
 	}

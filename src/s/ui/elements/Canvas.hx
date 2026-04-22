@@ -1,19 +1,41 @@
 package s.ui.elements;
 
+import s.ui.elements.Drawable;
 import kha.Image;
 import s.math.Mat3;
 import s.geometry.ISize;
 import s.graphics.Context2D;
 import s.graphics.RenderTarget;
 
-class Canvas extends Drawable {
-	var texture:RenderTarget;
-	@:attr var size:ISize;
+typedef CanvasAttributes = {
+	> DrawableAttributes,
+	?format:TextureFormat,
+	?samples:Int,
+	?depthStencil:DepthStencilFormat,
+	?textureSize:ISize
+}
 
-	@:attr public var format:TextureFormat = TextureFormat.RGBA32;
-	@:attr public var samples:Int = 1;
-	@:attr public var depthStencil:DepthStencilFormat = NoDepthAndStencil;
-	@:attr public var textureSize:ISize;
+// TODO: make canvas derive from imageelement
+class Canvas extends Drawable {
+	public static inline function setAttributes(x:Canvas, a:CanvasAttributes) {
+		Drawable.setAttributes(x, a);
+		if (a.format != null)
+			x.format = a.format;
+		if (a.samples != null)
+			x.samples = a.samples;
+		if (a.depthStencil != null)
+			x.depthStencil = a.depthStencil;
+		if (a.textureSize != null)
+			x.textureSize = a.textureSize;
+	}
+
+	var texture:RenderTarget;
+	@:attr(textureParameters) var size:ISize;
+
+	@:attr(textureParameters) public var format:TextureFormat = TextureFormat.RGBA32;
+	@:attr(textureParameters) public var samples:Int = 1;
+	@:attr(textureParameters) public var depthStencil:DepthStencilFormat = NoDepthAndStencil;
+	@:attr(textureParameters) public var textureSize:ISize;
 
 	public inline function paint(f:Context2D->Void):Void
 		texture?.context2D.draw(true, color, f);
@@ -27,7 +49,7 @@ class Canvas extends Drawable {
 			else
 				size = textureSize;
 
-		if (sizeDirty || formatDirty || depthStencilDirty || samplesDirty) {
+		if (textureParametersDirty) {
 			var tex = texture;
 
 			texture = new RenderTarget(size.width, size.height, format, depthStencil, samples);

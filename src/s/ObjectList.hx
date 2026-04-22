@@ -84,6 +84,15 @@ extern abstract ObjectList<T:Object<T>>(ObjectListData<T>) to ObjectListData<T> 
 		return false;
 	}
 
+	public inline function swap(x:Int, y:Int):Bool {
+		if (x < 0 || x >= count || y < 0 || y >= count)
+			return false;
+		var c = list[x];
+		list[x] = list[y];
+		list[y] = c;
+		return dirty = true;
+	}
+
 	public inline function contains(x:T):Bool
 		return list.contains(x);
 

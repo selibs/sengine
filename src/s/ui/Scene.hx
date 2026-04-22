@@ -140,8 +140,8 @@ class Scene implements s.shortcut.Shortcut extends Layer {
 			interactive.resize(0);
 	}
 
-	override function updateTree(?styles:Array<Style>, inheritedDirty:Bool = false) {
-		super.updateTree(styles, inheritedDirty);
+	override function updateTree() {
+		super.updateTree();
 		if (children.dirty)
 			interactive.reverse();
 	}

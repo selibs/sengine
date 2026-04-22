@@ -1,7 +1,6 @@
 package s.ui.elements;
 
 import s.ui.Alignment;
-import s.geometry.Rect;
 import s.graphics.FontStyle;
 
 using StringTools;
@@ -80,9 +79,9 @@ class Label extends Drawable {
 		}
 
 	function alignCharsY(offset:Float) {
-		final snap = font.snapToPixel;
+		final snappedOffset = font.snapToPixel ? Math.round(offset) : offset;
 		for (c in chars)
-			c.pos.y = offset + (snap ? Math.round(c.yoff) : c.yoff);
+			c.pos.y = snappedOffset + c.yoff;
 	}
 
 	function alignLineX(width:Float)

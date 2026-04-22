@@ -24,18 +24,18 @@ class Interactive extends Element {
 	@:attr(interaction) public var isEnabled:Bool = true;
 	@:attr(interaction) public var isFocused(default, set):Bool = false;
 
-	public var pressedButtons(default, null):MouseButton = 0;
+	@:attr public var pressedButtons:MouseButton = 0;
 
-	public var isHovered(default, null):Bool = false;
-	public var mouseX(default, null):Float = 0.0;
-	public var mouseY(default, null):Float = 0.0;
+	@:attr public var isHovered:Bool = false;
+	@:attr public var mouseX:Float = 0.0;
+	@:attr public var mouseY:Float = 0.0;
 
-	public var isPressed(default, null):Bool = false;
-	public var pressX(default, null):Float = 0.0;
-	public var pressY(default, null):Float = 0.0;
+	@:attr public var isPressed:Bool = false;
+	@:attr public var pressX:Float = 0.0;
+	@:attr public var pressY:Float = 0.0;
 
-	public var clickX(default, null):Float = 0.0;
-	public var clickY(default, null):Float = 0.0;
+	@:attr public var clickX:Float = 0.0;
+	@:attr public var clickY:Float = 0.0;
 
 	@:signal public function mouseEntered();
 
@@ -105,6 +105,7 @@ class Interactive extends Element {
 		isHovered = true;
 		if (cursor != null && scene != null)
 			scene.window.mouse.cursor = cursor;
+		
 		mouseEntered();
 	}
 

@@ -87,13 +87,13 @@ extern abstract Hotkey(HotkeyData) {
 		return value == null || value.length <= 0 ? null : new Hotkey(value.last(), value.splice(0, value.length - 1));
 
 	public inline function new(key:KeyCode, ?modifiers:Array<KeyCode>)
-		if (key == null || key.isModifier)
+		if (key.isModifier)
 			this = null;
 		else {
 			var mod = [];
 			var valid = true;
 			for (m in modifiers ?? []) {
-				if (m == null || !m.isModifier) {
+				if (!m.isModifier) {
 					valid = false;
 					break;
 				}
@@ -130,7 +130,7 @@ extern abstract Hotkey(HotkeyData) {
 extern abstract Shortcut(Array<Hotkey>) {
 	@:from
 	public static inline function fromString(value:String):Shortcut
-		return fromArray(value?.replace(";", ",").split(",").map(v -> (v : Hotkey)));
+		return fromArray(value?.replace(";", ",").split(",").map(v -> Hotkey.fromString(v)));
 
 	@:from
 	public static inline function fromArray(value:Array<Hotkey>):Shortcut

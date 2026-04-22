@@ -50,7 +50,8 @@ abstract class Object2D<T:Object2D<T>> extends Object<T> {
 		translate(value, value);
 
 	extern overload public inline function translate(x:Float, y:Float) {
-		transform *= Mat3.translation(x, y);
+		transform._20 += x;
+		transform._21 += y;
 		transformDirty = true;
 	}
 
