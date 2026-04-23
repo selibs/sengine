@@ -1,12 +1,11 @@
 package s.ui.layouts;
 
 import s.ui.Direction;
+import s.ui.Element;
 
-class ColumnLayout extends DirectionalLayout {
-	public function new(direction:Direction = TopToBottom) {
-		super(direction);
-	}
+class ColumnLayout extends FlowLayout {
+	override function updateChildren()
+		s.ui.macro.LayoutMacro.updateLayoutFlow("vertical", false, layoutDirection.matches(RightToLeft));
 
-	function updateFlow()
-		Layout.updateVerticalFlow(this);
+	override function layoutChild(c:Element) {}
 }

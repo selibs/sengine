@@ -145,16 +145,16 @@ extern abstract ObjectList<T:Object<T>>(ObjectListData<T>) to ObjectListData<T> 
 		return x;
 	}
 
-	private inline function get_dirty()
+	private inline function get_dirty():Bool
 		return @:privateAccess this.dirty;
 
-	private inline function set_dirty(value:Bool)
-		return @:privateAccess this.dirty = value;
+	private inline function set_dirty(value:Bool):Bool
+		return @:privateAccess this.dirty = true;
 
-	private inline function get_object()
+	private inline function get_object():T
 		return @:privateAccess this.object;
 
-	private inline function get_list()
+	private inline function get_list():Array<T>
 		return @:privateAccess this.list;
 
 	private inline function get_count():Int

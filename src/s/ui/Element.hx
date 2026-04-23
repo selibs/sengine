@@ -340,6 +340,11 @@ class Element extends Object2D<Element> implements Markup {
 		s.ui.macro.ElementMacro.updateAxis("left", "hCenter", "right", "x", "width");
 		s.ui.macro.ElementMacro.updateAxis("top", "vCenter", "bottom", "y", "height");
 
+		if (widthDirty)
+			realWidth = width;
+		if (heightDirty)
+			realHeight = height;
+		
 		if (horizontalDirty || originDirty)
 			realOriginX = left.position + (Math.isNaN(originX) ? width * 0.5 : originX);
 		if (verticalDirty || originDirty)
