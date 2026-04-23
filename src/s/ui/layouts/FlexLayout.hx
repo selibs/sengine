@@ -3,7 +3,7 @@ package s.ui.layouts;
 import s.ui.Axis;
 import s.ui.Direction;
 
-class FlowLayout extends DirectionalLayout {
+class FlexLayout extends DirectionalLayout {
 	@:attr(flowLayout) public var axis:Axis;
 
 	public function new(axis:Axis = Horizontal, direction:Direction = LeftToRight) {

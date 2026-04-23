@@ -51,10 +51,10 @@ class Layout extends Container {
 	public static inline function updateVerticalFlow(layout:DirectionalLayout)
 		updateFlow(layout, false, false);
 
-	public static inline function updateHorizontalWrap(layout:FlowLayout)
+	public static inline function updateHorizontalWrap(layout:FlexLayout)
 		updateFlow(layout, true, true);
 
-	public static inline function updateVerticalWrap(layout:FlowLayout)
+	public static inline function updateVerticalWrap(layout:FlexLayout)
 		updateFlow(layout, false, true);
 
 	static inline function updateFlow(layout:DirectionalLayout, horizontal:Bool, wrap:Bool) {

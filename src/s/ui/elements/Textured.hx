@@ -1,7 +1,5 @@
 package s.ui.elements;
 
-import s.math.Vec4;
-import s.geometry.Rect;
 import s.graphics.RenderTarget;
 import s.graphics.TextureSampling;
 import s.graphics.TextureParameters;
@@ -9,7 +7,7 @@ import s.assets.internal.image.Image;
 
 @:allow(s.ui.graphics.ImageElementDrawer)
 abstract class Textured<T:Image = Image> extends Drawable {
-	@:attr var texture:T;
+	@:attr var texture(default, set):T;
 	final parameters:TextureParameters = {
 		uAddressing: Clamp,
 		vAddressing: Clamp,
@@ -74,7 +72,17 @@ abstract class Textured<T:Image = Image> extends Drawable {
 	function draw(target:RenderTarget) {
 		if (!isLoaded)
 			return;
+		
 		s.ui.graphics.TexturedDrawer.shader.render(target, cast this);
+	}
+
+	function loadTexture()
+		textureDirty = true;
+
+	function set_texture(value:T) {
+		texture?.offLoaded(loadTexture);
+		value?.onLoaded(loadTexture);
+		return texture = value;
 	}
 
 	inline function get_mipmap():Bool

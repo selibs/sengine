@@ -79,7 +79,7 @@ class RenderTargetData extends s.assets.internal.image.Image {
 	 *
 	 * Use this when you need low-level access to the 1D drawing API exposed by Kha.
 	 */
-	public var context1D:Context1D;
+	public var context1D(default, null):Context1D;
 
 	/**
 	 * 2D graphics context for this texture.
@@ -87,14 +87,23 @@ class RenderTargetData extends s.assets.internal.image.Image {
 	 * This is the most common entry point when drawing UI, sprites, and text into
 	 * an off-screen target.
 	 */
-	public var context2D:Context2D;
+	public var context2D(default, null):Context2D;
 
 	/**
 	 * 3D graphics context for this texture.
 	 *
 	 * Use this for custom GPU rendering passes targeting the texture.
 	 */
-	public var context3D:Context3D;
+	public var context3D(default, null):Context3D;
+
+	override function unload() {
+		if (!isLoaded)
+			return;
+		context1D = null;
+		context2D = null;
+		context3D = null;
+		super.unload();
+	}
 
 	@:slot(loaded)
 	function updateContext()

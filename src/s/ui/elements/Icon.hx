@@ -2,7 +2,7 @@ package s.ui.elements;
 
 import s.assets.Image;
 
-class Icon<T:Image> extends Textured<T> {
+class Icon<T:Image = Image> extends Textured<T> {
 	/**
 	 * Asset key or path of the image to display.
 	 *
@@ -12,4 +12,14 @@ class Icon<T:Image> extends Textured<T> {
 	 * identifiers such as `"ui/logo"` or `"atlas/icons"`.
 	 */
 	@:alias public var source:T = texture;
+
+	/**
+	 * Creates a new image element bound to the given source asset.
+	 *
+	 * @param source Asset key or path used to resolve the image asset.
+	 */
+	public function new(?source:T) {
+		super();
+		this.source = source;
+	}
 }

@@ -132,8 +132,6 @@ class Element extends Object2D<Element> implements Markup {
 	@:readonly @:alias public var implicitWidth:Float = realWidth;
 	@:readonly @:alias public var implicitHeight:Float = realHeight;
 
-	@:signal public function updated():Void;
-
 	public function new(?tags:ElementTags) {
 		super();
 
@@ -315,27 +313,28 @@ class Element extends Object2D<Element> implements Markup {
 		return super.toString() + tags.toString();
 
 	function updateTree() {
-		updated();
 		update();
 		updateChildren();
 		flush();
 	}
 
-	function updateChildren() {
-		for (c in children.copy())
+	function updateChildren()
+		for (c in children)
 			updateChild(c);
-	}
 
-	function updateChild(child:Element)
-		if (isChildDirty(child)) {
-			if (child.parentDirty)
-				insertChild(child);
-			if (child.parentDirty || sceneDirty)
-				setChildScene(child);
-			if (child.parentDirty || layerDirty)
-				setChildLayer(child);
-			child.updateTree();
-		}
+	function updateChild(child:Element) {
+		if (!isChildDirty(child))
+			return;
+
+		if (child.parentDirty)
+			insertChild(child);
+		if (child.parentDirty || sceneDirty)
+			setChildScene(child);
+		if (child.parentDirty || layerDirty)
+			setChildLayer(child);
+
+		child.updateTree();
+	}
 
 	function update() {
 		s.ui.macro.ElementMacro.updateAxis("left", "hCenter", "right", "x", "width");

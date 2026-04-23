@@ -12,11 +12,12 @@ class Image extends Asset<kha.Image> implements s.shortcut.Shortcut {
 	public function setMipmaps(mipmaps:Array<Image>)
 		image.setMipmaps(mipmaps.map(m -> m.image));
 
-	function unload()
-		if (image != null) {
-			image.unload();
-			image = null;
-		}
+	function unload() {
+		if (!isLoaded)
+			return;
+		image.unload();
+		image = null;
+	}
 
 	function fromResource(resource:kha.Image):Void
 		image = resource;

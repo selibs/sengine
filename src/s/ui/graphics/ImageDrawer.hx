@@ -1,16 +1,18 @@
 package s.ui.graphics;
 
+import kha.graphics4.ConstantLocation;
 import s.ui.elements.ImageElement;
 
-class ImageDrawer<T:Image> extends TexturedDrawer<ImageElement<T>> {
+class ImageDrawer<T:ImageElement = ImageElement> extends TexturedDrawer<T> {
 	var clipRectCL:ConstantLocation;
-    
+
 	override function setup() {
 		super.setup();
-		sourceTU = pipeline.getTextureUnit("source");
+		clipRectCL = pipeline.getConstantLocation("clipRect");
 	}
 
 	override function setUniforms(target:s.graphics.RenderTarget, element:T) {
+		super.setUniforms(target, element);
 		final ctx = target.context3D;
 		ctx.setVec4(rectCL, element.rect);
 		ctx.setVec4(clipRectCL, element.clipRect);

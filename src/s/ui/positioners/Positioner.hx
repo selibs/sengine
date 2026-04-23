@@ -1,11 +1,8 @@
 package s.ui.positioners;
 
 import s.ui.Direction;
-import s.ui.elements.Container;
 
-abstract class Positioner extends Container {
-	@:marker var flowDirty:Bool = false;
-
+abstract class Positioner extends Element {
 	@:attr(flowLayout) public var direction:Direction;
 	@:attr(flowLayout) public var spacing:Float = 10.0;
 
@@ -14,12 +11,8 @@ abstract class Positioner extends Container {
 		this.direction = direction;
 	}
 
-	// TODO: no reflection
-	override function updateChildren() {
-		final updateFlow = Reflect.field(this, "updateFlow");
-		if (updateFlow != null)
-			Reflect.callMethod(this, updateFlow, []);
-		else
-			super.updateChildren();
-	}
+	override function updateChildren()
+		updateFlow();
+
+	abstract function updateFlow():Void;
 }

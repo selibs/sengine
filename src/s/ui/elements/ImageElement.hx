@@ -1,5 +1,8 @@
 package s.ui.elements;
 
+import s.graphics.RenderTarget;
+import s.math.Vec4;
+import s.geometry.Rect;
 import s.assets.Image;
 
 /**
@@ -86,7 +89,8 @@ import s.assets.Image;
  * @see s.ui.Alignment
  * @see s.geometry.Rect
  */
-class ImageElement<T:Image> extends Textured<T> {
+@:allow(s.ui.graphics.ImageDrawer)
+class ImageElement<T:Image = Image> extends Icon<T> {
 	@:attr var rect:Vec4 = new Vec4(0.0, 0.0, 1.0, 1.0);
 	@:attr var clipRect:Vec4 = new Vec4(0.0, 0.0, 1.0, 1.0);
 
@@ -139,16 +143,6 @@ class ImageElement<T:Image> extends Textured<T> {
 	 * @default `AlignCenter`
 	 */
 	@:attr public var alignment:Alignment = AlignCenter;
-
-	/**
-	 * Creates a new image element bound to the given source asset.
-	 *
-	 * @param source Asset key or path used to resolve the image asset.
-	 */
-	public function new(?source:T) {
-		super();
-		this.source = source;
-	}
 
 	override function update() {
 		super.update();
@@ -244,12 +238,10 @@ class ImageElement<T:Image> extends Textured<T> {
 		}
 	}
 
-	function loadSource()
-		textureDirty = true;
+	override function draw(target:RenderTarget) {
+		if (!isLoaded)
+			return;
 
-	function set_source(value:T) {
-		source?.offLoaded(loadSource);
-		value?.onLoaded(loadSource);
-		return texture = value;
+		s.ui.graphics.ImageDrawer.shader.render(target, cast this);
 	}
 }

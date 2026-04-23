@@ -3,7 +3,7 @@ package s.ui.positioners;
 import s.ui.AttachedAnchors;
 import s.ui.Direction;
 
-class Flow extends Positioner {
+class Flex extends Positioner {
 	@:attr(flowLayout) public var axis:Axis;
 
 	public function new(axis:Axis = Horizontal, direction:Direction = LeftToRight) {
@@ -73,16 +73,16 @@ class Flow extends Positioner {
 
 				inline function syncChild() {
 					if (childDirty) {
-					if (forward)
-						pLead.position = base + mStart;
-					else
-						pLead.position = base - mStart;
+						if (forward)
+							pLead.position = base + mStart;
+						else
+							pLead.position = base - mStart;
 
-					if (crossForward)
-						cLead.position = lineBase + crossStart;
-					else
-						cLead.position = lineBase - crossStart;
-				}
+						if (crossForward)
+							cLead.position = lineBase + crossStart;
+						else
+							cLead.position = lineBase - crossStart;
+					}
 
 					updateChild(c);
 				}
