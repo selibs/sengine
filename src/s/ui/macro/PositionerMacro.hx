@@ -20,8 +20,9 @@ class PositionerMacro {
 			var boundsAreDirty = $sRef.offsetDirty || $eRef.offsetDirty;
 			var offsetDirty = children.dirty || flowDirty || flowLayoutDirty || boundsAreDirty;
 			var base = forward ? $sRef.position + $sRef.padding : $eRef.position - $eRef.padding;
+			var items = children.copy();
 
-			for (c in children) {
+			for (c in items) {
 				var childDirty = offsetDirty;
 
 				var lm, tm, lp, tp;
@@ -44,12 +45,6 @@ class PositionerMacro {
 						c.$s.position = base + c.$s.margin;
 					else
 						c.$e.position = base - c.$e.margin;
-
-				if (c.isVisible && childDirty)
-					if (forward)
-						@:privateAccess @:bypassAccessor c.$s.positionDirty = true;
-					else
-						@:privateAccess @:bypassAccessor c.$e.positionDirty = true;
 
 				updateChild(c);
 

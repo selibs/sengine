@@ -1,13 +1,13 @@
 package s.ui;
 
+import s.ui.AttachedAnchorLine;
 import s.math.Mat3;
 import s.math.SMath;
 import s.geometry.Size;
 import s.geometry.Position;
 import s.ui.Alignment;
-import s.ui.LayoutAttribute;
-import s.ui.AnchorsAttribute;
-import s.ui.AnchorLineAttribute;
+import s.ui.AttachedLayout;
+import s.ui.AttachedAnchors;
 import s.ui.elements.Layer;
 #if debug_element_bounds
 import s.graphics.Context2D;
@@ -15,72 +15,9 @@ import s.graphics.Context2D;
 using s.extensions.StringExt;
 #end
 
-typedef ElementAttributes = {
-	?clip:Bool,
-	?layout:LayoutAttributeAttributes,
-	?opacity:Float,
-	?isVisible:Bool,
-	?padding:Float,
-	?margins:Float,
-	?anchors:AnchorsAttributeAttributes,
-	?left:AnchorLineAttributeAttributes,
-	?hCenter:AnchorLineAttributeAttributes,
-	?right:AnchorLineAttributeAttributes,
-	?top:AnchorLineAttributeAttributes,
-	?vCenter:AnchorLineAttributeAttributes,
-	?bottom:AnchorLineAttributeAttributes,
-	?x:Float,
-	?y:Float,
-	?width:Float,
-	?height:Float,
-	?originX:Float,
-	?originY:Float
-}
-
 @:allow(s.ui.Scene)
 @:allow(s.AttachedAttribute)
 class Element extends Object2D<Element> implements Markup {
-	public static inline function setAttributes(x:Element, a:ElementAttributes) {
-		if (a.clip != null)
-			x.clip = a.clip;
-		if (a.layout != null)
-			LayoutAttribute.setAttributes(x.layout, a.layout);
-		if (a.opacity != null)
-			x.opacity = a.opacity;
-		if (a.isVisible != null)
-			x.isVisible = a.isVisible;
-		if (a.padding != null)
-			x.padding = a.padding;
-		if (a.margins != null)
-			x.margins = a.margins;
-		if (a.anchors != null)
-			AnchorsAttribute.setAttributes(x.anchors, a.anchors);
-		if (a.left != null)
-			AnchorLineAttribute.setAttributes(x.left, a.left);
-		if (a.hCenter != null)
-			AnchorLineAttribute.setAttributes(x.hCenter, a.hCenter);
-		if (a.right != null)
-			AnchorLineAttribute.setAttributes(x.right, a.right);
-		if (a.top != null)
-			AnchorLineAttribute.setAttributes(x.top, a.top);
-		if (a.vCenter != null)
-			AnchorLineAttribute.setAttributes(x.vCenter, a.vCenter);
-		if (a.bottom != null)
-			AnchorLineAttribute.setAttributes(x.bottom, a.bottom);
-		if (a.x != null)
-			x.x = a.x;
-		if (a.y != null)
-			x.y = a.y;
-		if (a.width != null)
-			x.width = a.width;
-		if (a.height != null)
-			x.height = a.height;
-		if (a.originX != null)
-			x.originX = a.originX;
-		if (a.originY != null)
-			x.originY = a.originY;
-	}
-
 	overload extern public static inline function mapToElement(element:Element, x:Float, y:Float):Position
 		return element.mapFromGlobal(x, y);
 
@@ -168,14 +105,14 @@ class Element extends Object2D<Element> implements Markup {
 	@:attr.attached public var tags(default, set):ElementTags;
 
 	@:attr public var clip:Bool = false; // TODO: stencil test (?)
-	@:attr.attached public final layout:LayoutAttribute;
+	@:attr.attached public final layout:AttachedLayout;
 
 	@:attr(visibility) @:clamp public var opacity:Float = 1.0;
 	@:attr(visibility) public var isVisible:Bool = true;
 
 	public var padding(never, set):Float;
 	public var margins(never, set):Float;
-	@:attr.attached public final anchors:AnchorsAttribute;
+	@:attr.attached public final anchors:AttachedAnchors;
 
 	@:attr.attached public final left:HorizontalAnchor;
 	@:attr.attached public final hCenter:HorizontalAnchor;
@@ -200,12 +137,12 @@ class Element extends Object2D<Element> implements Markup {
 	public function new(?tags:ElementTags) {
 		super();
 
-		if (tags== null)
+		if (tags == null)
 			tags = "";
 		this.tags = tags;
 
-		layout = new LayoutAttribute(this);
-		anchors = new AnchorsAttribute(this);
+		layout = new AttachedLayout(this);
+		anchors = new AttachedAnchors(this);
 
 		left = new HorizontalAnchor(this);
 		hCenter = new HorizontalAnchor(this);
@@ -384,9 +321,10 @@ class Element extends Object2D<Element> implements Markup {
 		flush();
 	}
 
-	function updateChildren()
-		for (c in children)
+	function updateChildren() {
+		for (c in children.copy())
 			updateChild(c);
+	}
 
 	function updateChild(child:Element)
 		if (isChildDirty(child)) {

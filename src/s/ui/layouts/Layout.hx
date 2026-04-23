@@ -1,13 +1,13 @@
 package s.ui.layouts;
 
 import s.ui.Alignment;
-import s.ui.AnchorLineAttribute;
+import s.ui.AttachedAnchorLine;
 import s.ui.Direction;
-import s.ui.LayoutAttribute;
+import s.ui.AttachedLayout;
 import s.ui.elements.Container;
 import s.ui.Element;
 
-@:access(s.ui.LayoutAttribute)
+@:access(s.ui.AttachedLayout)
 @:access(s.ui.elements.Container)
 @:access(s.ui.Element)
 @:access(s.ui.positioners.Positioner)
@@ -83,9 +83,9 @@ class Layout extends Container {
 		if (crossAvailable < 0)
 			crossAvailable = 0;
 
-		final children = layout.children;
-		final count = children.count;
-		final childrenDirty = children.dirty;
+		final children = layout.children.copy();
+		final count = children.length;
+		final childrenDirty = layout.children.dirty;
 		final spacing = layout.spacing;
 		final crossSpace = horizontal ? layout.spaceV : layout.spaceH;
 		final crossSpaceDirty = horizontal ? layout.spaceVDirty : layout.spaceHDirty;
@@ -391,10 +391,10 @@ class Layout extends Container {
 		}
 	}
 
-	static inline function axisStart(el:Element, horizontal:Bool, primary:Bool):AnchorLineAttribute
+	static inline function axisStart(el:Element, horizontal:Bool, primary:Bool):AttachedAnchorLine
 		return horizontal == primary ? el.left : el.top;
 
-	static inline function axisEnd(el:Element, horizontal:Bool, primary:Bool):AnchorLineAttribute
+	static inline function axisEnd(el:Element, horizontal:Bool, primary:Bool):AttachedAnchorLine
 		return horizontal == primary ? el.right : el.bottom;
 
 	static inline function axisSize(el:Element, horizontal:Bool, primary:Bool):Float
@@ -414,37 +414,37 @@ class Layout extends Container {
 		return changed;
 	}
 
-	static inline function axisFill(l:LayoutAttribute, horizontal:Bool, primary:Bool):Bool
+	static inline function axisFill(l:AttachedLayout, horizontal:Bool, primary:Bool):Bool
 		return horizontal == primary ? l.fillWidth : l.fillHeight;
 
-	static inline function axisCanFill(l:LayoutAttribute, horizontal:Bool, primary:Bool):Bool
+	static inline function axisCanFill(l:AttachedLayout, horizontal:Bool, primary:Bool):Bool
 		return axisFill(l, horizontal, primary) && Math.isNaN(axisPreferred(l, horizontal, primary));
 
-	static inline function axisFillDirty(l:LayoutAttribute, horizontal:Bool, primary:Bool):Bool
+	static inline function axisFillDirty(l:AttachedLayout, horizontal:Bool, primary:Bool):Bool
 		return horizontal == primary ? l.fillWidthDirty : l.fillHeightDirty;
 
-	static inline function axisMinimum(l:LayoutAttribute, horizontal:Bool, primary:Bool):Float
+	static inline function axisMinimum(l:AttachedLayout, horizontal:Bool, primary:Bool):Float
 		return horizontal == primary ? l.minimumWidth : l.minimumHeight;
 
-	static inline function axisFactorDirty(l:LayoutAttribute, horizontal:Bool, primary:Bool):Bool {
+	static inline function axisFactorDirty(l:AttachedLayout, horizontal:Bool, primary:Bool):Bool {
 		if (primary)
 			return l.distributionDirty;
 		return horizontal == primary ? l.fillWidthFactorDirty : l.fillHeightFactorDirty;
 	}
 
-	static inline function axisPreferred(l:LayoutAttribute, horizontal:Bool, primary:Bool):Float
+	static inline function axisPreferred(l:AttachedLayout, horizontal:Bool, primary:Bool):Float
 		return horizontal == primary ? l.preferredWidth : l.preferredHeight;
 
-	static inline function axisPreferredDirty(l:LayoutAttribute, horizontal:Bool, primary:Bool):Bool
+	static inline function axisPreferredDirty(l:AttachedLayout, horizontal:Bool, primary:Bool):Bool
 		return horizontal == primary ? l.preferredWidthDirty : l.preferredHeightDirty;
 
-	static inline function axisMinMaxDirty(l:LayoutAttribute, horizontal:Bool, primary:Bool):Bool
+	static inline function axisMinMaxDirty(l:AttachedLayout, horizontal:Bool, primary:Bool):Bool
 		return horizontal == primary ? l.minimumWidthDirty || l.maximumWidthDirty : l.minimumHeightDirty || l.maximumHeightDirty;
 
-	static inline function axisLayoutDirty(l:LayoutAttribute, horizontal:Bool, primary:Bool):Bool
+	static inline function axisLayoutDirty(l:AttachedLayout, horizontal:Bool, primary:Bool):Bool
 		return horizontal == primary ? l.horizontalDirty : l.verticalDirty;
 
-	static inline function axisFactor(l:LayoutAttribute, horizontal:Bool, primary:Bool):Float {
+	static inline function axisFactor(l:AttachedLayout, horizontal:Bool, primary:Bool):Float {
 		var factor = horizontal == primary ? l.fillWidthFactor : l.fillHeightFactor;
 		if (primary) {
 			var weight = l.weight;
@@ -458,7 +458,7 @@ class Layout extends Container {
 	static inline function clampSize(el:Element, size:Float, horizontal:Bool, primary:Bool):Float
 		return horizontal == primary ? clampWidth(el, size) : clampHeight(el, size);
 
-	static inline function updatePrimarySize(c:Element, horizontal:Bool, pStart:AnchorLineAttribute, pEnd:AnchorLineAttribute):Bool {
+	static inline function updatePrimarySize(c:Element, horizontal:Bool, pStart:AttachedAnchorLine, pEnd:AttachedAnchorLine):Bool {
 		final l = c.layout;
 		final minMaxDirty = axisMinMaxDirty(l, horizontal, true);
 		final preferred = axisPreferred(l, horizontal, true);
@@ -475,7 +475,7 @@ class Layout extends Container {
 		return changed;
 	}
 
-	static inline function updateCrossSize(c:Element, horizontal:Bool, cStart:AnchorLineAttribute, cEnd:AnchorLineAttribute, crossSpace:Float,
+	static inline function updateCrossSize(c:Element, horizontal:Bool, cStart:AttachedAnchorLine, cEnd:AttachedAnchorLine, crossSpace:Float,
 			crossSpaceDirty:Bool, crossBoundsAreDirty:Bool, fill:Bool, isVisibleDirty:Bool):Bool {
 		final l = c.layout;
 		final minMaxDirty = axisMinMaxDirty(l, horizontal, false);
@@ -530,6 +530,9 @@ class Layout extends Container {
 	}
 
 	override function updateChild(c:Element) {
+		if (!isChildDirty(c))
+			return;
+
 		final l = c.layout;
 
 		if (l.alignmentDirty)

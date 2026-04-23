@@ -8,29 +8,8 @@ import s.graphics.Context2D;
 import s.graphics.RenderTarget.RenderTargetData;
 import s.graphics.TextureFormat;
 import s.graphics.DepthStencilFormat;
-import s.ui.elements.Drawable;
-
-typedef CanvasAttributes = {
-	> DrawableAttributes,
-	?format:TextureFormat,
-	?samples:Int,
-	?depthStencil:DepthStencilFormat,
-	?textureSize:ISize
-}
 
 class Canvas extends Textured<RenderTargetData> {
-	public static inline function setAttributes(x:Canvas, a:CanvasAttributes) {
-		Drawable.setAttributes(x, a);
-		if (a.format != null)
-			x.format = a.format;
-		if (a.samples != null)
-			x.samples = a.samples;
-		if (a.depthStencil != null)
-			x.depthStencil = a.depthStencil;
-		if (a.textureSize != null)
-			x.textureSize = a.textureSize;
-	}
-
 	@:attr(textureParameters) var size:ISize;
 
 	@:attr public var textureSize:ISize;

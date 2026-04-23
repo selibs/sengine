@@ -4,7 +4,7 @@ import s.ui.Direction;
 import s.ui.elements.Container;
 
 abstract class Positioner extends Container {
-	var flowDirty:Bool = false;
+	@:marker var flowDirty:Bool = false;
 
 	@:attr(flowLayout) public var direction:Direction;
 	@:attr(flowLayout) public var spacing:Float = 10.0;

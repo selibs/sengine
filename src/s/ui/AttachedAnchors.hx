@@ -1,34 +1,10 @@
 package s.ui;
 
-import s.ui.AnchorLineAttribute;
 import s.ui.Element;
-
-typedef AnchorsAttributeAttributes = {
-	?left:HorizontalAnchor,
-	?hCenter:HorizontalAnchor,
-	?right:HorizontalAnchor,
-	?top:VerticalAnchor,
-	?vCenter:VerticalAnchor,
-	?bottom:VerticalAnchor
-}
+import s.ui.AttachedAnchorLine;
 
 @:allow(s.ui.Element)
-class AnchorsAttribute extends s.shortcut.AttachedAttribute<Element> {
-	public static inline function setAttributes(x:AnchorsAttribute, a:AnchorsAttributeAttributes) {
-		if (a.left != null)
-			x.left = a.left;
-		if (a.hCenter != null)
-			x.hCenter = a.hCenter;
-		if (a.right != null)
-			x.right = a.right;
-		if (a.top != null)
-			x.top = a.top;
-		if (a.vCenter != null)
-			x.vCenter = a.vCenter;
-		if (a.bottom != null)
-			x.bottom = a.bottom;
-	}
-
+class AttachedAnchors extends s.shortcut.AttachedAttribute<Element> {
 	@:attr(horizontal) public var left:HorizontalAnchor = null;
 	@:attr(horizontal) public var hCenter:HorizontalAnchor = null;
 	@:attr(horizontal) public var right:HorizontalAnchor = null;

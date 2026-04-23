@@ -84,12 +84,27 @@ abstract class Object2D<T:Object2D<T>> extends Object<T> {
 		var ind = list.indexOf(child);
 
 		list.remove(child);
-		for (i in 0...list.length)
+		var lower = list.length;
+		var upper = list.length;
+		for (i in 0...list.length) {
+			if (lower == list.length && list[i].z >= child.z)
+				lower = i;
 			if (list[i].z > child.z) {
-				list.insert(i, child);
-				return;
+				upper = i;
+				break;
 			}
-		list.push(child);
+		}
+
+		var target = upper;
+		if (ind >= 0) {
+			if (ind < lower)
+				target = lower;
+			else if (upper < ind)
+				target = upper;
+			else
+				target = ind;
+		}
+		list.insert(target, child);
 
 		if (ind != list.indexOf(child))
 			children.dirty = true;

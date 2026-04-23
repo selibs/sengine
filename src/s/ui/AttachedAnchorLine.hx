@@ -2,27 +2,12 @@ package s.ui;
 
 import s.ui.Element;
 
-class HorizontalAnchor extends AnchorLineAttribute {}
-class VerticalAnchor extends AnchorLineAttribute {}
+class HorizontalAnchor extends AttachedAnchorLine {}
+class VerticalAnchor extends AttachedAnchorLine {}
 
-typedef AnchorLineAttributeAttributes = {
-	?position:Float,
-	?padding:Float,
-	?margin:Float
-}
-
-@:allow(s.ui.AnchorsAttribute)
+@:allow(s.ui.AttachedAnchors)
 @:allow(s.ui.Element)
-abstract class AnchorLineAttribute extends s.shortcut.AttachedAttribute<Element> {
-	public static inline function setAttributes(x:AnchorLineAttribute, a:AnchorLineAttributeAttributes) {
-		if (a.position != null)
-			x.position = a.position;
-		if (a.padding != null)
-			x.padding = a.padding;
-		if (a.margin != null)
-			x.margin = a.margin;
-	}
-
+abstract class AttachedAnchorLine extends s.shortcut.AttachedAttribute<Element> {
 	final dependents:Array<Element> = [];
 
 	@:attr(offset) public var position:Float = 0.0;

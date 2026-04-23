@@ -15,7 +15,7 @@ import s.ui.elements.Interactive;
 @:allow(s.ui.Element)
 @:access(s.ObjectList)
 @:access(s.app.Window)
-class Scene implements s.shortcut.Shortcut extends Layer {
+class Scene extends Layer {
 	final window:Window;
 
 	final interactive:Array<Interactive> = [];
@@ -37,6 +37,7 @@ class Scene implements s.shortcut.Shortcut extends Layer {
 
 		App.onUpdate(() -> updateTree());
 		window.onRender(render);
+		window.onResized((w, h) -> setSize(w, h));
 
 		var m = window.mouse;
 		m.onMoved(processMouseMoved);
@@ -55,22 +56,10 @@ class Scene implements s.shortcut.Shortcut extends Layer {
 	}
 
 	override function update() {
-		if (width != window.width)
-			width = window.width;
-		if (height != window.height)
-			height = window.height;
-
 		super.update();
 
 		if (children.dirty)
 			interactive.resize(0);
-	}
-
-	override function updateTree() {
-		final childrenDirty = children.dirty;
-		super.updateTree();
-		if (childrenDirty)
-			interactive.reverse();
 	}
 
 	override function draw(target:RenderTarget) {
@@ -103,7 +92,7 @@ class Scene implements s.shortcut.Shortcut extends Layer {
 		final fps = Std.int(1.0 / time);
 		var offset = 5;
 
-		inline function draw(text:String) {
+		inline function drawInfo(text:String) {
 			ctx.style.color = Black;
 			ctx.drawString(text, 6, offset + 1);
 			ctx.style.color = White;
@@ -111,13 +100,13 @@ class Scene implements s.shortcut.Shortcut extends Layer {
 			offset += 16;
 		}
 
-		draw("FPS: " + fps);
-		draw("Frame (ms): " + roundTo(time * 1000, 1));
+		drawInfo("FPS: " + fps);
+		drawInfo("Frame (ms): " + roundTo(time * 1000, 1));
 		// draw("CPU (ms): " + roundTo(Context3D.cpuTime, 1));
 		// draw("GPU (ms): " + roundTo(Context3D.gpuTime, 1));
-		draw("Draw calls: " + Context3D.drawCalls);
-		draw("IB allocations: " + Context3D.ibAllocations);
-		draw("VB allocations: " + Context3D.vbAllocations);
+		drawInfo("Draw calls: " + Context3D.drawCalls);
+		drawInfo("IB allocations: " + Context3D.ibAllocations);
+		drawInfo("VB allocations: " + Context3D.vbAllocations);
 	}
 	#end
 
@@ -152,25 +141,36 @@ class Scene implements s.shortcut.Shortcut extends Layer {
 	}
 
 	function processMouseMoved(x:Int, y:Int, dx:Int, dy:Int):Void {
+		final nextHovered:Array<Interactive> = [];
+		var accepted = false;
+
 		for (el in interactive) {
-			final c = el.covers(x, y);
-			if (!hovered.contains(el)) {
-				if (c && el.isEnabled) {
-					hovered.push(el);
-					final p = el.mapFromGlobal(x, y);
-					el.enter(p.x, p.y);
-				}
-			} else {
-				if (!c) {
-					hovered.remove(el);
-					final p = el.mapFromGlobal(x, y);
-					el.exit(p.x, p.y);
-				} else if (el.isEnabled) {
-					final p = el.realTransform * vec2(dx, dy);
-					el.mouse(p.x, p.y);
-				}
-			}
+			if (accepted || !el.isEnabled || !el.covers(x, y))
+				continue;
+
+			nextHovered.push(el);
+			if (!el.propagateMouseEvents)
+				accepted = true;
 		}
+
+		for (el in hovered.copy())
+			if (!nextHovered.contains(el)) {
+				final p = el.mapFromGlobal(x, y);
+				el.exit(p.x, p.y);
+			}
+
+		for (el in nextHovered)
+			if (!hovered.contains(el)) {
+				final p = el.mapFromGlobal(x, y);
+				el.enter(p.x, p.y);
+			} else {
+				final p = el.realTransform * vec2(dx, dy);
+				el.mouse(p.x, p.y);
+			}
+
+		hovered.resize(0);
+		for (el in nextHovered)
+			hovered.push(el);
 	}
 
 	function processMousePressed(b:MouseButton, x:Int, y:Int):Void {

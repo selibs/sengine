@@ -1,6 +1,6 @@
 package s.ui.positioners;
 
-import s.ui.AnchorsAttribute;
+import s.ui.AttachedAnchors;
 import s.ui.Direction;
 
 class Flow extends Positioner {
@@ -19,10 +19,10 @@ class Flow extends Positioner {
 		final forward = primaryHorizontal ? direction & RightToLeft == 0 : direction & BottomToTop == 0;
 		final crossForward = primaryHorizontal ? direction & BottomToTop == 0 : direction & RightToLeft == 0;
 
-		final pStart:AnchorLineAttribute = primaryHorizontal ? left : top;
-		final pEnd:AnchorLineAttribute = primaryHorizontal ? right : bottom;
-		final cStart:AnchorLineAttribute = primaryHorizontal ? top : left;
-		final cEnd:AnchorLineAttribute = primaryHorizontal ? bottom : right;
+		final pStart:AttachedAnchorLine = primaryHorizontal ? left : top;
+		final pEnd:AttachedAnchorLine = primaryHorizontal ? right : bottom;
+		final cStart:AttachedAnchorLine = primaryHorizontal ? top : left;
+		final cEnd:AttachedAnchorLine = primaryHorizontal ? bottom : right;
 
 		var boundsAreDirty = pStart.offsetDirty || pEnd.offsetDirty || cStart.offsetDirty || cEnd.offsetDirty;
 		var offsetDirty = children.dirty || flowDirty || flowLayoutDirty || boundsAreDirty;
@@ -34,14 +34,15 @@ class Flow extends Positioner {
 		var lineBase = crossForward ? cStart.position + cStart.padding : cEnd.position - cEnd.padding;
 		var lineSize = 0.0;
 		var hasInLine = false;
+		var items = children.copy();
 
-		for (c in children) {
+		for (c in items) {
 			var childDirty = offsetDirty;
 
-			final cpStart:AnchorLineAttribute = primaryHorizontal ? c.left : c.top;
-			final cpEnd:AnchorLineAttribute = primaryHorizontal ? c.right : c.bottom;
-			final ccStart:AnchorLineAttribute = primaryHorizontal ? c.top : c.left;
-			final ccEnd:AnchorLineAttribute = primaryHorizontal ? c.bottom : c.right;
+			final cpStart:AttachedAnchorLine = primaryHorizontal ? c.left : c.top;
+			final cpEnd:AttachedAnchorLine = primaryHorizontal ? c.right : c.bottom;
+			final ccStart:AttachedAnchorLine = primaryHorizontal ? c.top : c.left;
+			final ccEnd:AttachedAnchorLine = primaryHorizontal ? c.bottom : c.right;
 
 			final pLead = forward ? cpStart : cpEnd;
 			final pTrail = forward ? cpEnd : cpStart;
@@ -70,9 +71,27 @@ class Flow extends Positioner {
 				final crossStart = cLead.margin;
 				final crossEnd = cTrail.margin;
 
-				final primarySize = primaryHorizontal ? c.width : c.height;
-				final crossSize = primaryHorizontal ? c.height : c.width;
-				final needed = mStart + primarySize + mEnd;
+				inline function syncChild() {
+					if (childDirty) {
+					if (forward)
+						pLead.position = base + mStart;
+					else
+						pLead.position = base - mStart;
+
+					if (crossForward)
+						cLead.position = lineBase + crossStart;
+					else
+						cLead.position = lineBase - crossStart;
+				}
+
+					updateChild(c);
+				}
+
+				syncChild();
+
+				var primarySize = primaryHorizontal ? c.width : c.height;
+				var crossSize = primaryHorizontal ? c.height : c.width;
+				var needed = mStart + primarySize + mEnd;
 
 				if (hasInLine && (forward ? base + needed > limit : base - needed < limit)) {
 					base = start;
@@ -80,24 +99,13 @@ class Flow extends Positioner {
 					lineSize = 0.0;
 					hasInLine = false;
 					childDirty = true;
-					offsetDirty = true;
+
+					syncChild();
+
+					primarySize = primaryHorizontal ? c.width : c.height;
+					crossSize = primaryHorizontal ? c.height : c.width;
+					needed = mStart + primarySize + mEnd;
 				}
-
-				if (childDirty) {
-					if (forward)
-						pLead.position = base + mStart;
-					else
-						pLead.position = base - mStart;
-					@:privateAccess @:bypassAccessor pLead.positionDirty = true;
-
-					if (crossForward)
-						cLead.position = lineBase + crossStart;
-					else
-						cLead.position = lineBase - crossStart;
-					@:privateAccess @:bypassAccessor cLead.positionDirty = true;
-				}
-
-				updateChild(c);
 
 				if (forward)
 					base = pTrail.position + mEnd + spacing;

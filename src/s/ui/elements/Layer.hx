@@ -22,6 +22,9 @@ class Layer extends Canvas {
 	}
 
 	override function updateTree() {
+		if (!dirty)
+			return;
+
 		super.updateTree();
 
 		if (paintDirty) {

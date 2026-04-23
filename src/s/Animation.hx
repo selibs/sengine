@@ -11,7 +11,7 @@ class Animation implements s.shortcut.Shortcut {
 	@:overload(function(from:Vec3, to:Vec3, duration:Float, advance:Vec3->Void):Animation {})
 	@:overload(function(from:Vec4, to:Vec4, duration:Float, advance:Vec4->Void):Animation {})
 	public static function mix(from:Float, to:Float, duration:Float = 0.5, advance:Float->Void):Animation
-		return new Animation(duration, t -> advance(from * (1.0 - t) + to * t));
+		return new Animation(from == to ? 0.0 : duration, t -> advance(from * (1.0 - t) + to * t));
 
 	var d:Float = 0.0;
 	var l:Int = 0;
@@ -39,12 +39,21 @@ class Animation implements s.shortcut.Shortcut {
 
 	public function start() {
 		if (!active) {
+			d = 0.0;
+			l = 0;
+			if (duration <= 0.0) {
+				@:bypassAccessor active = false;
+				@:bypassAccessor paused = false;
+				started();
+				advance(1.0);
+				completed();
+				return this;
+			}
+
 			App.onUpdate(update);
 			@:bypassAccessor active = true;
 			@:bypassAccessor paused = false;
 			started();
-			d = 0.0;
-			l = 0;
 			advance(0.0);
 		}
 		return this;
