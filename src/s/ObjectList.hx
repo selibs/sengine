@@ -149,7 +149,7 @@ extern abstract ObjectList<T:Object<T>>(ObjectListData<T>) to ObjectListData<T> 
 		return @:privateAccess this.dirty;
 
 	private inline function set_dirty(value:Bool):Bool
-		return @:privateAccess this.dirty = true;
+		return @:privateAccess this.dirty = value;
 
 	private inline function get_object():T
 		return @:privateAccess this.object;

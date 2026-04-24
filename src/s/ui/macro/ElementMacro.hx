@@ -59,16 +59,6 @@ class ElementMacro {
 		return macro {
 			var lengthChanged = false;
 
-			if ($noAnchor && (parent != null && parent.$start.positionDirty))
-				$s.position = $p + parent.$start.position;
-
-			if ($as != null && (anchors.$sd || $as.offsetDirty))
-				$s.position = $as.position + $as.padding + $s.margin;
-			if ($ac != null && (anchors.$cd || $ac.offsetDirty))
-				$c.position = $ac.position + $ac.padding + $c.margin;
-			if ($ae != null && (anchors.$ed || $ae.offsetDirty))
-				$e.position = $ae.position - $ae.padding - $e.margin;
-
 			if ($s.positionDirty) {
 				${updatePos()};
 				if ($ae == null && $ac == null) {

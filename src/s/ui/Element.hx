@@ -86,8 +86,6 @@ class Element extends Object2D<Element> implements Markup {
 	@:attr var realTransform:Mat3 = new Mat3();
 	@:attr var realOpacity:Float = 1.0;
 	@:attr var realVisible:Bool = true;
-	@:attr var realWidth:Float = 0.0;
-	@:attr var realHeight:Float = 0.0;
 	@:attr(realOrigin) var realOriginX:Float = 0.0;
 	@:attr(realOrigin) var realOriginY:Float = 0.0;
 
@@ -128,9 +126,6 @@ class Element extends Object2D<Element> implements Markup {
 
 	@:attr(origin) public var originX:Float = Math.NaN;
 	@:attr(origin) public var originY:Float = Math.NaN;
-
-	@:readonly @:alias public var implicitWidth:Float = realWidth;
-	@:readonly @:alias public var implicitHeight:Float = realHeight;
 
 	public function new(?tags:ElementTags) {
 		super();
@@ -325,26 +320,29 @@ class Element extends Object2D<Element> implements Markup {
 	function updateChild(child:Element) {
 		if (!isChildDirty(child))
 			return;
+		updateChildDependencies(child);
+		child.updateTree();
+	}
 
+	function updateChildDependencies(child:Element) {
 		if (child.parentDirty)
 			insertChild(child);
 		if (child.parentDirty || sceneDirty)
 			setChildScene(child);
 		if (child.parentDirty || layerDirty)
 			setChildLayer(child);
-
-		child.updateTree();
+		if (!child.isHorizontallyAnchored() && left.positionDirty)
+			child.left.position = child.x + left.position;
+		if (!child.isVerticallyAnchored() && top.positionDirty)
+			child.top.position = child.y + top.position;
 	}
 
 	function update() {
+		anchors.update();
+
 		s.ui.macro.ElementMacro.updateAxis("left", "hCenter", "right", "x", "width");
 		s.ui.macro.ElementMacro.updateAxis("top", "vCenter", "bottom", "y", "height");
 
-		if (widthDirty)
-			realWidth = width;
-		if (heightDirty)
-			realHeight = height;
-		
 		if (horizontalDirty || originDirty)
 			realOriginX = left.position + (Math.isNaN(originX) ? width * 0.5 : originX);
 		if (verticalDirty || originDirty)
@@ -371,12 +369,12 @@ class Element extends Object2D<Element> implements Markup {
 	}
 
 	function isChildDirty(child:Element):Bool
-		return scene?.children.dirty
-			|| layer?.children.dirty
-			|| child.dirty
+		return child.dirty
 			|| realVisibleDirty
 			|| realOpacityDirty
-			|| realTransformDirty;
+			|| realTransformDirty
+			|| scene?.children.dirty
+			|| layer?.children.dirty;
 
 	function setChildScene(child:Element)
 		@:bypassAccessor child.scene = scene;

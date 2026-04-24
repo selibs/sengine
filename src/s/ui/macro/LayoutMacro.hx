@@ -2,235 +2,149 @@ package s.ui.macro;
 
 import haxe.macro.Expr;
 
+using s.extensions.StringExt;
+
 class LayoutMacro {
-	public static macro function updateLayoutFlow(d:String, reversePrimary:Expr, mirrorHorizontal:Expr) {
-		var primarySize:String, crossSize:String;
-		var primaryStart:String, primaryCenter:String, primaryEnd:String;
-		var crossStart:String, crossCenter:String, crossEnd:String;
-		var freePrimary:String, freeCross:String;
-		var primaryFill:String, crossFill:String;
-		var primaryStretch:String;
+	public static macro function updateLayoutFlow(s:String, e:String, p:String, l:String, cp:String, cl:String) {
+		var sCap = s.capitalize();
+		var eCap = e.capitalize();
+		var pCap = p.capitalize();
+		var lCap = l.capitalize();
+		var cpCap = cp.capitalize();
+		var clCap = cl.capitalize();
 
-		var primaryMin:Expr;
-		var primaryPref:Expr;
-		var primaryMax:Expr;
-		var crossMin:Expr;
-		var crossPref:Expr;
-		var crossMax:Expr;
-		var targetPrimary:Expr;
-		var targetCross:Expr;
-		var primaryReal:Expr;
-		var crossReal:Expr;
-		var primaryBaseStart:Expr;
-		var crossBase:Expr;
-		var primaryAlignEnd:Expr;
-		var primaryAlignCenter:Expr;
-		var crossAlignEnd:Expr;
-		var crossAlignCenter:Expr;
+		var sRef = macro $i{s};
+		var dRef = macro $i{'${eCap}To${sCap}'};
+		var rectPRef = macro $i{'rect$pCap'};
+		var rectLRef = macro $i{'rect$lCap'};
+		var rectCPRef = macro $i{'rect$cpCap'};
+		var rectCLRef = macro $i{'rect$clCap'};
+		var rectPDirtyRef = macro $i{'rect${pCap}Dirty'};
+		var rectLDirtyRef = macro $i{'rect${lCap}Dirty'};
+		var rectCPDirtyRef = macro $i{'rect${cpCap}Dirty'};
+		var rectCLDirtyRef = macro $i{'rect${clCap}Dirty'};
 
-		switch d {
-			case "horizontal":
-				primarySize = "width";
-				crossSize = "height";
-				primaryStart = "left";
-				primaryCenter = "hCenter";
-				primaryEnd = "right";
-				crossStart = "top";
-				crossCenter = "vCenter";
-				crossEnd = "bottom";
-				freePrimary = "freeWidth";
-				freeCross = "freeHeight";
-				primaryFill = "fillWidth";
-				crossFill = "fillHeight";
-				primaryStretch = "fillWidthFactor";
-				primaryMin = macro minimumWidth(c);
-				primaryPref = macro preferredWidth(c);
-				primaryMax = macro maximumWidth(c);
-				crossMin = macro minimumHeight(c);
-				crossPref = macro preferredHeight(c);
-				crossMax = macro maximumHeight(c);
-				targetPrimary = macro boundedWidth(c, contentPrimary);
-				targetCross = macro boundedHeight(c, contentCross);
-				primaryReal = macro realWidth;
-				crossReal = macro realHeight;
-				primaryBaseStart = macro reverse ? right.position - right.padding : left.position + left.padding;
-				crossBase = macro top.position + top.padding;
-				primaryAlignEnd = macro s.ui.Alignment.AlignRight;
-				primaryAlignCenter = macro s.ui.Alignment.AlignHCenter;
-				crossAlignEnd = macro s.ui.Alignment.AlignBottom;
-				crossAlignCenter = macro s.ui.Alignment.AlignVCenter;
-			case "vertical":
-				primarySize = "height";
-				crossSize = "width";
-				primaryStart = "top";
-				primaryCenter = "vCenter";
-				primaryEnd = "bottom";
-				crossStart = "left";
-				crossCenter = "hCenter";
-				crossEnd = "right";
-				freePrimary = "freeHeight";
-				freeCross = "freeWidth";
-				primaryFill = "fillHeight";
-				crossFill = "fillWidth";
-				primaryStretch = "fillHeightFactor";
-				primaryMin = macro minimumHeight(c);
-				primaryPref = macro preferredHeight(c);
-				primaryMax = macro maximumHeight(c);
-				crossMin = macro minimumWidth(c);
-				crossPref = macro preferredWidth(c);
-				crossMax = macro maximumWidth(c);
-				targetPrimary = macro boundedHeight(c, contentPrimary);
-				targetCross = macro boundedWidth(c, contentCross);
-				primaryReal = macro realHeight;
-				crossReal = macro realWidth;
-				primaryBaseStart = macro reverse ? bottom.position - bottom.padding : top.position + top.padding;
-				crossBase = macro left.position + left.padding;
-				primaryAlignEnd = macro s.ui.Alignment.AlignBottom;
-				primaryAlignCenter = macro s.ui.Alignment.AlignVCenter;
-				crossAlignEnd = macro s.ui.Alignment.AlignRight;
-				crossAlignCenter = macro s.ui.Alignment.AlignHCenter;
-			default:
-				throw "Invalid axis: " + d;
-		}
+		var clampL = 'clamp$lCap';
+		var fillL = 'fill$lCap';
+		var fillLFactor = '${fillL}Factor';
+		var minimumL = 'minimum$lCap';
+		var maximumL = 'maximum$lCap';
+		var preferredL = 'preferred$lCap';
+		var primaryDirty = l == "width" ? "horizontalDirty" : "verticalDirty";
+		var childLengthDirty = '${l}Dirty';
 
-		final psRef = macro $i{primaryStart};
-		final peRef = macro $i{primaryEnd};
-		final csRef = macro $i{crossStart};
-		final pSizeRef = macro $i{primarySize};
-		final cSizeRef = macro $i{crossSize};
-		final freePrimaryRef = macro $i{freePrimary};
-		final freeCrossRef = macro $i{freeCross};
-		final primaryFillRef = macro $i{primaryFill};
-		final crossFillRef = macro $i{crossFill};
-		final primaryStretchRef = macro $i{primaryStretch};
+		function updateCell(cell:Expr, uniform:Bool)
+			return macro {
+				var cell = $cell;
+				cell.$p = base;
+				${
+					if (uniform)
+						macro cell.$l = freeSpacePerCell;
+					else
+						macro {
+							if (!cell.$fillL || !Math.isNaN(cell.$preferredL))
+								cell.$l = cell.object.$l;
+							else
+								cell.$l = cell.$minimumL + freeSpace * weights[cell];
+							cell.$l += freeSpacePerCell;
+						}
+				}
+				base += cell.$l + spacing;
+				updateCell(cell);
+			}
 
 		return macro {
-			final items = [];
-			final reverse = $reversePrimary;
-			final mirror = $mirrorHorizontal;
+			var relayout = children.dirty || spacingDirty || directionDirty || uniformCellSizesDirty || $rectPDirtyRef || $rectLDirtyRef;
+			if (!relayout)
+				for (c in children) {
+					final cell = c.layout;
+					if (c.visibilityDirty
+						|| c.parentDirty
+						|| cell.$primaryDirty || (c.isVisible && !cell.$fillL && Math.isNaN(cell.$preferredL) && c.$childLengthDirty)) {
+						relayout = true;
+						break;
+					}
+				}
 
-			for (pass in 0...2) {
-				final syncChildren = children.copy();
-				var visible = 0;
-				var implicitPrimary = 0.0;
-				var implicitCross = 0.0;
+			if (!relayout) {
+				var i = 0;
+				while (i < cells.length) {
+					final cell = cells[i];
+					if ($rectCPDirtyRef)
+						cell.$cp = $rectCPRef;
+					if ($rectCLDirtyRef)
+						cell.$cl = $rectCLRef;
+					updateCell(cell);
+					i++;
+				}
+				return;
+			}
 
-				items.resize(0);
+			var fixedSpace = 0.0;
+			var totalWeight = 0.0;
+			var weights:Map<AttachedLayout, Float> = [];
 
-				for (c in syncChildren)
-					commitChild(c);
+			cells.resize(0);
+			for (c in children) {
+				if (!c.isVisible)
+					continue;
 
-				for (c in children)
-					if (c.isVisible) {
-						visible++;
+				final cell = c.layout;
+				cell.$cp = $rectCPRef;
+				cell.$cl = $rectCLRef;
+				cells.push(cell);
 
-						final lead = c.$primaryStart.margin;
-						final trail = c.$primaryEnd.margin;
-						final crossLead = c.$crossStart.margin;
-						final crossTrail = c.$crossEnd.margin;
-						final prefPrimary = $primaryPref;
-						final minPrimary = $primaryMin;
-						final maxPrimary = $primaryMax;
-						final prefCross = $crossPref;
-						final minCross = $crossMin;
-						final maxCross = $crossMax;
-						final cellPref = lead + prefPrimary + trail;
-						final crossPrefSize = crossLead + prefCross + crossTrail;
+				if (!Math.isNaN(cell.$preferredL))
+					fixedSpace += c.$l = cell.$clampL(cell.$preferredL);
+				else if (!cell.$fillL)
+					fixedSpace += c.$l;
+				else {
+					fixedSpace += cell.$minimumL;
+					weights[cell] = Math.min(cell.$maximumL, $rectLRef) / $rectLRef;
+					weights[cell] *= cell.$fillLFactor;
+					totalWeight += weights[cell];
+				}
+			}
 
-						items.push({
-							child: c,
-							fillPrimary: c.layout.$primaryFill,
-							fillCross: c.layout.$crossFill,
-							alignment: resolveAlignment(c.layout.alignment, s.ui.Alignment.AlignLeft, s.ui.Alignment.AlignVCenter, mirror),
-							stretchPrimary: c.layout.$primaryStretch,
-							lead: lead,
-							trail: trail,
-							crossLead: crossLead,
-							crossTrail: crossTrail,
-							prefPrimary: prefPrimary,
-							minPrimary: minPrimary,
-							maxPrimary: maxPrimary,
-							prefCross: prefCross,
-							minCross: minCross,
-							maxCross: maxCross,
-							cellMin: lead + minPrimary + trail,
-							cellPref: cellPref,
-							cellMax: lead + maxPrimary + trail,
-							cellSize: cellPref
-						});
+			if (cells.length <= 0)
+				return;
 
-						implicitPrimary += cellPref;
-						if (implicitCross < crossPrefSize)
-							implicitCross = crossPrefSize;
-					} else
-						commitChild(c);
+			var base = $sRef.position + $sRef.padding;
+			var freeSpace = Math.max(0.0, $rectLRef - fixedSpace - (cells.length - 1) * spacing);
+			var freeSpacePerCell = 0.0;
 
-				if (visible > 1)
-					implicitPrimary += (visible - 1) * spacing;
-
-				$primaryReal = $psRef.padding + implicitPrimary + $peRef.padding;
-				$crossReal = $csRef.padding + implicitCross + $i{crossEnd}.padding;
-
-				if (visible == 0)
-					return;
-
-				final gapCount = visible - 1;
-				var availablePrimary = $freePrimaryRef;
-				if (gapCount > 0)
-					availablePrimary -= gapCount * spacing;
-				if (availablePrimary < 0.0)
-					availablePrimary = 0.0;
-
-				if (uniformCellSizes)
-					layoutUniformCells(items, availablePrimary);
+			if (!uniformCellSizes) {
+				if (totalWeight > 1)
+					freeSpace /= totalWeight;
 				else
-					distributeLinearCells(items, availablePrimary);
+					freeSpacePerCell = freeSpace * (1 - totalWeight) / cells.length;
 
-				var primaryBase = $primaryBaseStart;
-				final crossBase = $crossBase;
-				var crossSpace = $freeCrossRef;
-				if (crossSpace < 0.0)
-					crossSpace = 0.0;
+				// *End*To*Start*
+				if (direction.matches($dRef)) {
+					var i = cells.length;
+					while (i > 0)
+						${updateCell(macro cells[--i], false)};
+				}
+				// fallback: *Start*To*End*
+				else {
+					var i = 0;
+					while (i < cells.length)
+						${updateCell(macro cells[i++], false)};
+				}
+			} else {
+				freeSpacePerCell = freeSpace / cells.length;
 
-				for (item in items) {
-					final c = item.child;
-					final contentPrimary = Math.max(0.0, item.cellSize - item.lead - item.trail);
-					final targetPrimary = item.fillPrimary ? $targetPrimary : item.prefPrimary;
-					var extraPrimary = contentPrimary - targetPrimary;
-					if (extraPrimary < 0.0)
-						extraPrimary = 0.0;
-
-					final contentCross = Math.max(0.0, crossSpace - item.crossLead - item.crossTrail);
-					final targetCross = item.fillCross ? $targetCross : item.prefCross;
-					var extraCross = contentCross - targetCross;
-					if (extraCross < 0.0)
-						extraCross = 0.0;
-
-					c.$primarySize = targetPrimary;
-					c.$crossSize = targetCross;
-
-					final primaryCellStart = reverse ? primaryBase - item.cellSize : primaryBase;
-					var primaryOffset = 0.0;
-					if (item.alignment.matches($primaryAlignEnd))
-						primaryOffset = extraPrimary;
-					else if (item.alignment.matches($primaryAlignCenter))
-						primaryOffset = extraPrimary * 0.5;
-
-					var crossOffset = 0.0;
-					if (item.alignment.matches($crossAlignEnd))
-						crossOffset = extraCross;
-					else if (item.alignment.matches($crossAlignCenter))
-						crossOffset = extraCross * 0.5;
-
-					c.$primaryStart.position = primaryCellStart + item.lead + primaryOffset;
-					c.$crossStart.position = crossBase + item.crossLead + crossOffset;
-
-					commitChild(c);
-
-					if (reverse)
-						primaryBase = primaryCellStart - spacing;
-					else
-						primaryBase = primaryCellStart + item.cellSize + spacing;
+				// *End*To*Start*
+				if (direction.matches($dRef)) {
+					var i = cells.length;
+					while (i > 0)
+						${updateCell(macro cells[--i], true)};
+				}
+				// fallback: *Start*To*End*
+				else {
+					var i = 0;
+					while (i < cells.length)
+						${updateCell(macro cells[i++], true)};
 				}
 			}
 		}

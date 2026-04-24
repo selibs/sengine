@@ -100,6 +100,21 @@ class AttachedAnchors extends s.shortcut.AttachedAttribute<Element> {
 	overload extern public inline function centerIn(element:Element)
 		centerIn(element.hCenter, element.vCenter);
 
+	function update() {
+		if (left != null && (leftDirty || left.offsetDirty || object.left.marginDirty))
+			object.left.position = left.position + left.padding + object.left.margin;
+		if (hCenter != null && (hCenterDirty || hCenter.offsetDirty || object.hCenter.marginDirty))
+			object.hCenter.position = hCenter.position + hCenter.padding + object.hCenter.margin;
+		if (right != null && (rightDirty || right.offsetDirty || object.right.marginDirty))
+			object.right.position = right.position - right.padding - object.right.margin;
+		if (top != null && (topDirty || top.offsetDirty || object.top.marginDirty))
+			object.top.position = top.position + top.padding + object.top.margin;
+		if (vCenter != null && (vCenterDirty || vCenter.offsetDirty || object.vCenter.marginDirty))
+			object.vCenter.position = vCenter.position + vCenter.padding + object.vCenter.margin;
+		if (bottom != null && (bottomDirty || bottom.offsetDirty || object.bottom.marginDirty))
+			object.bottom.position = bottom.position - bottom.padding - object.bottom.margin;
+	}
+
 	function set_left(value:HorizontalAnchor):HorizontalAnchor {
 		if (left == value)
 			return left;

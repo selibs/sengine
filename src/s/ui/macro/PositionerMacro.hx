@@ -5,37 +5,14 @@ import haxe.macro.Expr;
 using s.extensions.StringExt;
 
 class PositionerMacro {
-	public static macro function updatePositionFlow(d:String) {
-		var l:String, s:String, c:String, e:String;
-		var cl:String, cs:String, cc:String, ce:String;
-
-		switch d {
-			case "horizontal":
-				l = "width";
-				s = "left";
-				c = "hCenter";
-				e = "right";
-				cl = "height";
-				cs = "top";
-				cc = "vCenter";
-				ce = "bottom";
-			case "vertical":
-				l = "height";
-				s = "top";
-				c = "vCenter";
-				e = "bottom";
-				cl = "width";
-				cs = "left";
-				cc = "hCenter";
-				ce = "right";
-			default:
-				throw "Invalid axis: " + d;
-		}
+	public static macro function updatePositionFlow(l:String, s:String, c:String, e:String, cl:String, cs:String, cc:String, ce:String) {
+		var ld = '${l}Dirty';
+		var cld = '${cl}Dirty';
 
 		var sRef = macro $i{s};
 		var cRef = macro $i{c};
 		var eRef = macro $i{e};
-		var rlRef = macro $i{'real${l.capitalize()}'};
+		var lRef = macro $i{l};
 		var StoERef = macro $i{'${s.capitalize()}To${e.capitalize()}'};
 		var aERef = macro $i{'Align${e.capitalize()}'};
 		var aCRef = macro $i{'Align${c.capitalize()}'};
@@ -43,9 +20,12 @@ class PositionerMacro {
 		var csRef = macro $i{cs};
 		var ccRef = macro $i{cc};
 		var ceRef = macro $i{ce};
-		var crlRef = macro $i{'real${cl.capitalize()}'};
-		var caERef = macro $i{'Align${ce.capitalize()}'};
+		var clRef = macro $i{l};
+		var caERef = macro $i{'Align${ce.capitalize()}'}; 
 		var caCRef = macro $i{'Align${cc.capitalize()}'};
+
+		var childLDRef:Expr = macro c.$ld;
+		var childCLDRef:Expr = macro c.$cld;
 
 		function crossAlign()
 			return macro {
@@ -58,53 +38,79 @@ class PositionerMacro {
 			}
 
 		return macro {
-			$rlRef = 0.0;
-			$crlRef = 0.0;
-			var visible = 0;
+			var relayout = children.dirty
+				|| spacingDirty
+				|| directionDirty
+				|| alignmentDirty
+				|| $sRef.offsetDirty
+				|| $cRef.offsetDirty
+				|| $eRef.offsetDirty
+				|| $csRef.offsetDirty
+				|| $ccRef.offsetDirty
+				|| $ceRef.offsetDirty;
+
+			if (!relayout)
+				for (c in children)
+					if (c.visibilityDirty
+						|| c.parentDirty
+						|| $childLDRef
+						|| $childCLDRef
+						|| c.$s.marginDirty
+						|| c.$e.marginDirty
+						|| c.$cs.marginDirty
+						|| c.$cc.marginDirty
+						|| c.$ce.marginDirty) {
+						relayout = true;
+						break;
+					}
+
+			if (!relayout) {
+				var i = 0;
+				while (i < children.count)
+					updateChild(children[i++]);
+				return;
+			}
+
+			var size = 0.0;
+			var items = [];
 
 			for (c in children)
 				if (c.isVisible) {
-					$rlRef += c.$l;
-					if ($crlRef < c.$cl)
-						$crlRef = c.$cl;
-					visible++;
+					size += c.$l;
+					items.push(c);
 				}
-			if (visible > 1)
-				$rlRef += (visible - 1) * spacing;
+			if (items.length > 1)
+				size += (items.length - 1) * spacing;
 
 			var base = 0.0;
 			// Align*End*
 			if (alignment.matches($aERef))
-				base = $eRef.position - $eRef.padding - $rlRef;
+				base = $eRef.position - $eRef.padding - size;
 			// Align*Center*
 			else if (alignment.matches($aCRef))
-				base = $cRef.position + $cRef.padding - $rlRef * 0.5;
+				base = $cRef.position + $cRef.padding - size * 0.5;
 			// fallback: Align*Start*
 			else
 				base = $sRef.position + $sRef.padding;
 
 			if (direction.matches($StoERef)) {
 				var i = 0;
-				while (i < children.count) {
-					var c = children[i++];
-					if (c.isVisible) {
-						c.$s.position = base + c.$s.margin;
-						${crossAlign()};
-						updateChild(c);
-						base = c.$e.position + c.$e.margin + spacing;
-					}
+				while (i < items.length) {
+					var c = items[i++];
+					c.$s.position = base + c.$s.margin;
+					${crossAlign()};
+					updateChild(c);
+					base += c.$l + spacing;
 				}
 			} else {
-				base += $rlRef;
-				var i = children.count;
+				base += size;
+				var i = items.length;
 				while (i > 0) {
-					var c = children[--i];
-					if (c.isVisible) {
-						c.$e.position = base - c.$e.margin;
-						${crossAlign()};
-						updateChild(c);
-						base = c.$s.position - c.$s.margin - spacing;
-					}
+					var c = items[--i];
+					c.$e.position = base - c.$e.margin;
+					${crossAlign()};
+					updateChild(c);
+					base = c.$s.position - spacing;
 				}
 			}
 		}

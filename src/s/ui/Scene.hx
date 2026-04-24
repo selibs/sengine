@@ -35,7 +35,7 @@ class Scene extends Layer {
 		this.width = window.width;
 		this.height = window.height;
 
-		App.onUpdate(() -> updateTree());
+		App.onUpdate(() -> if (dirty) updateTree());
 		window.onRender(render);
 		window.onResized((w, h) -> setSize(w, h));
 
@@ -60,26 +60,6 @@ class Scene extends Layer {
 
 		if (children.dirty)
 			interactive.resize(0);
-	}
-
-	override function draw(target:RenderTarget) {
-		final ctx = target.context2D;
-		ctx.begin();
-		ctx.clear(color);
-		ctx.style.color = White;
-		ctx.drawImage(texture, 0, 0);
-
-		#if debug_element_bounds
-		if (window.mouse.hovers)
-			descendantAt(window.mouse.x, window.mouse.y)?.drawBounds(ctx);
-		#end
-
-		#if debug
-		drawDebugInfo(ctx);
-		Context3D.resetDebugInfo();
-		#end
-
-		ctx.end();
 	}
 
 	#if debug
@@ -113,6 +93,18 @@ class Scene extends Layer {
 	override function updateOrder() {}
 
 	function render(framebuffer:Framebuffer) {
+		// #if debug
+		// final ctx = texture.context2D;
+		// ctx.begin();
+		// #if debug_element_bounds
+		// if (window.mouse.hovers)
+		// 	descendantAt(window.mouse.x, window.mouse.y)?.drawBounds(ctx);
+		// #end
+		// drawDebugInfo(ctx);
+		// Context3D.resetDebugInfo();
+		// ctx.end();
+		// #end
+
 		framebuffer.g2.begin(color);
 		framebuffer.g2.drawImage(@:privateAccess texture.image, 0, 0);
 		framebuffer.g2.end();

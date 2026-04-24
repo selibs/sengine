@@ -1,11 +1,7 @@
 package s.ui.layouts;
 
-import s.ui.Direction;
-import s.ui.Element;
-
-class ColumnLayout extends FlowLayout {
+@:access(s.ui.AttachedLayout)
+class ColumnLayout extends DirectionalLayout {
 	override function updateChildren()
-		s.ui.macro.LayoutMacro.updateLayoutFlow("vertical", false, layoutDirection.matches(RightToLeft));
-
-	override function layoutChild(c:Element) {}
+		s.ui.macro.LayoutMacro.updateLayoutFlow("top", "bottom", "y", "height", "x", "width");
 }
