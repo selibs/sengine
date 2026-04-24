@@ -171,12 +171,12 @@ class ElementMacro {
 		"gradient.radial" => "s.ui.gradients.RadialGradient",
 		// positioners
 		"row" => "s.ui.positioners.Row",
-		"flow" => "s.ui.positioners.Flow",
+		// "flex" => "s.ui.positioners.Flex",
 		"column" => "s.ui.positioners.Column",
 		// layouts
 		"layout" => "s.ui.layouts.Layout",
 		"layout.row" => "s.ui.layouts.RowLayout",
-		"layout.flow" => "s.ui.layouts.FlowLayout",
+		// "layout.flex" => "s.ui.layouts.FlexLayout",
 		"layout.column" => "s.ui.layouts.ColumnLayout",
 		// widgets
 		// "progress" => "s.ui.widgets.ProgressBar",

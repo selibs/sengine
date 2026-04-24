@@ -10,8 +10,8 @@ class Layout extends Element {
 	@:attr(rect) var rectWidth:Float = 0.0;
 	@:attr(rect) var rectHeight:Float = 0.0;
 
-	@:readonly @:alias public var freeWidth:Float = rectWidth;
-	@:readonly @:alias public var freeHeight:Float = rectHeight;
+	@:readonly @:alias public var availableWidth:Float = rectWidth;
+	@:readonly @:alias public var availableHeight:Float = rectHeight;
 
 	override function update() {
 		super.update();

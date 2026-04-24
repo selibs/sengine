@@ -143,6 +143,8 @@ class Element extends Object2D<Element> implements Markup {
 		top = new VerticalAnchor(this);
 		vCenter = new VerticalAnchor(this);
 		bottom = new VerticalAnchor(this);
+
+		markup(this);
 	}
 
 	overload extern public inline function setPadding(value:Float):Void
@@ -306,6 +308,9 @@ class Element extends Object2D<Element> implements Markup {
 
 	override function toString():String
 		return super.toString() + tags.toString();
+
+	@:ui.markup
+	function markup() {}
 
 	function updateTree() {
 		update();

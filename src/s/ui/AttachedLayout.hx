@@ -5,6 +5,7 @@ import s.ui.Element;
 
 @:allow(s.ui.Element)
 class AttachedLayout extends s.shortcut.AttachedAttribute<Element> {
+	var weight:Float = 0.0;
 	@:attr(cell) var x:Float = 0.0;
 	@:attr(cell) var y:Float = 0.0;
 	@:attr(cell) var width:Float = 0.0;
@@ -18,16 +19,16 @@ class AttachedLayout extends s.shortcut.AttachedAttribute<Element> {
 	@:attr public var alignment:Alignment = AlignLeft | AlignVCenter;
 
 	@:attr(horizontal) public var fillWidth:Bool = false;
-	@:attr(horizontal) public var fillWidthFactor:Float = 1.0;
 	@:attr(horizontal) public var minimumWidth:Float = 0.0;
 	@:attr(horizontal) public var maximumWidth:Float = Math.POSITIVE_INFINITY;
 	@:attr(horizontal) public var preferredWidth:Float = Math.NaN;
+	@:attr(horizontal) public var horizontalStretchFactor:Float = 1.0;
 
 	@:attr(vertical) public var fillHeight:Bool = false;
-	@:attr(vertical) public var fillHeightFactor:Float = 1.0;
 	@:attr(vertical) public var minimumHeight:Float = 0.0;
 	@:attr(vertical) public var maximumHeight:Float = Math.POSITIVE_INFINITY;
 	@:attr(vertical) public var preferredHeight:Float = Math.NaN;
+	@:attr(vertical) public var verticalStretchFactor:Float = 1.0;
 
 	inline function clampWidth(value:Float)
 		return Math.min(Math.max(value, minimumWidth), maximumWidth);
@@ -40,14 +41,14 @@ class AttachedLayout extends s.shortcut.AttachedAttribute<Element> {
 		// fillWidth
 		if (horizontalDirty && !Math.isNaN(preferredWidth))
 			object.width = clampWidth(preferredWidth);
-		else if (fillWidth && (fillWidthDirty || fillWidthFactorDirty || widthDirty))
-			object.width = clampWidth(width * fillWidthFactor);
+		else if (fillWidth && (fillWidthDirty || horizontalStretchFactorDirty || widthDirty))
+			object.width = clampWidth(width * horizontalStretchFactor);
 
 		// fillHeight
 		if (verticalDirty && !Math.isNaN(preferredHeight))
 			object.height = clampHeight(preferredHeight);
-		else if (fillHeight && (fillHeightDirty || fillHeightFactorDirty || heightDirty))
-			object.height = clampHeight(height * fillHeightFactor);
+		else if (fillHeight && (fillHeightDirty || verticalStretchFactorDirty || heightDirty))
+			object.height = clampHeight(height * verticalStretchFactor);
 
 		// AlignRight
 		if ((alignmentDirty || xDirty || widthDirty || object.right.marginDirty) && alignment.matches(AlignRight))

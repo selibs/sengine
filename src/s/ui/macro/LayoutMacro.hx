@@ -5,7 +5,7 @@ import haxe.macro.Expr;
 using s.extensions.StringExt;
 
 class LayoutMacro {
-	public static macro function updateLayoutFlow(s:String, e:String, p:String, l:String, cp:String, cl:String) {
+	public static macro function updateLayoutFlow(d:String, s:String, e:String, p:String, l:String, cp:String, cl:String) {
 		var sCap = s.capitalize();
 		var eCap = e.capitalize();
 		var pCap = p.capitalize();
@@ -26,7 +26,7 @@ class LayoutMacro {
 
 		var clampL = 'clamp$lCap';
 		var fillL = 'fill$lCap';
-		var fillLFactor = '${fillL}Factor';
+		var stretchFactor = '${d}StretchFactor';
 		var minimumL = 'minimum$lCap';
 		var maximumL = 'maximum$lCap';
 		var preferredL = 'preferred$lCap';
@@ -45,7 +45,7 @@ class LayoutMacro {
 							if (!cell.$fillL || !Math.isNaN(cell.$preferredL))
 								cell.$l = cell.object.$l;
 							else
-								cell.$l = cell.$minimumL + freeSpace * weights[cell];
+								cell.$l = cell.$minimumL + freeSpace * cell.weight;
 							cell.$l += freeSpacePerCell;
 						}
 				}
@@ -55,6 +55,7 @@ class LayoutMacro {
 
 		return macro {
 			var relayout = children.dirty || spacingDirty || directionDirty || uniformCellSizesDirty || $rectPDirtyRef || $rectLDirtyRef;
+
 			if (!relayout)
 				for (c in children) {
 					final cell = c.layout;
@@ -82,7 +83,6 @@ class LayoutMacro {
 
 			var fixedSpace = 0.0;
 			var totalWeight = 0.0;
-			var weights:Map<AttachedLayout, Float> = [];
 
 			cells.resize(0);
 			for (c in children) {
@@ -99,10 +99,12 @@ class LayoutMacro {
 				else if (!cell.$fillL)
 					fixedSpace += c.$l;
 				else {
+					if ($rectLRef > 0.0)
+						cell.weight = Math.min(cell.$maximumL, $rectLRef) / $rectLRef * cell.$stretchFactor;
+					else
+						cell.weight = 0.0;
 					fixedSpace += cell.$minimumL;
-					weights[cell] = Math.min(cell.$maximumL, $rectLRef) / $rectLRef;
-					weights[cell] *= cell.$fillLFactor;
-					totalWeight += weights[cell];
+					totalWeight += cell.weight;
 				}
 			}
 

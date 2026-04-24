@@ -100,7 +100,7 @@ class PositionerMacro {
 					c.$s.position = base + c.$s.margin;
 					${crossAlign()};
 					updateChild(c);
-					base += c.$l + spacing;
+					base = c.$e.position + c.$e.margin + spacing;
 				}
 			} else {
 				base += size;
@@ -110,7 +110,7 @@ class PositionerMacro {
 					c.$e.position = base - c.$e.margin;
 					${crossAlign()};
 					updateChild(c);
-					base = c.$s.position - spacing;
+					base = c.$s.position - c.$s.margin - spacing;
 				}
 			}
 		}
