@@ -5,7 +5,6 @@ import kha.WindowMode;
 import kha.WindowOptions;
 import kha.FramebufferOptions;
 import kha.Window as KhaWindow;
-import s.graphics.RenderTarget;
 import s.app.input.WindowMouse;
 
 /**
@@ -34,6 +33,10 @@ class Window implements s.shortcut.Shortcut {
 
 	public final id:Int;
 	public final mouse:WindowMouse;
+
+	#if kha_windows
+	// public final HWND:Int;
+	#end
 
 	/** Window title. */
 	@:alias extern public var title:String = window.title;
@@ -117,6 +120,11 @@ class Window implements s.shortcut.Shortcut {
 	function new(w:KhaWindow) {
 		id = windows.push(this) - 1;
 		mouse = new WindowMouse(id);
+		#if kha_windows
+		// HWND = untyped __cpp__("(uintptr_t)kinc_windows_window_handle(windowId)");
+		// trace(HWND);
+		#end
+
 		window = w;
 		window.notifyOnResize((w, h) -> resized(w, h));
 	}

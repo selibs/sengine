@@ -33,20 +33,25 @@ class Canvas extends Textured<RenderTargetData> {
 			return;
 
 		var tex = texture;
+		final texWidth = size.width > 0 ? size.width : 1;
+		final texHeight = size.height > 0 ? size.height : 1;
+		final drawWidth = width > 0 ? width : 1;
+		final drawHeight = height > 0 ? height : 1;
 
-		texture = new RenderTarget(size.width, size.height, format, depthStencil, samples);
+		texture = new RenderTarget(texWidth, texHeight, format, depthStencil, samples);
 		if (Image.renderTargetsInvertedY())
-			texture.context2D.transform.setFrom(Mat3.orthogonalProjection(0, width, 0, height));
+			texture.context2D.transform.setFrom(Mat3.orthogonalProjection(0, drawWidth, 0, drawHeight));
 		else
-			texture.context2D.transform.setFrom(Mat3.orthogonalProjection(0, width, height, 0));
+			texture.context2D.transform.setFrom(Mat3.orthogonalProjection(0, drawWidth, drawHeight, 0));
 
 		if (tex == null)
 			return;
 
-		texture.context2D.draw(false, Transparent, ctx -> {
-			ctx.style.color = White;
-			ctx.drawScaledImage(tex, 0.0, 0.0, width, height);
-		});
+		if (width > 0 && height > 0)
+			texture.context2D.draw(false, Transparent, ctx -> {
+				ctx.style.color = White;
+				ctx.drawScaledImage(tex, 0.0, 0.0, width, height);
+			});
 		tex.unload();
 	}
 }

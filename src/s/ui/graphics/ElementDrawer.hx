@@ -31,6 +31,8 @@ abstract class ElementDrawer<T:Drawable> extends Shader {
 	}
 
 	public function render(target:RenderTarget, element:T) {
+		if (!compiled)
+			compile();
 		final ctx = target.context3D;
 		ctx.setPipeline(pipeline);
 		setBuffers(target);

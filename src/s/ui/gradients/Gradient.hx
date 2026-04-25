@@ -43,8 +43,14 @@ abstract class Gradient extends s.ui.elements.Drawable {
 		ctx.begin();
 		final inverted = kha.Image.renderTargetsInvertedY();
 
-		inline function setGradientPixel(x:Int, color:Color)
+		inline function setGradientPixel(x:Int, color:Color) {
+			#if (cpp && kha_opengl)
+			// Native OpenGL uses the raw bytes written through Graphics1.
+			// Swap R/B here so the uploaded texture still ends up in RGBA order.
+			color = Color.rgba(color.b, color.g, color.r, color.a);
+			#end
 			ctx.setPixel(inverted ? resolution - 1 - x : x, 0, color);
+		}
 
 		if (stops == null || stops.count == 0)
 			for (i in 0...resolution)

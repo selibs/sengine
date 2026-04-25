@@ -22,14 +22,15 @@ abstract class Shader {
 	var pipeline:PipelineState;
 	var compiled:Bool = false;
 
-	public static var quad(default, null):Mesh = [[[0.0, 0.0, 0.0, 1.0], [0.0, 1.0, 0.0, 0.0], [1.0, 1.0, 1.0, 0.0], [1.0, 0.0, 1.0, 1.0]]];
-
+	public static var quad(default, null):Mesh = [
+		[
+			[0.0, 0.0, 0.0, 1.0],
+			[0.0, 1.0, 0.0, 0.0],
+			[1.0, 1.0, 1.0, 0.0],
+			[1.0, 0.0, 1.0, 1.0]
+		]
+	];
 	public static final structure2D:VertexStructure = ["vertPos" => Float32_2X, "vertUV" => Float32_2X];
-
-	public static function compileShaders() 
-		for (shader in shaders)
-			shader.compile();
-	
 
 	function new(state:ShaderPipelineState) {
 		this.state = state;

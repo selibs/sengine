@@ -273,7 +273,6 @@ class App implements s.shortcut.Shortcut {
 				() -> state = Shutdown);
 
 			Aura.init();
-			Shader.compileShaders();
 
 			Assets.loadShelf({
 				fonts: ["default" => "font_default"],

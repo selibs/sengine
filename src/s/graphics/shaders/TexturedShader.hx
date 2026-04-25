@@ -1,7 +1,6 @@
 package s.graphics.shaders;
 
 import kha.graphics4.TextureUnit;
-import kha.graphics4.ConstantLocation;
 
 abstract class TexturedShader extends Shader2D {
 	var sourceTU:TextureUnit;
