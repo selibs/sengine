@@ -33,6 +33,6 @@ abstract class GradientDrawer<T:Gradient> extends ElementDrawer<T> {
 		final ctx = target.context3D;
 		ctx.setVec2(startCL, {x: l + start.x * w, y: t + start.y * h});
 		ctx.setVec2(endCL, {x: l + end.x * w, y: t + end.y * h});
-		ctx.setTexture(gradientTU, element.gradient);
+		ctx.setTexture(gradientTU, element.texture);
 	}
 }

@@ -149,8 +149,6 @@ class ElementMacro {
 
 	public static var shortcuts(default, null):Map<String, String> = [
 		"element" => "s.ui.Element",
-		"drawable" => "s.ui.elements.Drawable",
-		"interactive" => "s.ui.elements.Interactive",
 		// controls
 		"button" => "s.ui.controls.Button",
 		// "input" => "s.ui.controls.TextInput",
@@ -159,8 +157,11 @@ class ElementMacro {
 		"text" => "s.ui.elements.Text",
 		"label" => "s.ui.elements.Label",
 		"canvas" => "s.ui.elements.Canvas",
+		"icon" => "s.ui.elements.Icon",
 		"image" => "s.ui.elements.ImageElement",
 		"image.animated" => "s.ui.elements.AnimatedImageElement",
+		"layer" => "s.ui.elements.Layer",
+		"interactive" => "s.ui.elements.Interactive",
 		// shapes
 		"ellipse" => "s.ui.shapes.Ellipse",
 		"triangle" => "s.ui.shapes.Triangle",
@@ -334,6 +335,9 @@ class ElementMacro {
 					for (e in exprs)
 						out = out.concat(transform(e));
 					return out;
+				case EConst(CIdent(s)) if (s == "$element"):
+					expr = currentRef();
+					return transform(expr);
 				case EConst(CIdent(s)) if (s.charAt(0) == "$"):
 					if (s == "$parent")
 						expr = parentRef();
@@ -422,10 +426,8 @@ class ElementMacro {
 			default:
 				[];
 		}
-		args.push({
-			name: "parent",
-			type: macro :s.ui.Element
-		});
+		
+		args.unshift({name: "parent", type: macro :s.ui.Element});
 
 		if (expr != null)
 			field.kind = FFun({

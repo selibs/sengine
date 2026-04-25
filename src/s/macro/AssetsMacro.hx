@@ -338,16 +338,27 @@ class AssetsMacro {
 	}
 
 	static function loadBytes(resName:String, loadBlob:Expr) {
+		var reportErrorExpr = macro e -> {
+			var message = e != null ? Reflect.field(e, "message") : null;
+			reporter({error: message != null ? Std.string(message) : Std.string(e)});
+		}
+
 		function load(l)
 			return macro data -> {
+				var __asset = (asset : s.assets.internal.Asset<kha.$resName>);
+				@:privateAccess __asset.deferLoadedSignal = true;
 				try {
 					$l;
-					(asset : s.assets.internal.Asset<kha.$resName>).location = location;
-					logger.debug('Loaded "$location"');
 				} catch (e) {
-					reporter({error: e.message});
+					@:privateAccess __asset.deferLoadedSignal = false;
+					$reportErrorExpr(e);
 					return;
 				}
+				@:privateAccess __asset.deferLoadedSignal = false;
+				__asset.location = location;
+				logger.debug('Loaded "$location"');
+				if (__asset.isLoaded)
+					__asset.loaded();
 			}
 
 		var resLoadName = "load" + resName;
@@ -374,7 +385,7 @@ class AssetsMacro {
 						}
 				}
 			} catch (e)
-				reporter({error: e.message});
+				$reportErrorExpr(e);
 		}
 	}
 	#end

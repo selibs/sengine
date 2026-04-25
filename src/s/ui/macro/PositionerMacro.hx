@@ -13,7 +13,7 @@ class PositionerMacro {
 		var cRef = macro $i{c};
 		var eRef = macro $i{e};
 		var lRef = macro $i{l};
-		var StoERef = macro $i{'${s.capitalize()}To${e.capitalize()}'};
+		var EtoSRef = macro $i{'${e.capitalize()}To${s.capitalize()}'};
 		var aERef = macro $i{'Align${e.capitalize()}'};
 		var aCRef = macro $i{'Align${c.capitalize()}'};
 
@@ -21,7 +21,7 @@ class PositionerMacro {
 		var ccRef = macro $i{cc};
 		var ceRef = macro $i{ce};
 		var clRef = macro $i{l};
-		var caERef = macro $i{'Align${ce.capitalize()}'}; 
+		var caERef = macro $i{'Align${ce.capitalize()}'};
 		var caCRef = macro $i{'Align${cc.capitalize()}'};
 
 		var childLDRef:Expr = macro c.$ld;
@@ -38,28 +38,15 @@ class PositionerMacro {
 			}
 
 		return macro {
-			var relayout = children.dirty
-				|| spacingDirty
-				|| directionDirty
-				|| alignmentDirty
-				|| $sRef.offsetDirty
-				|| $cRef.offsetDirty
-				|| $eRef.offsetDirty
-				|| $csRef.offsetDirty
-				|| $ccRef.offsetDirty
-				|| $ceRef.offsetDirty;
+			var relayout = children.dirty || spacingDirty || directionDirty || alignmentDirty || $sRef.offsetDirty || $cRef.offsetDirty
+				|| $eRef.offsetDirty || $csRef.offsetDirty || $ccRef.offsetDirty || $ceRef.offsetDirty;
 
 			if (!relayout)
 				for (c in children)
 					if (c.visibilityDirty
 						|| c.parentDirty
 						|| $childLDRef
-						|| $childCLDRef
-						|| c.$s.marginDirty
-						|| c.$e.marginDirty
-						|| c.$cs.marginDirty
-						|| c.$cc.marginDirty
-						|| c.$ce.marginDirty) {
+						|| $childCLDRef || c.$s.marginDirty || c.$e.marginDirty || c.$cs.marginDirty || c.$cc.marginDirty || c.$ce.marginDirty) {
 						relayout = true;
 						break;
 					}
@@ -93,24 +80,20 @@ class PositionerMacro {
 			else
 				base = $sRef.position + $sRef.padding;
 
-			if (direction.matches($StoERef)) {
-				var i = 0;
-				while (i < items.length) {
-					var c = items[i++];
-					c.$s.position = base + c.$s.margin;
-					${crossAlign()};
-					updateChild(c);
-					base = c.$e.position + c.$e.margin + spacing;
-				}
-			} else {
+			if (direction.matches($EtoSRef)) {
 				base += size;
-				var i = items.length;
-				while (i > 0) {
-					var c = items[--i];
+				for (c in items) {
 					c.$e.position = base - c.$e.margin;
 					${crossAlign()};
 					updateChild(c);
 					base = c.$s.position - c.$s.margin - spacing;
+				}
+			} else {
+				for (c in items) {
+					c.$s.position = base + c.$s.margin;
+					${crossAlign()};
+					updateChild(c);
+					base = c.$e.position + c.$e.margin + spacing;
 				}
 			}
 		}

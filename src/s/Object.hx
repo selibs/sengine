@@ -17,7 +17,7 @@ import haxe.Json;
  * It does not define transform, rendering, or update behavior on its own.
  */
 @:allow(s.ObjectList)
-abstract class Object<T:Object<T>> implements s.shortcut.Shortcut implements s.shortcut.AttributeOwner {
+abstract class Object<T:Object<T>> implements s.shortcut.Shortcut {
 	/**
 	 * Parent node or `null` if this node is detached.
 	 *

@@ -1,10 +1,8 @@
 package s.ui.gradients;
 
-import s.ui.gradients.Gradient.GradientStops;
-
 @:allow(s.ui.graphics.gradients.RadialGradientDrawer)
 class RadialGradient extends Gradient {
-	public function new(?stops:GradientStops) {
+	public function new(?stops:s.ui.GradientStops) {
 		super(stops);
 		start = {x: 0.5, y: 0.5};
 		end = {x: 1.0, y: 0.5};

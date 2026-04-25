@@ -4,34 +4,22 @@ import s.math.Vec2;
 import s.math.Interpolation;
 import s.graphics.RenderTarget;
 
-@:structInit
-class GradientStop implements s.shortcut.Shortcut {
-	@:attr public var position:Float;
-	@:attr public var color:Color;
-}
-
-@:forward.new
-@:forward(length, concat, slice, toString, contains, indexOf, lastIndexOf, copy, iterator, keyValueIterator, map, filter)
-extern abstract GradientStops(Array<GradientStop>) from Array<GradientStop> {
-	@:op([])
-	inline function arrayRead(i:Int)
-		return this[i];
-}
-
-@:dox(hide)
+@:allow(s.ui.GradientStops)
 @:allow(s.ui.graphics.gradients.GradientDrawer)
 abstract class Gradient extends s.ui.elements.Drawable {
-	var gradient:RenderTarget;
+	var texture:RenderTarget;
 
-	public var start:Vec2 = new Vec2(0.5, 0.0);
-	public var end:Vec2 = new Vec2(0.5, 1.0);
-	@:attr(gradient) public var stops:GradientStops;
-	@:attr(gradient) public var resolution(default, set):Int = 256;
+	@:attr public var start:Vec2 = new Vec2(0.5, 0.0);
+	@:attr public var end:Vec2 = new Vec2(0.5, 1.0);
+	@:attr.attached public var stops(default, set):GradientStops;
+	@:attr(gradient) @:clamp(1) public var resolution:Int = 256;
 	@:attr(gradient) public var interpolation:Interpolation = Interpolation.Linear;
 
 	public function new(?stops:GradientStops) {
 		super();
-		gradient = new RenderTarget(resolution, 1);
+		texture = new RenderTarget(resolution, 1);
+		@:bypassAccessor this.stops = new GradientStops([], this);
+
 		if (stops != null)
 			this.stops = stops;
 	}
@@ -43,30 +31,30 @@ abstract class Gradient extends s.ui.elements.Drawable {
 			return;
 
 		if (resolutionDirty) {
-			gradient.unload();
-			gradient = new RenderTarget(resolution, 1);
+			texture.unload();
+			texture = new RenderTarget(resolution, 1);
 		}
 
-		gradient.context2D.begin();
-		gradient.context2D.clear(Transparent);
-		gradient.context2D.end();
+		texture.context2D.begin();
+		texture.context2D.clear(Transparent);
+		texture.context2D.end();
 
-		var ctx = gradient.context1D;
+		var ctx = texture.context1D;
 		ctx.begin();
 		final inverted = kha.Image.renderTargetsInvertedY();
 
 		inline function setGradientPixel(x:Int, color:Color)
 			ctx.setPixel(inverted ? resolution - 1 - x : x, 0, color);
 
-		if (stops == null || stops.length == 0)
+		if (stops == null || stops.count == 0)
 			for (i in 0...resolution)
 				setGradientPixel(i, Transparent);
-		else if (stops.length == 1) {
+		else if (stops.count == 1) {
 			var c = stops[0].color;
 			for (i in 0...resolution)
 				setGradientPixel(i, c);
 		} else {
-			var last = stops.length - 1;
+			var last = stops.count - 1;
 			var j = 0;
 			for (i in 0...resolution) {
 				var p = resolution > 1 ? i / (resolution - 1) : 0.0;
@@ -77,7 +65,7 @@ abstract class Gradient extends s.ui.elements.Drawable {
 				else if (p >= stops[last].position)
 					c = stops[last].color;
 				else {
-					while (j + 1 < stops.length && p > stops[j + 1].position)
+					while (j + 1 < stops.count && p > stops[j + 1].position)
 						j++;
 
 					var stop = stops[j];
@@ -94,6 +82,7 @@ abstract class Gradient extends s.ui.elements.Drawable {
 		ctx.end();
 	}
 
-	inline function set_resolution(value:Int):Int
-		return resolution = value > 0 ? value : 1;
+	function set_stops(value:GradientStops) {
+		return stops = new GradientStops(value != null ? value.stops : [], this);
+	}
 }

@@ -25,9 +25,6 @@ class Mouse implements s.shortcut.Shortcut {
 	public function new(id:Int = 0) {
 		mouse = kha.input.Mouse.get(id);
 		connect();
-
-		onPressed((b, x, y) -> buttonPressed(b, x, y));
-		onReleased((b, x, y) -> buttonReleased(b, x, y));
 	}
 
 	function connect()

@@ -28,7 +28,7 @@ class Image extends Asset<kha.Image> implements s.shortcut.Shortcut {
 	inline function set_image(value:kha.Image) {
 		image?.unload();
 		if ((image = value) != null)
-			loaded();
+			notifyLoaded();
 		return image;
 	}
 

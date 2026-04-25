@@ -6,6 +6,7 @@ abstract class Shape extends s.ui.elements.Drawable {
 
 	@:attr.attached public final border:BorderAttribute;
 	@:attr @:clamp(0) public var radius:Float;
+	@:attr @:clamp(0) public var softness:Float = 0.5;
 
 	public function new(radius:Float = 5.0) {
 		super();

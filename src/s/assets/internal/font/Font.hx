@@ -744,7 +744,7 @@ class Font extends Asset<kha.Font> {
 
 	function set_blob(value:Blob):Blob {
 		if ((blob = value) != null)
-			loaded();
+			notifyLoaded();
 		return blob;
 	}
 
